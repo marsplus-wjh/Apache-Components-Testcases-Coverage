@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CollectionPointer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri.model.beans</a> &gt; <span class="el_source">CollectionPointer.java</span></div><h1>CollectionPointer.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri.model.beans;
+
+import java.util.Locale;
+
+import org.apache.commons.jxpath.JXPathContext;
+import org.apache.commons.jxpath.JXPathIntrospector;
+import org.apache.commons.jxpath.ri.Compiler;
+import org.apache.commons.jxpath.ri.QName;
+import org.apache.commons.jxpath.ri.compiler.NodeNameTest;
+import org.apache.commons.jxpath.ri.compiler.NodeTest;
+import org.apache.commons.jxpath.ri.compiler.NodeTypeTest;
+import org.apache.commons.jxpath.ri.model.NodeIterator;
+import org.apache.commons.jxpath.ri.model.NodePointer;
+import org.apache.commons.jxpath.util.ValueUtils;
+
+/**
+ * Transparent pointer to a collection (array or Collection).
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision: 668329 $ $Date: 2008-06-16 16:59:48 -0500 (Mon, 16 Jun 2008) $
+ */
+public class CollectionPointer extends NodePointer {
+    private Object collection;
+    private NodePointer valuePointer;
+
+    private static final long serialVersionUID = 8620254915563256588L;
+
+    /**
+     * Create a new CollectionPointer.
+     * @param collection value
+     * @param locale Locale
+     */
+    public CollectionPointer(Object collection, Locale locale) {
+<span class="fc" id="L50">        super(null, locale);</span>
+<span class="fc" id="L51">        this.collection = collection;</span>
+<span class="fc" id="L52">    }</span>
+
+    /**
+     * Create a new CollectionPointer.
+     * @param parent parent NodePointer
+     * @param collection value
+     */
+    public CollectionPointer(NodePointer parent, Object collection) {
+<span class="fc" id="L60">        super(parent);</span>
+<span class="fc" id="L61">        this.collection = collection;</span>
+<span class="fc" id="L62">    }</span>
+
+    public QName getName() {
+<span class="fc" id="L65">        return null;</span>
+    }
+
+    public Object getBaseValue() {
+<span class="fc" id="L69">        return collection;</span>
+    }
+
+    public boolean isCollection() {
+<span class="fc" id="L73">        return true;</span>
+    }
+
+    public int getLength() {
+<span class="fc" id="L77">        return ValueUtils.getLength(getBaseValue());</span>
+    }
+
+    public boolean isLeaf() {
+<span class="nc" id="L81">        Object value = getNode();</span>
+<span class="nc bnc" id="L82" title="All 4 branches missed.">        return value == null || JXPathIntrospector.getBeanInfo(value.getClass()).isAtomic();</span>
+    }
+
+    public boolean isContainer() {
+<span class="pc bpc" id="L86" title="1 of 2 branches missed.">        return index != WHOLE_COLLECTION;</span>
+    }
+
+    public Object getImmediateNode() {
+<span class="fc bfc" id="L90" title="All 2 branches covered.">        return index == WHOLE_COLLECTION ? ValueUtils.getValue(collection)</span>
+<span class="fc" id="L91">                : ValueUtils.getValue(collection, index);</span>
+    }
+
+    public void setValue(Object value) {
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">        if (index == WHOLE_COLLECTION) {</span>
+<span class="nc" id="L96">            parent.setValue(value);</span>
+        }
+        else {
+<span class="fc" id="L99">            ValueUtils.setValue(collection, index, value);</span>
+        }
+<span class="fc" id="L101">    }</span>
+
+    public void setIndex(int index) {
+<span class="fc" id="L104">        super.setIndex(index);</span>
+<span class="fc" id="L105">        valuePointer = null;</span>
+<span class="fc" id="L106">    }</span>
+
+    public NodePointer getValuePointer() {
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        if (valuePointer == null) {</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">            if (index == WHOLE_COLLECTION) {</span>
+<span class="fc" id="L111">                valuePointer = this;</span>
+            }
+            else {
+<span class="fc" id="L114">                Object value = getImmediateNode();</span>
+<span class="fc" id="L115">                valuePointer =</span>
+<span class="fc" id="L116">                    NodePointer.newChildNodePointer(this, getName(), value);</span>
+            }
+        }
+<span class="fc" id="L119">        return valuePointer;</span>
+    }
+
+    public NodePointer createPath(JXPathContext context) {
+<span class="pc bpc" id="L123" title="1 of 2 branches missed.">        if (ValueUtils.getLength(getBaseValue()) &lt;= index) {</span>
+<span class="nc" id="L124">            collection = ValueUtils.expandCollection(getNode(), index + 1);</span>
+        }
+<span class="fc" id="L126">        return this;</span>
+    }
+
+    public NodePointer createPath(JXPathContext context, Object value) {
+<span class="fc" id="L130">        NodePointer ptr = createPath(context);</span>
+<span class="fc" id="L131">        ptr.setValue(value);</span>
+<span class="fc" id="L132">        return ptr;</span>
+    }
+
+    public NodePointer createChild(
+        JXPathContext context,
+        QName name,
+        int index,
+        Object value) {
+<span class="fc" id="L140">        NodePointer ptr = (NodePointer) clone();</span>
+<span class="fc" id="L141">        ptr.setIndex(index);</span>
+<span class="fc" id="L142">        return ptr.createPath(context, value);</span>
+    }
+
+    public NodePointer createChild(
+        JXPathContext context,
+        QName name,
+        int index) {
+<span class="nc" id="L149">        NodePointer ptr = (NodePointer) clone();</span>
+<span class="nc" id="L150">        ptr.setIndex(index);</span>
+<span class="nc" id="L151">        return ptr.createPath(context);</span>
+    }
+
+    public int hashCode() {
+<span class="fc" id="L155">        return System.identityHashCode(collection) + index;</span>
+    }
+
+    public boolean equals(Object object) {
+<span class="pc bpc" id="L159" title="1 of 2 branches missed.">        if (object == this) {</span>
+<span class="nc" id="L160">            return true;</span>
+        }
+
+<span class="pc bpc" id="L163" title="1 of 2 branches missed.">        if (!(object instanceof CollectionPointer)) {</span>
+<span class="fc" id="L164">            return false;</span>
+        }
+
+<span class="nc" id="L167">        CollectionPointer other = (CollectionPointer) object;</span>
+<span class="nc bnc" id="L168" title="All 4 branches missed.">        return collection == other.collection &amp;&amp; index == other.index;</span>
+    }
+
+    public NodeIterator childIterator(NodeTest test,
+                boolean reverse, NodePointer startWith) {
+<span class="fc bfc" id="L173" title="All 2 branches covered.">        if (index == WHOLE_COLLECTION) {</span>
+<span class="fc" id="L174">            return new CollectionChildNodeIterator(</span>
+                this,
+                test,
+                reverse,
+                startWith);
+        }
+<span class="fc" id="L180">        return getValuePointer().childIterator(test, reverse, startWith);</span>
+    }
+
+    public NodeIterator attributeIterator(QName name) {
+<span class="pc bpc" id="L184" title="1 of 2 branches missed.">        return index == WHOLE_COLLECTION ? new CollectionAttributeNodeIterator(this, name)</span>
+<span class="nc" id="L185">                : getValuePointer().attributeIterator(name);</span>
+    }
+
+    public NodeIterator namespaceIterator() {
+<span class="nc bnc" id="L189" title="All 2 branches missed.">        return index == WHOLE_COLLECTION ? null : getValuePointer().namespaceIterator();</span>
+    }
+
+    public NodePointer namespacePointer(String namespace) {
+<span class="nc bnc" id="L193" title="All 2 branches missed.">        return index == WHOLE_COLLECTION ? null : getValuePointer().namespacePointer(namespace);</span>
+    }
+
+    public boolean testNode(NodeTest test) {
+<span class="fc bfc" id="L197" title="All 2 branches covered.">        if (index == WHOLE_COLLECTION) {</span>
+<span class="pc bpc" id="L198" title="1 of 2 branches missed.">            if (test == null) {</span>
+<span class="nc" id="L199">                return true;</span>
+            }
+<span class="pc bpc" id="L201" title="1 of 2 branches missed.">            if (test instanceof NodeNameTest) {</span>
+<span class="nc" id="L202">                return false;</span>
+            }
+<span class="pc bpc" id="L204" title="2 of 4 branches missed.">            return test instanceof NodeTypeTest &amp;&amp; ((NodeTypeTest) test).getNodeType() == Compiler.NODE_TYPE_NODE;</span>
+        }
+<span class="fc" id="L206">        return getValuePointer().testNode(test);</span>
+    }
+
+    public int compareChildNodePointers(
+                NodePointer pointer1, NodePointer pointer2) {
+<span class="nc" id="L211">        return pointer1.getIndex() - pointer2.getIndex();</span>
+    }
+
+    public String asPath() {
+<span class="fc" id="L215">        StringBuffer buffer = new StringBuffer();</span>
+<span class="fc" id="L216">        NodePointer parent = getImmediateParentPointer();</span>
+<span class="fc bfc" id="L217" title="All 2 branches covered.">        if (parent != null) {</span>
+<span class="fc" id="L218">            buffer.append(parent.asPath());</span>
+<span class="fc bfc" id="L219" title="All 2 branches covered.">            if (index != WHOLE_COLLECTION) {</span>
+                // Address the list[1][2] case
+<span class="fc bfc" id="L221" title="All 2 branches covered.">                if (parent.getIndex() != WHOLE_COLLECTION) {</span>
+<span class="fc" id="L222">                    buffer.append(&quot;/.&quot;);</span>
+                }
+<span class="fc" id="L224">                buffer.append(&quot;[&quot;).append(index + 1).append(']');</span>
+            }
+        }
+        else {
+<span class="fc bfc" id="L228" title="All 2 branches covered.">            if (index != WHOLE_COLLECTION) {</span>
+<span class="fc" id="L229">                buffer.append(&quot;/.[&quot;).append(index + 1).append(']');</span>
+            }
+            else {
+<span class="fc" id="L232">                buffer.append(&quot;/&quot;);</span>
+            }
+        }
+<span class="fc" id="L235">        return buffer.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

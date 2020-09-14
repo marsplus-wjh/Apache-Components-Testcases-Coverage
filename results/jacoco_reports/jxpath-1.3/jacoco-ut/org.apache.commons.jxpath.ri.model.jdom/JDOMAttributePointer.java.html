@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JDOMAttributePointer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri.model.jdom</a> &gt; <span class="el_source">JDOMAttributePointer.java</span></div><h1>JDOMAttributePointer.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri.model.jdom;
+
+import org.apache.commons.jxpath.ri.QName;
+import org.apache.commons.jxpath.ri.model.NodePointer;
+import org.apache.commons.jxpath.util.TypeUtils;
+import org.jdom.Attribute;
+
+/**
+ * A Pointer that points to a DOM node.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision: 652884 $ $Date: 2008-05-02 15:02:00 -0500 (Fri, 02 May 2008) $
+ */
+public class JDOMAttributePointer extends NodePointer {
+    private Attribute attr;
+
+    private static final long serialVersionUID = 8896050354479644028L;
+
+    /**
+     * Create a JDOMAttributePointer.
+     * @param parent NodePointer parent
+     * @param attr JDOM Attribute
+     */
+    public JDOMAttributePointer(NodePointer parent, Attribute attr) {
+<span class="fc" id="L41">        super(parent);</span>
+<span class="fc" id="L42">        this.attr = attr;</span>
+<span class="fc" id="L43">    }</span>
+
+    public QName getName() {
+<span class="fc" id="L46">        return new QName(</span>
+<span class="fc" id="L47">            JDOMNodePointer.getPrefix(attr),</span>
+<span class="fc" id="L48">            JDOMNodePointer.getLocalName(attr));</span>
+    }
+
+    public String getNamespaceURI() {
+<span class="fc" id="L52">        String uri = attr.getNamespaceURI();</span>
+<span class="pc bpc" id="L53" title="1 of 4 branches missed.">        if (uri != null &amp;&amp; uri.equals(&quot;&quot;)) {</span>
+<span class="fc" id="L54">            uri = null;</span>
+        }
+<span class="fc" id="L56">        return uri;</span>
+    }
+
+    public Object getValue() {
+<span class="fc" id="L60">        return attr.getValue();</span>
+    }
+
+    public Object getBaseValue() {
+<span class="nc" id="L64">        return attr;</span>
+    }
+
+    public boolean isCollection() {
+<span class="nc" id="L68">        return false;</span>
+    }
+
+    public int getLength() {
+<span class="nc" id="L72">        return 1;</span>
+    }
+
+    public Object getImmediateNode() {
+<span class="fc" id="L76">        return attr;</span>
+    }
+
+    public boolean isActual() {
+<span class="fc" id="L80">        return true;</span>
+    }
+
+    public boolean isLeaf() {
+<span class="nc" id="L84">        return true;</span>
+    }
+
+    public void setValue(Object value) {
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        attr.setValue((String) TypeUtils.convert(value, String.class));</span>
+<span class="fc" id="L89">    }</span>
+
+    public void remove() {
+<span class="fc" id="L92">        attr.getParent().removeAttribute(attr);</span>
+<span class="fc" id="L93">    }</span>
+
+    public String asPath() {
+<span class="fc" id="L96">        StringBuffer buffer = new StringBuffer();</span>
+<span class="pc bpc" id="L97" title="1 of 2 branches missed.">        if (parent != null) {</span>
+<span class="fc" id="L98">            buffer.append(parent.asPath());</span>
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">            if (buffer.length() == 0</span>
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">                || buffer.charAt(buffer.length() - 1) != '/') {</span>
+<span class="fc" id="L101">                buffer.append('/');</span>
+            }
+        }
+<span class="fc" id="L104">        buffer.append('@');</span>
+<span class="fc" id="L105">        buffer.append(getName());</span>
+<span class="fc" id="L106">        return buffer.toString();</span>
+    }
+
+    public int hashCode() {
+<span class="fc" id="L110">        return System.identityHashCode(attr);</span>
+    }
+
+    public boolean equals(Object object) {
+<span class="nc bnc" id="L114" title="All 6 branches missed.">        return object == this || object instanceof JDOMAttributePointer</span>
+                &amp;&amp; ((JDOMAttributePointer) object).attr == attr;
+    }
+
+    public int compareChildNodePointers(
+            NodePointer pointer1,
+            NodePointer pointer2) {
+        // Won't happen - attributes don't have children
+<span class="nc" id="L122">        return 0;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

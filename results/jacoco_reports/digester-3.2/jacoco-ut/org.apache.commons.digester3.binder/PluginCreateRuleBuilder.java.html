@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PluginCreateRuleBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester3.binder</a> &gt; <span class="el_source">PluginCreateRuleBuilder.java</span></div><h1>PluginCreateRuleBuilder.java</h1><pre class="source lang-java linenums">package org.apache.commons.digester3.binder;
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import org.apache.commons.digester3.plugins.PluginCreateRule;
+import org.apache.commons.digester3.plugins.RuleLoader;
+
+/**
+ * Builder chained when invoking {@link LinkedRuleBuilder#createPlugin()}.
+ *
+ * @since 3.0
+ */
+public final class PluginCreateRuleBuilder
+    extends AbstractBackToLinkedRuleBuilder&lt;PluginCreateRule&gt;
+{
+
+<span class="nc" id="L38">    private final Map&lt;String, String&gt; pluginClassAttributes = new LinkedHashMap&lt;String, String&gt;();</span>
+
+<span class="nc" id="L40">    private final Map&lt;String, String&gt; pluginIdAttributes = new LinkedHashMap&lt;String, String&gt;();</span>
+
+    private Class&lt;?&gt; baseClass;
+
+    private Class&lt;?&gt; dfltPluginClass;
+
+    private RuleLoader dfltPluginRuleLoader;
+
+    PluginCreateRuleBuilder( String keyPattern, String namespaceURI, RulesBinder mainBinder,
+                                    LinkedRuleBuilder mainBuilder )
+    {
+<span class="nc" id="L51">        super( keyPattern, namespaceURI, mainBinder, mainBuilder );</span>
+<span class="nc" id="L52">    }</span>
+
+    /**
+     * Set the class which any specified plugin &lt;i&gt;must&lt;/i&gt; be descended from.
+     *
+     * @param &lt;T&gt; Any Java type
+     * @param type the class which any specified plugin &lt;i&gt;must&lt;/i&gt; be descended from
+     * @return this builder instance
+     */
+    public &lt;T&gt; PluginCreateRuleBuilder ofType( Class&lt;T&gt; type )
+    {
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        if ( type == null )</span>
+        {
+<span class="nc" id="L65">            reportError( &quot;createPlugin().ofType( Class&lt;?&gt; )&quot;, &quot;NULL Java type not allowed&quot; );</span>
+<span class="nc" id="L66">            return this;</span>
+        }
+
+<span class="nc" id="L69">        this.baseClass = type;</span>
+
+<span class="nc" id="L71">        return this;</span>
+    }
+
+    /**
+     * Set the class which will be used if the user doesn't specify any plugin-class or plugin-id.
+     *
+     * @param &lt;T&gt; Any Java type
+     * @param type the class which will be used if the user doesn't specify any plugin-class or plugin-id.
+     * @return this builder instance
+     */
+    public &lt;T&gt; PluginCreateRuleBuilder usingDefaultPluginClass( /* @Nullable */Class&lt;T&gt; type )
+    {
+<span class="nc" id="L83">        this.dfltPluginClass = type;</span>
+<span class="nc" id="L84">        return this;</span>
+    }
+
+    /**
+     * Set RuleLoader instance which knows how to load the custom rules associated with the default plugin.
+     *
+     * @param &lt;RL&gt; Any {@link RuleLoader} extension.
+     * @param ruleLoader the RuleLoader instance which knows how to load the custom rules associated with
+     *        the default plugin.
+     * @return this builder instance
+     */
+    public &lt;RL extends RuleLoader&gt; PluginCreateRuleBuilder usingRuleLoader( /* @Nullable */RL ruleLoader )
+    {
+<span class="nc" id="L97">        this.dfltPluginRuleLoader = ruleLoader;</span>
+<span class="nc" id="L98">        return this;</span>
+    }
+
+    /**
+     * Sets the xml attribute which the input xml uses to indicate to a
+     * PluginCreateRule which class should be instantiated.
+     *
+     * @param attrName the xml attribute which the input xml uses to indicate to a
+     *                 PluginCreateRule which class should be instantiated.
+     * @return this builder instance
+     */
+    public PluginCreateRuleBuilder setPluginClassAttribute( String attrName )
+    {
+<span class="nc bnc" id="L111" title="All 2 branches missed.">        if ( attrName == null )</span>
+        {
+<span class="nc" id="L113">            reportError( &quot;createPlugin().setPluginClassAttribute( String )&quot;, &quot;NULL attribute name not allowed&quot; );</span>
+<span class="nc" id="L114">            return this;</span>
+        }
+
+<span class="nc" id="L117">        return this.setPluginClassAttribute( null, attrName );</span>
+    }
+
+    /**
+     * Sets the xml attribute which the input xml uses to indicate to a
+     * PluginCreateRule which class should be instantiated.
+     *
+     * @param namespaceUri The attribute NameSpace
+     * @param attrName The attribute name
+     * @return this builder instance
+     */
+    public PluginCreateRuleBuilder setPluginClassAttribute( /* @Nullable */String namespaceUri, String attrName )
+    {
+<span class="nc bnc" id="L130" title="All 2 branches missed.">        if ( attrName == null )</span>
+        {
+<span class="nc" id="L132">            reportError( &quot;createPlugin().setPluginClassAttribute( String, String )&quot;,</span>
+                         &quot;NULL attribute name not allowed&quot; );
+<span class="nc" id="L134">            return this;</span>
+        }
+
+<span class="nc" id="L137">        return addToMap( pluginClassAttributes, namespaceUri, attrName );</span>
+    }
+
+    /**
+     * Sets the xml attribute which the input xml uses to indicate to a 
+     * PluginCreateRule which plugin declaration is being referenced.
+     *
+     * @param attrName The attribute name
+     * @return this builder instance
+     */
+    public PluginCreateRuleBuilder setPluginIdAttribute( String attrName )
+    {
+<span class="nc bnc" id="L149" title="All 2 branches missed.">        if ( attrName == null )</span>
+        {
+<span class="nc" id="L151">            reportError( &quot;createPlugin().setPluginIdAttribute( String )&quot;, &quot;NULL attribute name not allowed&quot; );</span>
+<span class="nc" id="L152">            return this;</span>
+        }
+
+<span class="nc" id="L155">        return setPluginIdAttribute( null, attrName );</span>
+    }
+
+    /**
+     * Sets the xml attribute which the input xml uses to indicate to a 
+     * PluginCreateRule which plugin declaration is being referenced.
+     *
+     * @param namespaceUri The attribute NameSpace
+     * @param attrName The attribute name
+     * @return this builder instance
+     */
+    public PluginCreateRuleBuilder setPluginIdAttribute( /* @Nullable */String namespaceUri, String attrName )
+    {
+<span class="nc bnc" id="L168" title="All 2 branches missed.">        if ( attrName == null )</span>
+        {
+<span class="nc" id="L170">            reportError( &quot;createPlugin().setPluginIdAttribute( String, String )&quot;, &quot;NULL attribute name not allowed&quot; );</span>
+<span class="nc" id="L171">            return this;</span>
+        }
+
+<span class="nc" id="L174">        return addToMap( pluginIdAttributes, namespaceUri, attrName );</span>
+    }
+
+    /**
+     * Private internal method to set values to a {@link Map} instance and return the current builder.
+     *
+     * @param map The target {@link Map}
+     * @param namespaceUri The attribute NameSpace
+     * @param attrName The attribute name
+     * @return this builder instance
+     */
+    private PluginCreateRuleBuilder addToMap( Map&lt;String, String&gt; map, String namespaceUri, String attrName )
+    {
+<span class="nc" id="L187">        map.put( namespaceUri, attrName );</span>
+<span class="nc" id="L188">        return this;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected PluginCreateRule createRule()
+    {
+<span class="nc bnc" id="L197" title="All 2 branches missed.">        if ( baseClass == null )</span>
+        {
+<span class="nc" id="L199">            reportError( &quot;createPlugin()&quot;, &quot;'baseClass' has to be specified&quot; );</span>
+        }
+
+        PluginCreateRule rule;
+<span class="nc bnc" id="L203" title="All 2 branches missed.">        if ( dfltPluginClass != null )</span>
+        {
+<span class="nc bnc" id="L205" title="All 2 branches missed.">            if ( dfltPluginRuleLoader != null )</span>
+            {
+<span class="nc" id="L207">                rule = new PluginCreateRule( baseClass, dfltPluginClass, dfltPluginRuleLoader );</span>
+            }
+            else
+            {
+<span class="nc" id="L211">                rule = new PluginCreateRule( baseClass, dfltPluginClass );</span>
+            }
+        }
+        else
+        {
+<span class="nc" id="L216">            rule = new PluginCreateRule( baseClass );</span>
+        }
+
+<span class="nc bnc" id="L219" title="All 2 branches missed.">        for ( Entry&lt;String, String&gt; entry : pluginClassAttributes.entrySet() )</span>
+        {
+<span class="nc" id="L221">            rule.setPluginClassAttribute( entry.getKey(), entry.getValue() );</span>
+<span class="nc" id="L222">        }</span>
+
+<span class="nc bnc" id="L224" title="All 2 branches missed.">        for ( Entry&lt;String, String&gt; entry : pluginIdAttributes.entrySet() )</span>
+        {
+<span class="nc" id="L226">            rule.setPluginIdAttribute( entry.getKey(), entry.getValue() );</span>
+<span class="nc" id="L227">        }</span>
+
+<span class="nc" id="L229">        return rule;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

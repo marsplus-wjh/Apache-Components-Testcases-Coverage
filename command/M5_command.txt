@@ -1,0 +1,22 @@
+commons-collections
+git diff --stat 483cbbbf5a8b3c14edf3e6563e8f8ba380966d47 77e37dbf238d26351edb29e95391e3df75095d01 -- '*.java'
+git diff --stat cb157163d7543f942a1391f3ef752ebea1e1b349 483cbbbf5a8b3c14edf3e6563e8f8ba380966d47 -- '*.java'
+git diff --stat db189926f7415b9866e76cd8123e40c09c1cc67e cb157163d7543f942a1391f3ef752ebea1e1b349 -- '*.java'
+git diff --stat 8e217b44a763565f395268be20e7cff1dedf747b db189926f7415b9866e76cd8123e40c09c1cc67e -- '*.java'
+git diff --stat 0af3ae8f26388bcdec42d36bf66a1000a9221754 8e217b44a763565f395268be20e7cff1dedf747b -- '*.java'
+
+commons-configuration
+git clone https://github.com/apache/commons-configuration.git
+git diff --stat 6543cb0b6c283c0d4331dc0baee269b01db00622 dc00a04783ea951280ba0cd8318f53e19acb707f -- '*.java'
+git diff --stat 43bd7dc2e9d73cb5ac9cb2a3caee2285569f87c3 6543cb0b6c283c0d4331dc0baee269b01db00622 -- '*.java'
+git diff --stat 137997974e0ebd3acd047243f46ddf3b90fa0160 43bd7dc2e9d73cb5ac9cb2a3caee2285569f87c3 -- '*.java'
+git diff --stat 31c1ab6bed9b9c7686111e00202f555de7471904 137997974e0ebd3acd047243f46ddf3b90fa0160 -- '*.java'
+git diff --stat e814fe00bb51256386dd78f3f926aa30d8de6a7c 31c1ab6bed9b9c7686111e00202f555de7471904 -- '*.java'
+
+commons-codec
+git diff --shortstat 9ceef2231549e95f7868266f38b0c7e1a0a40ed4 0082c9e31747d6f0d5a66dc993d817a00e1451a4 -- '*.java'
+git diff --shortstat e9da3d16ae67f2940a0bbdf982ecec19a0481981 9ceef2231549e95f7868266f38b0c7e1a0a40ed4 -- '*.java'
+git diff --shortstat 52cfc73491e417366c77c226a7b01b40f7677f9a e9da3d16ae67f2940a0bbdf982ecec19a0481981 -- '*.java'
+git diff --shortstat aa988a92ce3317077abd4e8414ef501b382d7fc0 52cfc73491e417366c77c226a7b01b40f7677f9a -- '*.java'
+git diff --shortstat 183aa006e80e5c5a4c8c215d104be39cd77f3336 aa988a92ce3317077abd4e8414ef501b382d7fc0 -- '*.java'
+

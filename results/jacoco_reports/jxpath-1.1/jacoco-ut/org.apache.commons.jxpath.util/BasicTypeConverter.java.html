@@ -1,0 +1,568 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>BasicTypeConverter.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.util</a> &gt; <span class="el_source">BasicTypeConverter.java</span></div><h1>BasicTypeConverter.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.util;
+
+import java.lang.reflect.Array;
+import java.lang.reflect.Modifier;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.SortedSet;
+
+import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.beanutils.Converter;
+import org.apache.commons.jxpath.JXPathInvalidAccessException;
+import org.apache.commons.jxpath.JXPathTypeConversionException;
+import org.apache.commons.jxpath.NodeSet;
+import org.apache.commons.jxpath.Pointer;
+
+/**
+ * The default implementation of TypeConverter.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision$ $Date$
+ */
+<span class="fc" id="L45">public class BasicTypeConverter implements TypeConverter {</span>
+
+    /**
+     * Returns true if it can convert the supplied
+     * object to the specified class.
+     * @param object to check
+     * @param toType prospective destination class
+     * @return boolean
+     */
+    public boolean canConvert(Object object, final Class toType) {
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">        if (object == null) {</span>
+<span class="nc" id="L56">            return true;</span>
+        }
+<span class="fc" id="L58">        final Class useType = TypeUtils.wrapPrimitive(toType);</span>
+<span class="fc" id="L59">        Class fromType = object.getClass();</span>
+
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        if (useType.isAssignableFrom(fromType)) {</span>
+<span class="fc" id="L62">            return true;</span>
+        }
+
+<span class="pc bpc" id="L65" title="1 of 4 branches missed.">        if (useType == String.class) {</span>
+<span class="fc" id="L66">            return true;</span>
+        }
+
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">        if (object instanceof Boolean) {</span>
+<span class="nc bnc" id="L70" title="All 4 branches missed.">            if (Number.class.isAssignableFrom(useType)</span>
+                    || &quot;java.util.concurrent.atomic.AtomicBoolean&quot;
+<span class="nc bnc" id="L72" title="All 2 branches missed.">                            .equals(useType.getName())) {</span>
+<span class="nc" id="L73">                return true;</span>
+            }
+        }
+<span class="fc bfc" id="L76" title="All 2 branches covered.">        if (object instanceof Number) {</span>
+<span class="pc bpc" id="L77" title="1 of 8 branches missed.">            if (Number.class.isAssignableFrom(useType) || useType == Boolean.class) {</span>
+<span class="fc" id="L78">                return true;</span>
+            }
+        }
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        if (object instanceof String) {</span>
+<span class="pc bpc" id="L82" title="2 of 6 branches missed.">            if (useType == Boolean.class</span>
+<span class="pc bpc" id="L83" title="2 of 4 branches missed.">                || useType == Character.class</span>
+<span class="pc bpc" id="L84" title="2 of 4 branches missed.">                || useType == Byte.class</span>
+<span class="pc bpc" id="L85" title="2 of 4 branches missed.">                || useType == Short.class</span>
+<span class="pc bpc" id="L86" title="1 of 4 branches missed.">                || useType == Integer.class</span>
+<span class="pc bpc" id="L87" title="2 of 4 branches missed.">                || useType == Long.class</span>
+<span class="pc bpc" id="L88" title="2 of 4 branches missed.">                || useType == Float.class</span>
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">                || useType == Double.class) {</span>
+<span class="fc" id="L90">                return true;</span>
+            }
+        }
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        if (fromType.isArray()) {</span>
+            // Collection -&gt; array
+<span class="fc bfc" id="L95" title="All 2 branches covered.">            if (useType.isArray()) {</span>
+<span class="fc" id="L96">                Class cType = useType.getComponentType();</span>
+<span class="fc" id="L97">                int length = Array.getLength(object);</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">                for (int i = 0; i &lt; length; i++) {</span>
+<span class="fc" id="L99">                    Object value = Array.get(object, i);</span>
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">                    if (!canConvert(value, cType)) {</span>
+<span class="nc" id="L101">                        return false;</span>
+                    }
+                }
+<span class="fc" id="L104">                return true;</span>
+            }
+<span class="pc bpc" id="L106" title="2 of 4 branches missed.">            if (Collection.class.isAssignableFrom(useType)) {</span>
+<span class="fc" id="L107">                return canCreateCollection(useType);</span>
+            }
+<span class="nc bnc" id="L109" title="All 2 branches missed.">            if (Array.getLength(object) &gt; 0) {</span>
+<span class="nc" id="L110">                Object value = Array.get(object, 0);</span>
+<span class="nc" id="L111">                return canConvert(value, useType);</span>
+            }
+<span class="nc" id="L113">            return canConvert(&quot;&quot;, useType);</span>
+        }
+<span class="fc bfc" id="L115" title="All 2 branches covered.">        if (object instanceof Collection) {</span>
+            // Collection -&gt; array
+<span class="fc bfc" id="L117" title="All 2 branches covered.">            if (useType.isArray()) {</span>
+<span class="fc" id="L118">                Class cType = useType.getComponentType();</span>
+<span class="fc" id="L119">                Iterator it = ((Collection) object).iterator();</span>
+<span class="fc bfc" id="L120" title="All 2 branches covered.">                while (it.hasNext()) {</span>
+<span class="fc" id="L121">                    Object value = it.next();</span>
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">                    if (!canConvert(value, cType)) {</span>
+<span class="nc" id="L123">                        return false;</span>
+                    }
+<span class="fc" id="L125">                }</span>
+<span class="fc" id="L126">                return true;</span>
+            }
+<span class="pc bpc" id="L128" title="2 of 4 branches missed.">            if (Collection.class.isAssignableFrom(useType)) {</span>
+<span class="nc" id="L129">                return canCreateCollection(useType);</span>
+            }
+<span class="fc bfc" id="L131" title="All 2 branches covered.">            if (((Collection) object).size() &gt; 0) {</span>
+                Object value;
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">                if (object instanceof List) {</span>
+<span class="fc" id="L134">                    value = ((List) object).get(0);</span>
+                }
+                else {
+<span class="nc" id="L137">                    Iterator it = ((Collection) object).iterator();</span>
+<span class="nc" id="L138">                    value = it.next();</span>
+                }
+<span class="fc" id="L140">                return canConvert(value, useType);</span>
+            }
+<span class="fc" id="L142">            return canConvert(&quot;&quot;, useType);</span>
+        }
+<span class="fc bfc" id="L144" title="All 2 branches covered.">        if (object instanceof NodeSet) {</span>
+<span class="fc" id="L145">            return canConvert(((NodeSet) object).getValues(), useType);</span>
+        }
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">        if (object instanceof Pointer) {</span>
+<span class="nc" id="L148">            return canConvert(((Pointer) object).getValue(), useType);</span>
+        }
+<span class="fc bfc" id="L150" title="All 2 branches covered.">        return ConvertUtils.lookup(useType) != null;</span>
+    }
+
+    /**
+     * Converts the supplied object to the specified
+     * type. Throws a runtime exception if the conversion is
+     * not possible.
+     * @param object to convert
+     * @param toType destination class
+     * @return converted object
+     */
+    public Object convert(Object object, final Class toType) {
+<span class="fc bfc" id="L162" title="All 2 branches covered.">        if (object == null) {</span>
+<span class="fc bfc" id="L163" title="All 2 branches covered.">            return toType.isPrimitive() ? convertNullToPrimitive(toType) : null;</span>
+        }
+
+<span class="fc bfc" id="L166" title="All 4 branches covered.">        if (toType == Object.class) {</span>
+<span class="fc bfc" id="L167" title="All 2 branches covered.">            if (object instanceof NodeSet) {</span>
+<span class="fc" id="L168">                return convert(((NodeSet) object).getValues(), toType);</span>
+            }
+<span class="pc bpc" id="L170" title="1 of 2 branches missed.">            if (object instanceof Pointer) {</span>
+<span class="nc" id="L171">                return convert(((Pointer) object).getValue(), toType);</span>
+            }
+<span class="fc" id="L173">            return object;</span>
+        }
+<span class="fc" id="L175">        final Class useType = TypeUtils.wrapPrimitive(toType);</span>
+<span class="fc" id="L176">        Class fromType = object.getClass();</span>
+
+<span class="fc bfc" id="L178" title="All 2 branches covered.">        if (useType.isAssignableFrom(fromType)) {</span>
+<span class="fc" id="L179">            return object;</span>
+        }
+
+<span class="fc bfc" id="L182" title="All 2 branches covered.">        if (fromType.isArray()) {</span>
+<span class="fc" id="L183">            int length = Array.getLength(object);</span>
+<span class="fc bfc" id="L184" title="All 2 branches covered.">            if (useType.isArray()) {</span>
+<span class="fc" id="L185">                Class cType = useType.getComponentType();</span>
+
+<span class="fc" id="L187">                Object array = Array.newInstance(cType, length);</span>
+<span class="fc bfc" id="L188" title="All 2 branches covered.">                for (int i = 0; i &lt; length; i++) {</span>
+<span class="fc" id="L189">                    Object value = Array.get(object, i);</span>
+<span class="fc" id="L190">                    Array.set(array, i, convert(value, cType));</span>
+                }
+<span class="fc" id="L192">                return array;</span>
+            }
+<span class="fc bfc" id="L194" title="All 4 branches covered.">            if (Collection.class.isAssignableFrom(useType)) {</span>
+<span class="fc" id="L195">                Collection collection = allocateCollection(useType);</span>
+<span class="fc bfc" id="L196" title="All 2 branches covered.">                for (int i = 0; i &lt; length; i++) {</span>
+<span class="fc" id="L197">                    collection.add(Array.get(object, i));</span>
+                }
+<span class="fc" id="L199">                return unmodifiableCollection(collection);</span>
+            }
+<span class="pc bpc" id="L201" title="1 of 2 branches missed.">            if (length &gt; 0) {</span>
+<span class="fc" id="L202">                Object value = Array.get(object, 0);</span>
+<span class="fc" id="L203">                return convert(value, useType);</span>
+            }
+<span class="nc" id="L205">            return convert(&quot;&quot;, useType);</span>
+        }
+<span class="fc bfc" id="L207" title="All 2 branches covered.">        if (object instanceof Collection) {</span>
+<span class="fc" id="L208">            int length = ((Collection) object).size();</span>
+<span class="fc bfc" id="L209" title="All 2 branches covered.">            if (useType.isArray()) {</span>
+<span class="fc" id="L210">                Class cType = useType.getComponentType();</span>
+<span class="fc" id="L211">                Object array = Array.newInstance(cType, length);</span>
+<span class="fc" id="L212">                Iterator it = ((Collection) object).iterator();</span>
+<span class="fc bfc" id="L213" title="All 2 branches covered.">                for (int i = 0; i &lt; length; i++) {</span>
+<span class="fc" id="L214">                    Object value = it.next();</span>
+<span class="fc" id="L215">                    Array.set(array, i, convert(value, cType));</span>
+                }
+<span class="fc" id="L217">                return array;</span>
+            }
+<span class="pc bpc" id="L219" title="2 of 4 branches missed.">            if (Collection.class.isAssignableFrom(useType)) {</span>
+<span class="nc" id="L220">                Collection collection = allocateCollection(useType);</span>
+<span class="nc" id="L221">                collection.addAll((Collection) object);</span>
+<span class="nc" id="L222">                return unmodifiableCollection(collection);</span>
+            }
+<span class="fc bfc" id="L224" title="All 2 branches covered.">            if (length &gt; 0) {</span>
+                Object value;
+<span class="fc bfc" id="L226" title="All 2 branches covered.">                if (object instanceof List) {</span>
+<span class="fc" id="L227">                    value = ((List) object).get(0);</span>
+                }
+                else {
+<span class="fc" id="L230">                    Iterator it = ((Collection) object).iterator();</span>
+<span class="fc" id="L231">                    value = it.next();</span>
+                }
+<span class="fc" id="L233">                return convert(value, useType);</span>
+            }
+<span class="fc" id="L235">            return convert(&quot;&quot;, useType);</span>
+        }
+<span class="fc bfc" id="L237" title="All 2 branches covered.">        if (object instanceof NodeSet) {</span>
+<span class="fc" id="L238">            return convert(((NodeSet) object).getValues(), useType);</span>
+        }
+<span class="fc bfc" id="L240" title="All 2 branches covered.">        if (object instanceof Pointer) {</span>
+<span class="fc" id="L241">            return convert(((Pointer) object).getValue(), useType);</span>
+        }
+<span class="fc bfc" id="L243" title="All 4 branches covered.">        if (useType == String.class) {</span>
+<span class="fc" id="L244">            return object.toString();</span>
+        }
+<span class="pc bpc" id="L246" title="1 of 2 branches missed.">        if (object instanceof Boolean) {</span>
+<span class="nc bnc" id="L247" title="All 4 branches missed.">            if (Number.class.isAssignableFrom(useType)) {</span>
+<span class="nc bnc" id="L248" title="All 2 branches missed.">                return allocateNumber(useType, ((Boolean) object).booleanValue() ? 1 : 0);</span>
+            }
+<span class="nc bnc" id="L250" title="All 2 branches missed.">            if (&quot;java.util.concurrent.atomic.AtomicBoolean&quot;.equals(useType.getName())) {</span>
+                try {
+<span class="nc" id="L252">                    return useType.getConstructor(new Class[] { boolean.class })</span>
+<span class="nc" id="L253">                            .newInstance(new Object[] { object });</span>
+                }
+<span class="nc" id="L255">                catch (Exception e) {</span>
+<span class="nc" id="L256">                    throw new JXPathTypeConversionException(useType.getName(), e);</span>
+                }
+            }
+        }
+<span class="fc bfc" id="L260" title="All 2 branches covered.">        if (object instanceof Number) {</span>
+<span class="fc" id="L261">            double value = ((Number) object).doubleValue();</span>
+<span class="pc bpc" id="L262" title="1 of 4 branches missed.">            if (useType == Boolean.class) {</span>
+<span class="pc bpc" id="L263" title="1 of 2 branches missed.">                return value == 0.0 ? Boolean.FALSE : Boolean.TRUE;</span>
+            }
+<span class="pc bpc" id="L265" title="2 of 4 branches missed.">            if (Number.class.isAssignableFrom(useType)) {</span>
+<span class="fc" id="L266">                return allocateNumber(useType, value);</span>
+            }
+        }
+<span class="pc bpc" id="L269" title="1 of 2 branches missed.">        if (object instanceof String) {</span>
+<span class="fc" id="L270">            Object value = convertStringToPrimitive(object, useType);</span>
+<span class="fc bfc" id="L271" title="All 2 branches covered.">            if (value != null) {</span>
+<span class="fc" id="L272">                return value;</span>
+            }
+        }
+
+<span class="fc" id="L276">        Converter converter = ConvertUtils.lookup(useType);</span>
+<span class="fc bfc" id="L277" title="All 2 branches covered.">        if (converter != null) {</span>
+<span class="fc" id="L278">            return converter.convert(useType, object);</span>
+        }
+
+<span class="fc" id="L281">        throw new JXPathTypeConversionException(&quot;Cannot convert &quot;</span>
+<span class="fc" id="L282">                + object.getClass() + &quot; to &quot; + useType);</span>
+    }
+
+    /**
+     * Convert null to a primitive type.
+     * @param toType destination class
+     * @return a wrapper
+     */
+    protected Object convertNullToPrimitive(Class toType) {
+<span class="pc bpc" id="L291" title="1 of 2 branches missed.">        if (toType == boolean.class) {</span>
+<span class="nc" id="L292">            return Boolean.FALSE;</span>
+        }
+<span class="pc bpc" id="L294" title="1 of 2 branches missed.">        if (toType == char.class) {</span>
+<span class="nc" id="L295">            return new Character('\0');</span>
+        }
+<span class="pc bpc" id="L297" title="1 of 2 branches missed.">        if (toType == byte.class) {</span>
+<span class="nc" id="L298">            return new Byte((byte) 0);</span>
+        }
+<span class="pc bpc" id="L300" title="1 of 2 branches missed.">        if (toType == short.class) {</span>
+<span class="nc" id="L301">            return new Short((short) 0);</span>
+        }
+<span class="pc bpc" id="L303" title="1 of 2 branches missed.">        if (toType == int.class) {</span>
+<span class="fc" id="L304">            return new Integer(0);</span>
+        }
+<span class="nc bnc" id="L306" title="All 2 branches missed.">        if (toType == long.class) {</span>
+<span class="nc" id="L307">            return new Long(0L);</span>
+        }
+<span class="nc bnc" id="L309" title="All 2 branches missed.">        if (toType == float.class) {</span>
+<span class="nc" id="L310">            return new Float(0.0f);</span>
+        }
+<span class="nc bnc" id="L312" title="All 2 branches missed.">        if (toType == double.class) {</span>
+<span class="nc" id="L313">            return new Double(0.0);</span>
+        }
+<span class="nc" id="L315">        return null;</span>
+    }
+
+    /**
+     * Convert a string to a primitive type.
+     * @param object String
+     * @param toType destination class
+     * @return wrapper
+     */
+    protected Object convertStringToPrimitive(Object object, Class toType) {
+<span class="fc" id="L325">        toType = TypeUtils.wrapPrimitive(toType);</span>
+<span class="fc bfc" id="L326" title="All 4 branches covered.">        if (toType == Boolean.class) {</span>
+<span class="fc" id="L327">            return Boolean.valueOf((String) object);</span>
+        }
+<span class="pc bpc" id="L329" title="1 of 4 branches missed.">        if (toType == Character.class) {</span>
+<span class="nc" id="L330">            return new Character(((String) object).charAt(0));</span>
+        }
+<span class="pc bpc" id="L332" title="1 of 4 branches missed.">        if (toType == Byte.class) {</span>
+<span class="nc" id="L333">            return new Byte((String) object);</span>
+        }
+<span class="pc bpc" id="L335" title="1 of 4 branches missed.">        if (toType == Short.class) {</span>
+<span class="nc" id="L336">            return new Short((String) object);</span>
+        }
+<span class="fc bfc" id="L338" title="All 4 branches covered.">        if (toType == Integer.class) {</span>
+<span class="fc" id="L339">            return new Integer((String) object);</span>
+        }
+<span class="pc bpc" id="L341" title="2 of 4 branches missed.">        if (toType == Long.class) {</span>
+<span class="nc" id="L342">            return new Long((String) object);</span>
+        }
+<span class="pc bpc" id="L344" title="2 of 4 branches missed.">        if (toType == Float.class) {</span>
+<span class="nc" id="L345">            return new Float((String) object);</span>
+        }
+<span class="pc bpc" id="L347" title="2 of 4 branches missed.">        if (toType == Double.class) {</span>
+<span class="nc" id="L348">            return new Double((String) object);</span>
+        }
+<span class="fc" id="L350">        return null;</span>
+    }
+
+    /**
+     * Allocate a number of a given type and value.
+     * @param type destination class
+     * @param value double
+     * @return Number
+     */
+    protected Number allocateNumber(Class type, double value) {
+<span class="fc" id="L360">        type = TypeUtils.wrapPrimitive(type);</span>
+<span class="pc bpc" id="L361" title="2 of 4 branches missed.">        if (type == Byte.class) {</span>
+<span class="nc" id="L362">            return new Byte((byte) value);</span>
+        }
+<span class="pc bpc" id="L364" title="2 of 4 branches missed.">        if (type == Short.class) {</span>
+<span class="nc" id="L365">            return new Short((short) value);</span>
+        }
+<span class="pc bpc" id="L367" title="1 of 4 branches missed.">        if (type == Integer.class) {</span>
+<span class="fc" id="L368">            return new Integer((int) value);</span>
+        }
+<span class="pc bpc" id="L370" title="2 of 4 branches missed.">        if (type == Long.class) {</span>
+<span class="nc" id="L371">            return new Long((long) value);</span>
+        }
+<span class="pc bpc" id="L373" title="2 of 4 branches missed.">        if (type == Float.class) {</span>
+<span class="nc" id="L374">            return new Float((float) value);</span>
+        }
+<span class="pc bpc" id="L376" title="2 of 4 branches missed.">        if (type == Double.class) {</span>
+<span class="fc" id="L377">            return new Double(value);</span>
+        }
+<span class="nc bnc" id="L379" title="All 4 branches missed.">        if (type == BigInteger.class) {</span>
+<span class="nc" id="L380">            return BigInteger.valueOf((long) value);</span>
+        }
+<span class="nc bnc" id="L382" title="All 4 branches missed.">        if (type == BigDecimal.class) {</span>
+<span class="nc" id="L383">            return new BigDecimal(value);</span>
+        }
+<span class="nc" id="L385">        String classname = type.getName();</span>
+<span class="nc" id="L386">        Class initialValueType = null;</span>
+<span class="nc bnc" id="L387" title="All 2 branches missed.">        if (&quot;java.util.concurrent.atomic.AtomicInteger&quot;.equals(classname)) {</span>
+<span class="nc" id="L388">            initialValueType = int.class;</span>
+        }
+<span class="nc bnc" id="L390" title="All 2 branches missed.">        if (&quot;java.util.concurrent.atomic.AtomicLong&quot;.equals(classname)) {</span>
+<span class="nc" id="L391">            initialValueType = long.class;</span>
+        }
+<span class="nc bnc" id="L393" title="All 2 branches missed.">        if (initialValueType != null) {</span>
+            try {
+<span class="nc" id="L395">                return (Number) type.getConstructor(</span>
+                        new Class[] { initialValueType })
+<span class="nc" id="L397">                        .newInstance(</span>
+<span class="nc" id="L398">                                new Object[] { allocateNumber(initialValueType,</span>
+                                        value) });
+            }
+<span class="nc" id="L401">            catch (Exception e) {</span>
+<span class="nc" id="L402">                throw new JXPathTypeConversionException(classname, e);</span>
+            }
+        }
+<span class="nc" id="L405">        return null;</span>
+    }
+
+    /**
+     * Learn whether this BasicTypeConverter can create a collection of the specified type.
+     * @param type prospective destination class
+     * @return boolean
+     */
+    protected boolean canCreateCollection(Class type) {
+<span class="pc bpc" id="L414" title="1 of 2 branches missed.">        if (!type.isInterface()</span>
+<span class="nc bnc" id="L415" title="All 2 branches missed.">                &amp;&amp; ((type.getModifiers() &amp; Modifier.ABSTRACT) == 0)) {</span>
+            try {
+<span class="nc" id="L417">                type.getConstructor(new Class[0]);</span>
+<span class="nc" id="L418">                return true;</span>
+            }
+<span class="nc" id="L420">            catch (Exception e) {</span>
+<span class="nc" id="L421">                return false;</span>
+            }
+        }
+<span class="pc bpc" id="L424" title="10 of 12 branches missed.">        return type == List.class || type == Collection.class || type == Set.class;</span>
+    }
+
+    /**
+     * Create a collection of a given type.
+     * @param type destination class
+     * @return Collection
+     */
+    protected Collection allocateCollection(Class type) {
+<span class="pc bpc" id="L433" title="1 of 2 branches missed.">        if (!type.isInterface()</span>
+<span class="nc bnc" id="L434" title="All 2 branches missed.">                &amp;&amp; ((type.getModifiers() &amp; Modifier.ABSTRACT) == 0)) {</span>
+            try {
+<span class="nc" id="L436">                return (Collection) type.newInstance();</span>
+            }
+<span class="nc" id="L438">            catch (Exception ex) {</span>
+<span class="nc" id="L439">                throw new JXPathInvalidAccessException(</span>
+                        &quot;Cannot create collection of type: &quot; + type, ex);
+            }
+        }
+
+<span class="pc bpc" id="L444" title="6 of 8 branches missed.">        if (type == List.class || type == Collection.class) {</span>
+<span class="fc" id="L445">            return new ArrayList();</span>
+        }
+<span class="nc bnc" id="L447" title="All 4 branches missed.">        if (type == Set.class) {</span>
+<span class="nc" id="L448">            return new HashSet();</span>
+        }
+<span class="nc" id="L450">        throw new JXPathInvalidAccessException(</span>
+                &quot;Cannot create collection of type: &quot; + type);
+    }
+
+    /**
+     * Get an unmodifiable version of a collection.
+     * @param collection to wrap
+     * @return Collection
+     */
+    protected Collection unmodifiableCollection(Collection collection) {
+<span class="pc bpc" id="L460" title="1 of 2 branches missed.">        if (collection instanceof List) {</span>
+<span class="fc" id="L461">            return Collections.unmodifiableList((List) collection);</span>
+        }
+<span class="nc bnc" id="L463" title="All 2 branches missed.">        if (collection instanceof SortedSet) {</span>
+<span class="nc" id="L464">            return Collections.unmodifiableSortedSet((SortedSet) collection);</span>
+        }
+<span class="nc bnc" id="L466" title="All 2 branches missed.">        if (collection instanceof Set) {</span>
+<span class="nc" id="L467">            return Collections.unmodifiableSet((Set) collection);</span>
+        }
+<span class="nc" id="L469">        return Collections.unmodifiableCollection(collection);</span>
+    }
+
+    /**
+     * NodeSet implementation
+     */
+    static final class ValueNodeSet implements NodeSet {
+        private List values;
+        private List pointers;
+
+        /**
+         * Create a new ValueNodeSet.
+         * @param values to return
+         */
+<span class="nc" id="L483">        public ValueNodeSet(List values) {</span>
+<span class="nc" id="L484">           this.values = values;</span>
+<span class="nc" id="L485">        }</span>
+
+        public List getValues() {
+<span class="nc" id="L488">            return Collections.unmodifiableList(values);</span>
+        }
+
+        public List getNodes() {
+<span class="nc" id="L492">            return Collections.unmodifiableList(values);</span>
+        }
+
+        public List getPointers() {
+<span class="nc bnc" id="L496" title="All 2 branches missed.">            if (pointers == null) {</span>
+<span class="nc" id="L497">                pointers = new ArrayList();</span>
+<span class="nc bnc" id="L498" title="All 2 branches missed.">                for (int i = 0; i &lt; values.size(); i++) {</span>
+<span class="nc" id="L499">                    pointers.add(new ValuePointer(values.get(i)));</span>
+                }
+<span class="nc" id="L501">                pointers = Collections.unmodifiableList(pointers);</span>
+            }
+<span class="nc" id="L503">            return pointers;</span>
+        }
+    }
+
+    /**
+     * Value pointer
+     */
+    static final class ValuePointer implements Pointer {
+        private Object bean;
+
+        private static final long serialVersionUID = -4817239482392206188L;
+
+        /**
+         * Create a new ValuePointer.
+         * @param object value
+         */
+<span class="nc" id="L519">        public ValuePointer(Object object) {</span>
+<span class="nc" id="L520">            this.bean = object;</span>
+<span class="nc" id="L521">        }</span>
+
+        public Object getValue() {
+<span class="nc" id="L524">            return bean;</span>
+        }
+
+        public Object getNode() {
+<span class="nc" id="L528">            return bean;</span>
+        }
+
+        public Object getRootNode() {
+<span class="nc" id="L532">            return bean;</span>
+        }
+
+        public void setValue(Object value) {
+<span class="nc" id="L536">            throw new UnsupportedOperationException();</span>
+        }
+
+        public Object clone() {
+<span class="nc" id="L540">            return this;</span>
+        }
+
+        public int compareTo(Object object) {
+<span class="nc" id="L544">            return 0;</span>
+        }
+
+        public String asPath() {
+<span class="nc bnc" id="L548" title="All 2 branches missed.">            if (bean == null) {</span>
+<span class="nc" id="L549">                return &quot;null()&quot;;</span>
+            }
+<span class="nc bnc" id="L551" title="All 2 branches missed.">            if (bean instanceof Number) {</span>
+<span class="nc" id="L552">                String string = bean.toString();</span>
+<span class="nc bnc" id="L553" title="All 2 branches missed.">                if (string.endsWith(&quot;.0&quot;)) {</span>
+<span class="nc" id="L554">                    string = string.substring(0, string.length() - 2);</span>
+                }
+<span class="nc" id="L556">                return string;</span>
+            }
+<span class="nc bnc" id="L558" title="All 2 branches missed.">            if (bean instanceof Boolean) {</span>
+<span class="nc bnc" id="L559" title="All 2 branches missed.">                return ((Boolean) bean).booleanValue() ? &quot;true()&quot; : &quot;false()&quot;;</span>
+            }
+<span class="nc bnc" id="L561" title="All 2 branches missed.">            if (bean instanceof String) {</span>
+<span class="nc" id="L562">                return &quot;'&quot; + bean + &quot;'&quot;;</span>
+            }
+<span class="nc" id="L564">            return &quot;{object of type &quot; + bean.getClass().getName() + &quot;}&quot;;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JDOMAttributeIterator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri.model.jdom</a> &gt; <span class="el_source">JDOMAttributeIterator.java</span></div><h1>JDOMAttributeIterator.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri.model.jdom;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import org.apache.commons.jxpath.ri.QName;
+import org.apache.commons.jxpath.ri.model.NodeIterator;
+import org.apache.commons.jxpath.ri.model.NodePointer;
+import org.jdom.Attribute;
+import org.jdom.Element;
+import org.jdom.Namespace;
+
+/**
+ * An iterator of attributes of a DOM Node.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision: 652845 $ $Date: 2008-05-02 12:46:46 -0500 (Fri, 02 May 2008) $
+ */
+public class JDOMAttributeIterator implements NodeIterator {
+    private NodePointer parent;
+    private List attributes;
+<span class="fc" id="L39">    private int position = 0;</span>
+
+    /**
+     * Create a new JDOMAttributeIterator.
+     * @param parent pointer
+     * @param name test
+     */
+<span class="fc" id="L46">    public JDOMAttributeIterator(NodePointer parent, QName name) {</span>
+<span class="fc" id="L47">        this.parent = parent;</span>
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">        if (parent.getNode() instanceof Element) {</span>
+<span class="fc" id="L49">            Element element = (Element) parent.getNode();</span>
+<span class="fc" id="L50">            String prefix = name.getPrefix();</span>
+<span class="fc" id="L51">            Namespace ns = null;</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">            if (prefix != null) {</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">                if (prefix.equals(&quot;xml&quot;)) {</span>
+<span class="fc" id="L54">                    ns = Namespace.XML_NAMESPACE;</span>
+                }
+                else {
+<span class="fc" id="L57">                    String uri = parent.getNamespaceResolver().getNamespaceURI(prefix);</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">                    if (uri != null) {</span>
+<span class="fc" id="L59">                        ns = Namespace.getNamespace(prefix, uri);</span>
+                    }
+<span class="fc bfc" id="L61" title="All 2 branches covered.">                    if (ns == null) {</span>
+                        // TBD: no attributes
+<span class="fc" id="L63">                        attributes = Collections.EMPTY_LIST;</span>
+<span class="fc" id="L64">                        return;</span>
+                    }
+<span class="fc" id="L66">                }</span>
+            }
+            else {
+<span class="fc" id="L69">                ns = Namespace.NO_NAMESPACE;</span>
+            }
+
+<span class="fc" id="L72">            String lname = name.getName();</span>
+<span class="fc bfc" id="L73" title="All 2 branches covered.">            if (!lname.equals(&quot;*&quot;)) {</span>
+<span class="fc" id="L74">                attributes = new ArrayList();</span>
+<span class="fc" id="L75">                Attribute attr = element.getAttribute(lname, ns);</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">                if (attr != null) {</span>
+<span class="fc" id="L77">                    attributes.add(attr);</span>
+                }
+<span class="fc" id="L79">            }</span>
+            else {
+<span class="fc" id="L81">                attributes = new ArrayList();</span>
+<span class="fc" id="L82">                List allAttributes = element.getAttributes();</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">                for (int i = 0; i &lt; allAttributes.size(); i++) {</span>
+<span class="fc" id="L84">                    Attribute attr = (Attribute) allAttributes.get(i);</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">                    if (ns == Namespace.NO_NAMESPACE</span>
+<span class="fc bfc" id="L86" title="All 2 branches covered.">                            || attr.getNamespace().equals(ns)) {</span>
+<span class="fc" id="L87">                        attributes.add(attr);</span>
+                    }
+                }
+            }
+        }
+<span class="fc" id="L92">    }</span>
+
+    public NodePointer getNodePointer() {
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">        if (position == 0) {</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">            if (!setPosition(1)) {</span>
+<span class="nc" id="L97">                return null;</span>
+            }
+<span class="nc" id="L99">            position = 0;</span>
+        }
+<span class="fc" id="L101">        int index = position - 1;</span>
+<span class="pc bpc" id="L102" title="1 of 2 branches missed.">        if (index &lt; 0) {</span>
+<span class="nc" id="L103">            index = 0;</span>
+        }
+<span class="fc" id="L105">        return new JDOMAttributePointer(</span>
+            parent,
+<span class="fc" id="L107">            (Attribute) attributes.get(index));</span>
+    }
+
+    public int getPosition() {
+<span class="fc" id="L111">        return position;</span>
+    }
+
+    public boolean setPosition(int position) {
+<span class="pc bpc" id="L115" title="1 of 2 branches missed.">        if (attributes == null) {</span>
+<span class="nc" id="L116">            return false;</span>
+        }
+<span class="fc" id="L118">        this.position = position;</span>
+<span class="pc bpc" id="L119" title="1 of 4 branches missed.">        return position &gt;= 1 &amp;&amp; position &lt;= attributes.size();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

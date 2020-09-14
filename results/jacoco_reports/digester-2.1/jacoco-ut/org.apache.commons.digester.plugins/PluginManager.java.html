@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>PluginManager.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester.plugins</a> &gt; <span class="el_source">PluginManager.java</span></div><h1>PluginManager.java</h1><pre class="source lang-java linenums">/* $Id$
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.digester.plugins;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Properties;
+import java.util.Iterator;
+
+import org.apache.commons.digester.Digester;
+
+import org.apache.commons.logging.Log;
+
+/**
+ * Coordinates between PluginDeclarationRule and PluginCreateRule objects,
+ * providing a place to share data between instances of these rules.
+ * &lt;p&gt;
+ * One instance of this class exists per PluginRules instance.
+ *
+ * @since 1.6
+ */
+
+public class PluginManager {
+
+    /** Map of classname-&gt;Declaration */
+<span class="fc" id="L42">    private HashMap&lt;String, Declaration&gt; declarationsByClass = new HashMap&lt;String, Declaration&gt;();</span>
+
+    /** Map of id-&gt;Declaration  */
+<span class="fc" id="L45">    private HashMap&lt;String, Declaration&gt; declarationsById = new HashMap&lt;String, Declaration&gt;();</span>
+
+    /** the parent manager to which this one may delegate lookups. */
+    private PluginManager parent;
+    
+    /** 
+     * The object containing data that should only exist once for each
+     * Digester instance.
+     */
+    private PluginContext pluginContext;
+    
+    //------------------- constructors ---------------------------------------
+    
+    /** Construct a &quot;root&quot; PluginManager, ie one with no parent. */
+<span class="fc" id="L59">    public PluginManager(PluginContext r) {</span>
+<span class="fc" id="L60">        pluginContext = r;</span>
+<span class="fc" id="L61">    }</span>
+
+    /** 
+     * Construct a &quot;child&quot; PluginManager. When declarations are added to
+     * a &quot;child&quot;, they are stored within the child and do not modify the
+     * parent, so when the child goes out of scope, those declarations
+     * disappear. When asking a &quot;child&quot; to retrieve a declaration, it 
+     * delegates the search to its parent if it does not hold a matching
+     * entry itself.
+     * &lt;p&gt;
+     * @param parent must be non-null.
+     */
+<span class="fc" id="L73">    public PluginManager(PluginManager parent) {</span>
+<span class="fc" id="L74">        this.parent = parent;</span>
+<span class="fc" id="L75">        this.pluginContext = parent.pluginContext;</span>
+<span class="fc" id="L76">    }</span>
+    
+    //------------------- methods --------------------------------------------
+
+    /**
+     * Add the declaration to the set of known declarations.
+     * &lt;p&gt;
+     * TODO: somehow get a reference to a Digester object
+     * so that we can really log here. Currently, all
+     * logging is disabled from this method.
+     *
+     *@param decl an object representing a plugin class.
+     */
+    public void addDeclaration(Declaration decl) {
+<span class="fc" id="L90">        Log log = LogUtils.getLogger(null);</span>
+<span class="fc" id="L91">        boolean debug = log.isDebugEnabled();</span>
+        
+<span class="fc" id="L93">        Class&lt;?&gt; pluginClass = decl.getPluginClass();</span>
+<span class="fc" id="L94">        String id = decl.getId();</span>
+        
+<span class="fc" id="L96">        declarationsByClass.put(pluginClass.getName(), decl);</span>
+            
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        if (id != null) {</span>
+<span class="fc" id="L99">            declarationsById.put(id, decl);</span>
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">            if (debug) {</span>
+<span class="nc" id="L101">                log.debug(</span>
+                    &quot;Indexing plugin-id [&quot; + id + &quot;]&quot; +
+<span class="nc" id="L103">                    &quot; -&gt; class [&quot; + pluginClass.getName() + &quot;]&quot;);</span>
+            }
+        }
+<span class="fc" id="L106">    }</span>
+
+    /**
+     * Return the declaration object with the specified class.
+     * If no such plugin is known, null is returned.
+     */
+    public Declaration getDeclarationByClass(String className) {
+<span class="fc" id="L113">        Declaration decl = </span>
+<span class="fc" id="L114">            declarationsByClass.get(className);</span>
+            
+<span class="pc bpc" id="L116" title="1 of 4 branches missed.">        if ((decl == null) &amp;&amp; (parent != null)) {</span>
+<span class="nc" id="L117">            decl = parent.getDeclarationByClass(className);</span>
+        }
+
+<span class="fc" id="L120">        return decl;</span>
+    }
+
+    /**
+     * Return the declaration object with the specified id.
+     * If no such plugin is known, null is returned.
+     *
+     *@param id Description of the Parameter
+     *@return The declaration value
+     */
+    public Declaration getDeclarationById(String id) {
+<span class="fc" id="L131">        Declaration decl = declarationsById.get(id);</span>
+
+<span class="pc bpc" id="L133" title="1 of 4 branches missed.">        if ((decl == null) &amp;&amp; (parent != null)) {</span>
+<span class="fc" id="L134">            decl = parent.getDeclarationById(id);</span>
+        }
+
+<span class="fc" id="L137">        return decl;</span>
+    }
+
+    /**
+     * Given a plugin class and some associated properties, scan the
+     * list of known RuleFinder instances until one detects a source of
+     * custom rules for this plugin (aka a RuleLoader).
+     * &lt;p&gt;
+     * If no source of custom rules can be found, null is returned.
+     */
+    public RuleLoader findLoader(Digester digester, String id, 
+                        Class&lt;?&gt; pluginClass, Properties props) 
+                        throws PluginException {    
+
+        // iterate over the list of RuleFinders, trying each one 
+        // until one of them locates a source of dynamic rules given
+        // this specific plugin class and the associated declaration 
+        // properties.
+<span class="fc" id="L155">        Log log = LogUtils.getLogger(digester);</span>
+<span class="fc" id="L156">        boolean debug = log.isDebugEnabled();</span>
+<span class="fc" id="L157">        log.debug(&quot;scanning ruleFinders to locate loader..&quot;);</span>
+        
+<span class="fc" id="L159">        List&lt;RuleFinder&gt; ruleFinders = pluginContext.getRuleFinders();</span>
+<span class="fc" id="L160">        RuleLoader ruleLoader = null;</span>
+        try {
+<span class="fc" id="L162">            for(Iterator&lt;RuleFinder&gt; i = ruleFinders.iterator(); </span>
+<span class="fc bfc" id="L163" title="All 4 branches covered.">                i.hasNext() &amp;&amp; ruleLoader == null; ) {</span>
+                    
+<span class="fc" id="L165">                RuleFinder finder = i.next();</span>
+<span class="pc bpc" id="L166" title="1 of 2 branches missed.">                if (debug) {</span>
+<span class="nc" id="L167">                    log.debug(&quot;checking finder of type &quot; + finder.getClass().getName());</span>
+                }
+<span class="fc" id="L169">                ruleLoader = finder.findLoader(digester, pluginClass, props);</span>
+<span class="fc" id="L170">            }</span>
+        }
+<span class="nc" id="L172">        catch(PluginException e) {</span>
+<span class="nc" id="L173">            throw new PluginException(</span>
+                &quot;Unable to locate plugin rules for plugin&quot;
+                + &quot; with id [&quot; + id + &quot;]&quot;
+<span class="nc" id="L176">                + &quot;, and class [&quot; + pluginClass.getName() + &quot;]&quot;</span>
+<span class="nc" id="L177">                + &quot;:&quot; + e.getMessage(), e.getCause());</span>
+<span class="fc" id="L178">        }</span>
+<span class="fc" id="L179">        log.debug(&quot;scanned ruleFinders.&quot;);</span>
+        
+<span class="fc" id="L181">        return ruleLoader;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

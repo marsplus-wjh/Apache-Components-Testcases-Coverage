@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NamespaceContext.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri.axes</a> &gt; <span class="el_source">NamespaceContext.java</span></div><h1>NamespaceContext.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri.axes;
+
+import org.apache.commons.jxpath.ri.EvalContext;
+import org.apache.commons.jxpath.ri.QName;
+import org.apache.commons.jxpath.ri.compiler.NodeNameTest;
+import org.apache.commons.jxpath.ri.compiler.NodeTest;
+import org.apache.commons.jxpath.ri.model.NodeIterator;
+import org.apache.commons.jxpath.ri.model.NodePointer;
+
+/**
+ * EvalContext that walks the &quot;namespace::&quot; axis.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision: 652845 $ $Date: 2008-05-02 12:46:46 -0500 (Fri, 02 May 2008) $
+ */
+public class NamespaceContext extends EvalContext {
+    private NodeTest nodeTest;
+<span class="fc" id="L34">    private boolean setStarted = false;</span>
+    private NodeIterator iterator;
+    private NodePointer currentNodePointer;
+
+    /**
+     * @param parentContext represents the previous step on the path
+     * @param nodeTest is the name of the namespace we are looking for
+     */
+    public NamespaceContext(EvalContext parentContext, NodeTest nodeTest) {
+<span class="fc" id="L43">        super(parentContext);</span>
+<span class="fc" id="L44">        this.nodeTest = nodeTest;</span>
+<span class="fc" id="L45">    }</span>
+
+    public NodePointer getCurrentNodePointer() {
+<span class="fc" id="L48">        return currentNodePointer;</span>
+    }
+
+    public void reset() {
+<span class="fc" id="L52">        setStarted = false;</span>
+<span class="fc" id="L53">        iterator = null;</span>
+<span class="fc" id="L54">        super.reset();</span>
+<span class="fc" id="L55">    }</span>
+
+    public boolean setPosition(int position) {
+<span class="nc bnc" id="L58" title="All 2 branches missed.">        if (position &lt; getCurrentPosition()) {</span>
+<span class="nc" id="L59">            reset();</span>
+        }
+
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        while (getCurrentPosition() &lt; position) {</span>
+<span class="nc bnc" id="L63" title="All 2 branches missed.">            if (!nextNode()) {</span>
+<span class="nc" id="L64">                return false;</span>
+            }
+        }
+<span class="nc" id="L67">        return true;</span>
+    }
+
+    public boolean nextNode() {
+<span class="fc" id="L71">        super.setPosition(getCurrentPosition() + 1);</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">        if (!setStarted) {</span>
+<span class="fc" id="L73">            setStarted = true;</span>
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">            if (!(nodeTest instanceof NodeNameTest)) {</span>
+<span class="nc" id="L75">                return false;</span>
+            }
+
+<span class="fc" id="L78">            NodeNameTest nodeNameTest = (NodeNameTest) nodeTest;</span>
+<span class="fc" id="L79">            QName testName = nodeNameTest.getNodeName();</span>
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">            if (testName.getPrefix() != null) {</span>
+<span class="nc" id="L81">                return false;</span>
+            }
+<span class="fc bfc" id="L83" title="All 2 branches covered.">            if (nodeNameTest.isWildcard()) {</span>
+<span class="fc" id="L84">                iterator =</span>
+<span class="fc" id="L85">                    parentContext.getCurrentNodePointer().namespaceIterator();</span>
+            }
+            else {
+<span class="fc" id="L88">                currentNodePointer =</span>
+<span class="fc" id="L89">                    parentContext.getCurrentNodePointer().namespacePointer(</span>
+<span class="fc" id="L90">                            testName.getName());</span>
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">                return currentNodePointer != null;</span>
+            }
+        }
+
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">        if (iterator == null) {</span>
+<span class="nc" id="L96">            return false;</span>
+        }
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        if (!iterator.setPosition(iterator.getPosition() + 1)) {</span>
+<span class="fc" id="L99">            return false;</span>
+        }
+<span class="fc" id="L101">        currentNodePointer = iterator.getNodePointer();</span>
+<span class="fc" id="L102">        return true;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

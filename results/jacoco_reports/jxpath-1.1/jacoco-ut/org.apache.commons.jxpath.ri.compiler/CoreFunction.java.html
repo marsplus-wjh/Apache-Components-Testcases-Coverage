@@ -1,0 +1,914 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>CoreFunction.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri.compiler</a> &gt; <span class="el_source">CoreFunction.java</span></div><h1>CoreFunction.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri.compiler;
+
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
+import java.util.Collection;
+import java.util.Locale;
+
+import org.apache.commons.jxpath.BasicNodeSet;
+import org.apache.commons.jxpath.JXPathContext;
+import org.apache.commons.jxpath.JXPathException;
+import org.apache.commons.jxpath.JXPathInvalidSyntaxException;
+import org.apache.commons.jxpath.NodeSet;
+import org.apache.commons.jxpath.ri.Compiler;
+import org.apache.commons.jxpath.ri.EvalContext;
+import org.apache.commons.jxpath.ri.InfoSetUtil;
+import org.apache.commons.jxpath.ri.axes.NodeSetContext;
+import org.apache.commons.jxpath.ri.model.NodePointer;
+
+/**
+ * An element of the compile tree representing one of built-in functions
+ * like &quot;position()&quot; or &quot;number()&quot;.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision$ $Date$
+ */
+public class CoreFunction extends Operation {
+
+<span class="fc" id="L45">    private static final Double ZERO = new Double(0);</span>
+    private int functionCode;
+
+    /**
+     * Create a new CoreFunction.
+     * @param functionCode int function code
+     * @param args argument Expressions
+     */
+    public CoreFunction(int functionCode, Expression[] args) {
+<span class="fc" id="L54">        super(args);</span>
+<span class="fc" id="L55">        this.functionCode = functionCode;</span>
+<span class="fc" id="L56">    }</span>
+
+    /**
+     * Get the function code.
+     * @return int function code
+     */
+    public int getFunctionCode() {
+<span class="nc" id="L63">        return functionCode;</span>
+    }
+
+    /**
+     * Get the name of this function.
+     * @return String function name
+     */
+    protected String getFunctionName() {
+<span class="pc bpc" id="L71" title="1 of 30 branches missed.">        switch (functionCode) {</span>
+            case Compiler.FUNCTION_LAST :
+<span class="fc" id="L73">                return &quot;last&quot;;</span>
+            case Compiler.FUNCTION_POSITION :
+<span class="fc" id="L75">                return &quot;position&quot;;</span>
+            case Compiler.FUNCTION_COUNT :
+<span class="fc" id="L77">                return &quot;count&quot;;</span>
+            case Compiler.FUNCTION_ID :
+<span class="fc" id="L79">                return &quot;id&quot;;</span>
+            case Compiler.FUNCTION_LOCAL_NAME :
+<span class="fc" id="L81">                return &quot;local-name&quot;;</span>
+            case Compiler.FUNCTION_NAMESPACE_URI :
+<span class="fc" id="L83">                return &quot;namespace-uri&quot;;</span>
+            case Compiler.FUNCTION_NAME :
+<span class="fc" id="L85">                return &quot;name&quot;;</span>
+            case Compiler.FUNCTION_STRING :
+<span class="fc" id="L87">                return &quot;string&quot;;</span>
+            case Compiler.FUNCTION_CONCAT :
+<span class="fc" id="L89">                return &quot;concat&quot;;</span>
+            case Compiler.FUNCTION_STARTS_WITH :
+<span class="fc" id="L91">                return &quot;starts-with&quot;;</span>
+            case Compiler.FUNCTION_CONTAINS :
+<span class="fc" id="L93">                return &quot;contains&quot;;</span>
+            case Compiler.FUNCTION_SUBSTRING_BEFORE :
+<span class="fc" id="L95">                return &quot;substring-before&quot;;</span>
+            case Compiler.FUNCTION_SUBSTRING_AFTER :
+<span class="fc" id="L97">                return &quot;substring-after&quot;;</span>
+            case Compiler.FUNCTION_SUBSTRING :
+<span class="fc" id="L99">                return &quot;substring&quot;;</span>
+            case Compiler.FUNCTION_STRING_LENGTH :
+<span class="fc" id="L101">                return &quot;string-length&quot;;</span>
+            case Compiler.FUNCTION_NORMALIZE_SPACE :
+<span class="fc" id="L103">                return &quot;normalize-space&quot;;</span>
+            case Compiler.FUNCTION_TRANSLATE :
+<span class="fc" id="L105">                return &quot;translate&quot;;</span>
+            case Compiler.FUNCTION_BOOLEAN :
+<span class="fc" id="L107">                return &quot;boolean&quot;;</span>
+            case Compiler.FUNCTION_NOT :
+<span class="fc" id="L109">                return &quot;not&quot;;</span>
+            case Compiler.FUNCTION_TRUE :
+<span class="fc" id="L111">                return &quot;true&quot;;</span>
+            case Compiler.FUNCTION_FALSE :
+<span class="fc" id="L113">                return &quot;false&quot;;</span>
+            case Compiler.FUNCTION_LANG :
+<span class="fc" id="L115">                return &quot;lang&quot;;</span>
+            case Compiler.FUNCTION_NUMBER :
+<span class="fc" id="L117">                return &quot;number&quot;;</span>
+            case Compiler.FUNCTION_SUM :
+<span class="fc" id="L119">                return &quot;sum&quot;;</span>
+            case Compiler.FUNCTION_FLOOR :
+<span class="fc" id="L121">                return &quot;floor&quot;;</span>
+            case Compiler.FUNCTION_CEILING :
+<span class="fc" id="L123">                return &quot;ceiling&quot;;</span>
+            case Compiler.FUNCTION_ROUND :
+<span class="fc" id="L125">                return &quot;round&quot;;</span>
+            case Compiler.FUNCTION_KEY :
+<span class="fc" id="L127">                return &quot;key&quot;;</span>
+            case Compiler.FUNCTION_FORMAT_NUMBER:
+<span class="fc" id="L129">                return &quot;format-number&quot;;</span>
+            default:
+<span class="nc" id="L131">                return &quot;unknownFunction&quot; + functionCode + &quot;()&quot;;</span>
+        }
+    }
+
+    /**
+     * Convenience method to return the first argument.
+     * @return Expression
+     */
+    public Expression getArg1() {
+<span class="fc" id="L140">        return args[0];</span>
+    }
+
+    /**
+     * Convenience method to return the second argument.
+     * @return Expression
+     */
+    public Expression getArg2() {
+<span class="fc" id="L148">        return args[1];</span>
+    }
+
+    /**
+     * Convenience method to return the third argument.
+     * @return Expression
+     */
+    public Expression getArg3() {
+<span class="fc" id="L156">        return args[2];</span>
+    }
+
+    /**
+     * Return the number of argument Expressions.
+     * @return int count
+     */
+    public int getArgumentCount() {
+<span class="fc bfc" id="L164" title="All 2 branches covered.">        if (args == null) {</span>
+<span class="fc" id="L165">            return 0;</span>
+        }
+<span class="fc" id="L167">        return args.length;</span>
+    }
+
+    /**
+     * Returns true if any argument is context dependent or if
+     * the function is last(), position(), boolean(), local-name(),
+     * name(), string(), lang(), number().
+     * @return boolean
+     */
+    public boolean computeContextDependent() {
+<span class="fc bfc" id="L177" title="All 2 branches covered.">        if (super.computeContextDependent()) {</span>
+<span class="fc" id="L178">            return true;</span>
+        }
+
+<span class="pc bpc" id="L181" title="4 of 5 branches missed.">        switch(functionCode) {</span>
+            case Compiler.FUNCTION_LAST:
+            case Compiler.FUNCTION_POSITION:
+<span class="fc" id="L184">                return true;</span>
+
+            case Compiler.FUNCTION_BOOLEAN:
+            case Compiler.FUNCTION_LOCAL_NAME:
+            case Compiler.FUNCTION_NAME:
+            case Compiler.FUNCTION_NAMESPACE_URI:
+            case Compiler.FUNCTION_STRING:
+            case Compiler.FUNCTION_LANG:
+            case Compiler.FUNCTION_NUMBER:
+<span class="nc bnc" id="L193" title="All 4 branches missed.">                return args == null || args.length == 0;</span>
+
+            case Compiler.FUNCTION_COUNT:
+            case Compiler.FUNCTION_ID:
+            case Compiler.FUNCTION_CONCAT:
+            case Compiler.FUNCTION_STARTS_WITH:
+            case Compiler.FUNCTION_CONTAINS:
+            case Compiler.FUNCTION_SUBSTRING_BEFORE:
+            case Compiler.FUNCTION_SUBSTRING_AFTER:
+            case Compiler.FUNCTION_SUBSTRING:
+            case Compiler.FUNCTION_STRING_LENGTH:
+            case Compiler.FUNCTION_NORMALIZE_SPACE:
+            case Compiler.FUNCTION_TRANSLATE:
+            case Compiler.FUNCTION_NOT:
+            case Compiler.FUNCTION_TRUE:
+            case Compiler.FUNCTION_FALSE:
+            case Compiler.FUNCTION_SUM:
+            case Compiler.FUNCTION_FLOOR:
+            case Compiler.FUNCTION_CEILING:
+            case Compiler.FUNCTION_ROUND:
+<span class="nc" id="L213">                return false;</span>
+
+            case Compiler.FUNCTION_FORMAT_NUMBER:
+<span class="nc bnc" id="L216" title="All 4 branches missed.">                return args != null &amp;&amp; args.length == 2;</span>
+            default:
+<span class="nc" id="L218">                return false;</span>
+        }
+    }
+
+    public String toString() {
+<span class="fc" id="L223">        StringBuffer buffer = new StringBuffer();</span>
+<span class="fc" id="L224">        buffer.append(getFunctionName());</span>
+<span class="fc" id="L225">        buffer.append('(');</span>
+<span class="fc" id="L226">        Expression[] args = getArguments();</span>
+<span class="fc bfc" id="L227" title="All 2 branches covered.">        if (args != null) {</span>
+<span class="fc bfc" id="L228" title="All 2 branches covered.">            for (int i = 0; i &lt; args.length; i++) {</span>
+<span class="fc bfc" id="L229" title="All 2 branches covered.">                if (i &gt; 0) {</span>
+<span class="fc" id="L230">                    buffer.append(&quot;, &quot;);</span>
+                }
+<span class="fc" id="L232">                buffer.append(args[i]);</span>
+            }
+        }
+<span class="fc" id="L235">        buffer.append(')');</span>
+<span class="fc" id="L236">        return buffer.toString();</span>
+    }
+
+    public Object compute(EvalContext context) {
+<span class="fc" id="L240">        return computeValue(context);</span>
+    }
+
+    public Object computeValue(EvalContext context) {
+<span class="pc bpc" id="L244" title="1 of 31 branches missed.">        switch (functionCode) {</span>
+            case Compiler.FUNCTION_LAST :
+<span class="fc" id="L246">                return functionLast(context);</span>
+            case Compiler.FUNCTION_POSITION :
+<span class="fc" id="L248">                return functionPosition(context);</span>
+            case Compiler.FUNCTION_COUNT :
+<span class="fc" id="L250">                return functionCount(context);</span>
+            case Compiler.FUNCTION_LANG :
+<span class="fc" id="L252">                return functionLang(context);</span>
+            case Compiler.FUNCTION_ID :
+<span class="fc" id="L254">                return functionID(context);</span>
+            case Compiler.FUNCTION_LOCAL_NAME :
+<span class="fc" id="L256">                return functionLocalName(context);</span>
+            case Compiler.FUNCTION_NAMESPACE_URI :
+<span class="fc" id="L258">                return functionNamespaceURI(context);</span>
+            case Compiler.FUNCTION_NAME :
+<span class="fc" id="L260">                return functionName(context);</span>
+            case Compiler.FUNCTION_STRING :
+<span class="fc" id="L262">                return functionString(context);</span>
+            case Compiler.FUNCTION_CONCAT :
+<span class="fc" id="L264">                return functionConcat(context);</span>
+            case Compiler.FUNCTION_STARTS_WITH :
+<span class="fc" id="L266">                return functionStartsWith(context);</span>
+            case Compiler.FUNCTION_CONTAINS :
+<span class="fc" id="L268">                return functionContains(context);</span>
+            case Compiler.FUNCTION_SUBSTRING_BEFORE :
+<span class="fc" id="L270">                return functionSubstringBefore(context);</span>
+            case Compiler.FUNCTION_SUBSTRING_AFTER :
+<span class="fc" id="L272">                return functionSubstringAfter(context);</span>
+            case Compiler.FUNCTION_SUBSTRING :
+<span class="fc" id="L274">                return functionSubstring(context);</span>
+            case Compiler.FUNCTION_STRING_LENGTH :
+<span class="fc" id="L276">                return functionStringLength(context);</span>
+            case Compiler.FUNCTION_NORMALIZE_SPACE :
+<span class="fc" id="L278">                return functionNormalizeSpace(context);</span>
+            case Compiler.FUNCTION_TRANSLATE :
+<span class="fc" id="L280">                return functionTranslate(context);</span>
+            case Compiler.FUNCTION_BOOLEAN :
+<span class="fc" id="L282">                return functionBoolean(context);</span>
+            case Compiler.FUNCTION_NOT :
+<span class="fc" id="L284">                return functionNot(context);</span>
+            case Compiler.FUNCTION_TRUE :
+<span class="fc" id="L286">                return functionTrue(context);</span>
+            case Compiler.FUNCTION_FALSE :
+<span class="fc" id="L288">                return functionFalse(context);</span>
+            case Compiler.FUNCTION_NULL :
+<span class="fc" id="L290">                return functionNull(context);</span>
+            case Compiler.FUNCTION_NUMBER :
+<span class="fc" id="L292">                return functionNumber(context);</span>
+            case Compiler.FUNCTION_SUM :
+<span class="fc" id="L294">                return functionSum(context);</span>
+            case Compiler.FUNCTION_FLOOR :
+<span class="fc" id="L296">                return functionFloor(context);</span>
+            case Compiler.FUNCTION_CEILING :
+<span class="fc" id="L298">                return functionCeiling(context);</span>
+            case Compiler.FUNCTION_ROUND :
+<span class="fc" id="L300">                return functionRound(context);</span>
+            case Compiler.FUNCTION_KEY :
+<span class="fc" id="L302">                return functionKey(context);</span>
+            case Compiler.FUNCTION_FORMAT_NUMBER :
+<span class="fc" id="L304">                return functionFormatNumber(context);</span>
+            default:
+<span class="nc" id="L306">                return null;</span>
+        }
+    }
+
+    /**
+     * last() implementation.
+     * @param context evaluation context
+     * @return Number
+     */
+    protected Object functionLast(EvalContext context) {
+<span class="fc" id="L316">        assertArgCount(0);</span>
+        // Move the position to the beginning and iterate through
+        // the context to count nodes.
+<span class="fc" id="L319">        int old = context.getCurrentPosition();</span>
+<span class="fc" id="L320">        context.reset();</span>
+<span class="fc" id="L321">        int count = 0;</span>
+<span class="fc bfc" id="L322" title="All 2 branches covered.">        while (context.nextNode()) {</span>
+<span class="fc" id="L323">            count++;</span>
+        }
+
+        // Restore the current position.
+<span class="pc bpc" id="L327" title="1 of 2 branches missed.">        if (old != 0) {</span>
+<span class="fc" id="L328">            context.setPosition(old);</span>
+        }
+<span class="fc" id="L330">        return new Double(count);</span>
+    }
+
+    /**
+     * position() implementation.
+     * @param context evaluation context
+     * @return Number
+     */
+    protected Object functionPosition(EvalContext context) {
+<span class="fc" id="L339">        assertArgCount(0);</span>
+<span class="fc" id="L340">        return new Integer(context.getCurrentPosition());</span>
+    }
+
+    /**
+     * count() implementation.
+     * @param context evaluation context
+     * @return Number
+     */
+    protected Object functionCount(EvalContext context) {
+<span class="fc" id="L349">        assertArgCount(1);</span>
+<span class="fc" id="L350">        Expression arg1 = getArg1();</span>
+<span class="fc" id="L351">        int count = 0;</span>
+<span class="fc" id="L352">        Object value = arg1.compute(context);</span>
+<span class="pc bpc" id="L353" title="1 of 2 branches missed.">        if (value instanceof NodePointer) {</span>
+<span class="nc" id="L354">            value = ((NodePointer) value).getValue();</span>
+        }
+<span class="pc bpc" id="L356" title="1 of 2 branches missed.">        if (value instanceof EvalContext) {</span>
+<span class="fc" id="L357">            EvalContext ctx = (EvalContext) value;</span>
+<span class="fc bfc" id="L358" title="All 2 branches covered.">            while (ctx.hasNext()) {</span>
+<span class="fc" id="L359">                ctx.next();</span>
+<span class="fc" id="L360">                count++;</span>
+            }
+<span class="fc" id="L362">        }</span>
+<span class="nc bnc" id="L363" title="All 2 branches missed.">        else if (value instanceof Collection) {</span>
+<span class="nc" id="L364">            count = ((Collection) value).size();</span>
+        }
+<span class="nc bnc" id="L366" title="All 2 branches missed.">        else if (value == null) {</span>
+<span class="nc" id="L367">            count = 0;</span>
+        }
+        else {
+<span class="nc" id="L370">            count = 1;</span>
+        }
+<span class="fc" id="L372">        return new Double(count);</span>
+    }
+
+    /**
+     * lang() implementation.
+     * @param context evaluation context
+     * @return Boolean
+     */
+    protected Object functionLang(EvalContext context) {
+<span class="fc" id="L381">        assertArgCount(1);</span>
+<span class="fc" id="L382">        String lang = InfoSetUtil.stringValue(getArg1().computeValue(context));</span>
+<span class="fc" id="L383">        NodePointer pointer = (NodePointer) context.getSingleNodePointer();</span>
+<span class="pc bpc" id="L384" title="1 of 2 branches missed.">        if (pointer == null) {</span>
+<span class="nc" id="L385">            return Boolean.FALSE;</span>
+        }
+<span class="fc bfc" id="L387" title="All 2 branches covered.">        return pointer.isLanguage(lang) ? Boolean.TRUE : Boolean.FALSE;</span>
+    }
+
+    /**
+     * id() implementation.
+     * @param context evaluation context
+     * @return Pointer
+     */
+    protected Object functionID(EvalContext context) {
+<span class="fc" id="L396">        assertArgCount(1);</span>
+<span class="fc" id="L397">        String id = InfoSetUtil.stringValue(getArg1().computeValue(context));</span>
+<span class="fc" id="L398">        JXPathContext jxpathContext = context.getJXPathContext();</span>
+<span class="fc" id="L399">        NodePointer pointer = (NodePointer) jxpathContext.getContextPointer();</span>
+<span class="fc" id="L400">        return pointer.getPointerByID(jxpathContext, id);</span>
+    }
+
+    /**
+     * key() implementation.
+     * @param context evaluation context
+     * @return various Object
+     */
+    protected Object functionKey(EvalContext context) {
+<span class="fc" id="L409">        assertArgCount(2);</span>
+<span class="fc" id="L410">        String key = InfoSetUtil.stringValue(getArg1().computeValue(context));</span>
+<span class="fc" id="L411">        Object value = getArg2().compute(context);</span>
+<span class="fc" id="L412">        EvalContext ec = null;</span>
+<span class="fc bfc" id="L413" title="All 2 branches covered.">        if (value instanceof EvalContext) {</span>
+<span class="fc" id="L414">            ec = (EvalContext) value;</span>
+<span class="pc bpc" id="L415" title="1 of 2 branches missed.">            if (ec.hasNext()) {</span>
+<span class="fc" id="L416">                value = ((NodePointer) ec.next()).getValue();</span>
+            }
+            else { // empty context -&gt; empty results
+<span class="nc" id="L419">                return new NodeSetContext(context, new BasicNodeSet());</span>
+            }
+        }
+<span class="fc" id="L422">        JXPathContext jxpathContext = context.getJXPathContext();</span>
+<span class="fc" id="L423">        NodeSet nodeSet = jxpathContext.getNodeSetByKey(key, value);</span>
+<span class="pc bpc" id="L424" title="1 of 4 branches missed.">        if (ec != null &amp;&amp; ec.hasNext()) {</span>
+<span class="fc" id="L425">            BasicNodeSet accum = new BasicNodeSet();</span>
+<span class="fc" id="L426">            accum.add(nodeSet);</span>
+<span class="fc bfc" id="L427" title="All 2 branches covered.">            while (ec.hasNext()) {</span>
+<span class="fc" id="L428">                value = ((NodePointer) ec.next()).getValue();</span>
+<span class="fc" id="L429">                accum.add(jxpathContext.getNodeSetByKey(key, value));</span>
+            }
+<span class="fc" id="L431">            nodeSet = accum;</span>
+        }
+<span class="fc" id="L433">        return new NodeSetContext(context, nodeSet);</span>
+    }
+
+    /**
+     * namespace-uri() implementation.
+     * @param context evaluation context
+     * @return String
+     */
+    protected Object functionNamespaceURI(EvalContext context) {
+<span class="fc bfc" id="L442" title="All 2 branches covered.">        if (getArgumentCount() == 0) {</span>
+<span class="fc" id="L443">            NodePointer ptr = context.getCurrentNodePointer();</span>
+<span class="fc" id="L444">            String str = ptr.getNamespaceURI();</span>
+<span class="fc bfc" id="L445" title="All 2 branches covered.">            return str == null ? &quot;&quot; : str;</span>
+        }
+<span class="fc" id="L447">        assertArgCount(1);</span>
+<span class="fc" id="L448">        Object set = getArg1().compute(context);</span>
+<span class="pc bpc" id="L449" title="1 of 2 branches missed.">        if (set instanceof EvalContext) {</span>
+<span class="fc" id="L450">            EvalContext ctx = (EvalContext) set;</span>
+<span class="pc bpc" id="L451" title="1 of 2 branches missed.">            if (ctx.hasNext()) {</span>
+<span class="fc" id="L452">                NodePointer ptr = (NodePointer) ctx.next();</span>
+<span class="fc" id="L453">                String str = ptr.getNamespaceURI();</span>
+<span class="fc bfc" id="L454" title="All 2 branches covered.">                return str == null ? &quot;&quot; : str;</span>
+            }
+        }
+<span class="nc" id="L457">        return &quot;&quot;;</span>
+    }
+
+    /**
+     * local-name() implementation.
+     * @param context evaluation context
+     * @return String
+     */
+    protected Object functionLocalName(EvalContext context) {
+<span class="pc bpc" id="L466" title="1 of 2 branches missed.">        if (getArgumentCount() == 0) {</span>
+<span class="nc" id="L467">            NodePointer ptr = context.getCurrentNodePointer();</span>
+<span class="nc" id="L468">            return ptr.getName().getName();</span>
+        }
+<span class="fc" id="L470">        assertArgCount(1);</span>
+<span class="fc" id="L471">        Object set = getArg1().compute(context);</span>
+<span class="pc bpc" id="L472" title="1 of 2 branches missed.">        if (set instanceof EvalContext) {</span>
+<span class="fc" id="L473">            EvalContext ctx = (EvalContext) set;</span>
+<span class="pc bpc" id="L474" title="1 of 2 branches missed.">            if (ctx.hasNext()) {</span>
+<span class="fc" id="L475">                NodePointer ptr = (NodePointer) ctx.next();</span>
+<span class="fc" id="L476">                return ptr.getName().getName();</span>
+            }
+        }
+<span class="nc" id="L479">        return &quot;&quot;;</span>
+    }
+
+    /**
+     * name() implementation.
+     * @param context evaluation context
+     * @return String
+     */
+    protected Object functionName(EvalContext context) {
+<span class="fc bfc" id="L488" title="All 2 branches covered.">        if (getArgumentCount() == 0) {</span>
+<span class="fc" id="L489">            NodePointer ptr = context.getCurrentNodePointer();</span>
+<span class="fc" id="L490">            return ptr.getName().toString();</span>
+        }
+<span class="fc" id="L492">        assertArgCount(1);</span>
+<span class="fc" id="L493">        Object set = getArg1().compute(context);</span>
+<span class="pc bpc" id="L494" title="1 of 2 branches missed.">        if (set instanceof EvalContext) {</span>
+<span class="fc" id="L495">            EvalContext ctx = (EvalContext) set;</span>
+<span class="pc bpc" id="L496" title="1 of 2 branches missed.">            if (ctx.hasNext()) {</span>
+<span class="fc" id="L497">                NodePointer ptr = (NodePointer) ctx.next();</span>
+<span class="fc" id="L498">                return ptr.getName().toString();</span>
+            }
+        }
+<span class="nc" id="L501">        return &quot;&quot;;</span>
+    }
+
+    /**
+     * string() implementation.
+     * @param context evaluation context
+     * @return String
+     */
+    protected Object functionString(EvalContext context) {
+<span class="pc bpc" id="L510" title="1 of 2 branches missed.">        if (getArgumentCount() == 0) {</span>
+<span class="nc" id="L511">            return InfoSetUtil.stringValue(context.getCurrentNodePointer());</span>
+        }
+<span class="fc" id="L513">        assertArgCount(1);</span>
+<span class="fc" id="L514">        return InfoSetUtil.stringValue(getArg1().computeValue(context));</span>
+    }
+
+    /**
+     * concat() implementation.
+     * @param context evaluation context
+     * @return String
+     */
+    protected Object functionConcat(EvalContext context) {
+<span class="pc bpc" id="L523" title="1 of 2 branches missed.">        if (getArgumentCount() &lt; 2) {</span>
+<span class="nc" id="L524">            assertArgCount(2);</span>
+        }
+<span class="fc" id="L526">        StringBuffer buffer = new StringBuffer();</span>
+<span class="fc" id="L527">        Expression[] args = getArguments();</span>
+<span class="fc bfc" id="L528" title="All 2 branches covered.">        for (int i = 0; i &lt; args.length; i++) {</span>
+<span class="fc" id="L529">            buffer.append(InfoSetUtil.stringValue(args[i].compute(context)));</span>
+        }
+<span class="fc" id="L531">        return buffer.toString();</span>
+    }
+
+    /**
+     * starts-with() implementation.
+     * @param context evaluation context
+     * @return Boolean
+     */
+    protected Object functionStartsWith(EvalContext context) {
+<span class="fc" id="L540">        assertArgCount(2);</span>
+<span class="fc" id="L541">        String s1 = InfoSetUtil.stringValue(getArg1().computeValue(context));</span>
+<span class="fc" id="L542">        String s2 = InfoSetUtil.stringValue(getArg2().computeValue(context));</span>
+<span class="fc bfc" id="L543" title="All 2 branches covered.">        return s1.startsWith(s2) ? Boolean.TRUE : Boolean.FALSE;</span>
+    }
+
+    /**
+     * contains() implementation.
+     * @param context evaluation context
+     * @return Boolean
+     */
+    protected Object functionContains(EvalContext context) {
+<span class="fc" id="L552">        assertArgCount(2);</span>
+<span class="fc" id="L553">        String s1 = InfoSetUtil.stringValue(getArg1().computeValue(context));</span>
+<span class="fc" id="L554">        String s2 = InfoSetUtil.stringValue(getArg2().computeValue(context));</span>
+<span class="fc bfc" id="L555" title="All 2 branches covered.">        return s1.indexOf(s2) != -1 ? Boolean.TRUE : Boolean.FALSE;</span>
+    }
+
+    /**
+     * substring-before() implementation.
+     * @param context evaluation context
+     * @return String
+     */
+    protected Object functionSubstringBefore(EvalContext context) {
+<span class="fc" id="L564">        assertArgCount(2);</span>
+<span class="fc" id="L565">        String s1 = InfoSetUtil.stringValue(getArg1().computeValue(context));</span>
+<span class="fc" id="L566">        String s2 = InfoSetUtil.stringValue(getArg2().computeValue(context));</span>
+<span class="fc" id="L567">        int index = s1.indexOf(s2);</span>
+<span class="pc bpc" id="L568" title="1 of 2 branches missed.">        if (index == -1) {</span>
+<span class="nc" id="L569">            return &quot;&quot;;</span>
+        }
+<span class="fc" id="L571">        return s1.substring(0, index);</span>
+    }
+
+    /**
+     * substring-after() implementation.
+     * @param context evaluation context
+     * @return String
+     */
+    protected Object functionSubstringAfter(EvalContext context) {
+<span class="fc" id="L580">        assertArgCount(2);</span>
+<span class="fc" id="L581">        String s1 = InfoSetUtil.stringValue(getArg1().computeValue(context));</span>
+<span class="fc" id="L582">        String s2 = InfoSetUtil.stringValue(getArg2().computeValue(context));</span>
+<span class="fc" id="L583">        int index = s1.indexOf(s2);</span>
+<span class="pc bpc" id="L584" title="1 of 2 branches missed.">        if (index == -1) {</span>
+<span class="nc" id="L585">            return &quot;&quot;;</span>
+        }
+<span class="fc" id="L587">        return s1.substring(index + s2.length());</span>
+    }
+
+    /**
+     * substring() implementation.
+     * @param context evaluation context
+     * @return String
+     */
+    protected Object functionSubstring(EvalContext context) {
+<span class="fc" id="L596">        final int minArgs = 2;</span>
+<span class="fc" id="L597">        final int maxArgs = 3;</span>
+<span class="fc" id="L598">        assertArgRange(minArgs, maxArgs);</span>
+<span class="fc" id="L599">        int ac = getArgumentCount();</span>
+
+<span class="fc" id="L601">        String s1 = InfoSetUtil.stringValue(getArg1().computeValue(context));</span>
+<span class="fc" id="L602">        double from = InfoSetUtil.doubleValue(getArg2().computeValue(context));</span>
+<span class="fc bfc" id="L603" title="All 2 branches covered.">        if (Double.isNaN(from)) {</span>
+<span class="fc" id="L604">            return &quot;&quot;;</span>
+        }
+
+<span class="fc" id="L607">        from = Math.round(from);</span>
+<span class="fc bfc" id="L608" title="All 2 branches covered.">        if (from &gt; s1.length() + 1) {</span>
+<span class="fc" id="L609">            return &quot;&quot;;</span>
+        }
+<span class="fc bfc" id="L611" title="All 2 branches covered.">        if (ac == 2) {</span>
+<span class="pc bpc" id="L612" title="1 of 2 branches missed.">            if (from &lt; 1) {</span>
+<span class="nc" id="L613">                from = 1;</span>
+            }
+<span class="fc" id="L615">            return s1.substring((int) from - 1);</span>
+        }
+<span class="fc" id="L617">        double length =</span>
+<span class="fc" id="L618">            InfoSetUtil.doubleValue(getArg3().computeValue(context));</span>
+<span class="fc" id="L619">        length = Math.round(length);</span>
+<span class="pc bpc" id="L620" title="1 of 2 branches missed.">        if (length &lt; 0) {</span>
+<span class="nc" id="L621">            return &quot;&quot;;</span>
+        }
+
+<span class="fc" id="L624">        double to = from + length;</span>
+<span class="fc bfc" id="L625" title="All 2 branches covered.">        if (to &lt; 1) {</span>
+<span class="fc" id="L626">            return &quot;&quot;;</span>
+        }
+
+<span class="fc bfc" id="L629" title="All 2 branches covered.">        if (to &gt; s1.length() + 1) {</span>
+<span class="fc bfc" id="L630" title="All 2 branches covered.">            if (from &lt; 1) {</span>
+<span class="fc" id="L631">                from = 1;</span>
+            }
+<span class="fc" id="L633">            return s1.substring((int) from - 1);</span>
+        }
+
+<span class="fc bfc" id="L636" title="All 2 branches covered.">        if (from &lt; 1) {</span>
+<span class="fc" id="L637">            from = 1;</span>
+        }
+<span class="fc" id="L639">        return s1.substring((int) from - 1, (int) (to - 1));</span>
+    }
+
+    /**
+     * string-length() implementation.
+     * @param context evaluation context
+     * @return Number
+     */
+    protected Object functionStringLength(EvalContext context) {
+        String s;
+<span class="fc bfc" id="L649" title="All 2 branches covered.">        if (getArgumentCount() == 0) {</span>
+<span class="fc" id="L650">            s = InfoSetUtil.stringValue(context.getCurrentNodePointer());</span>
+        }
+        else {
+<span class="fc" id="L653">            assertArgCount(1);</span>
+<span class="fc" id="L654">            s = InfoSetUtil.stringValue(getArg1().computeValue(context));</span>
+        }
+<span class="fc" id="L656">        return new Double(s.length());</span>
+    }
+
+    /**
+     * normalize-space() implementation.
+     * @param context evaluation context
+     * @return String
+     */
+    protected Object functionNormalizeSpace(EvalContext context) {
+<span class="fc" id="L665">        assertArgCount(1);</span>
+<span class="fc" id="L666">        String s = InfoSetUtil.stringValue(getArg1().computeValue(context));</span>
+<span class="fc" id="L667">        char[] chars = s.toCharArray();</span>
+<span class="fc" id="L668">        int out = 0;</span>
+<span class="fc" id="L669">        int phase = 0;</span>
+<span class="fc bfc" id="L670" title="All 2 branches covered.">        for (int in = 0; in &lt; chars.length; in++) {</span>
+<span class="fc bfc" id="L671" title="All 2 branches covered.">            switch (chars[in]) {</span>
+                case ' ':
+                case '\t':
+                case '\r':
+                case '\n':
+<span class="fc bfc" id="L676" title="All 2 branches covered.">                    if (phase == 1) { // non-space</span>
+<span class="fc" id="L677">                        phase = 2;</span>
+<span class="fc" id="L678">                        chars[out++] = ' ';</span>
+                    }
+                    break;
+                default:
+<span class="fc" id="L682">                    chars[out++] = chars[in];</span>
+<span class="fc" id="L683">                    phase = 1;</span>
+            }
+        }
+<span class="fc bfc" id="L686" title="All 2 branches covered.">        if (phase == 2) { // trailing-space</span>
+<span class="fc" id="L687">            out--;</span>
+        }
+<span class="fc" id="L689">        return new String(chars, 0, out);</span>
+    }
+
+    /**
+     * translate() implementation.
+     * @param context evaluation context
+     * @return String
+     */
+    protected Object functionTranslate(EvalContext context) {
+<span class="fc" id="L698">        final int argCount = 3;</span>
+<span class="fc" id="L699">        assertArgCount(argCount);</span>
+<span class="fc" id="L700">        String s1 = InfoSetUtil.stringValue(getArg1().computeValue(context));</span>
+<span class="fc" id="L701">        String s2 = InfoSetUtil.stringValue(getArg2().computeValue(context));</span>
+<span class="fc" id="L702">        String s3 = InfoSetUtil.stringValue(getArg3().computeValue(context));</span>
+<span class="fc" id="L703">        char[] chars = s1.toCharArray();</span>
+<span class="fc" id="L704">        int out = 0;</span>
+<span class="fc bfc" id="L705" title="All 2 branches covered.">        for (int in = 0; in &lt; chars.length; in++) {</span>
+<span class="fc" id="L706">            char c = chars[in];</span>
+<span class="fc" id="L707">            int inx = s2.indexOf(c);</span>
+<span class="pc bpc" id="L708" title="1 of 2 branches missed.">            if (inx != -1) {</span>
+<span class="fc bfc" id="L709" title="All 2 branches covered.">                if (inx &lt; s3.length()) {</span>
+<span class="fc" id="L710">                    chars[out++] = s3.charAt(inx);</span>
+                }
+            }
+            else {
+<span class="nc" id="L714">                chars[out++] = c;</span>
+            }
+        }
+<span class="fc" id="L717">        return new String(chars, 0, out);</span>
+    }
+
+    /**
+     * boolean() implementation.
+     * @param context evaluation context
+     * @return Boolean
+     */
+    protected Object functionBoolean(EvalContext context) {
+<span class="fc" id="L726">        assertArgCount(1);</span>
+<span class="fc bfc" id="L727" title="All 2 branches covered.">        return InfoSetUtil.booleanValue(getArg1().computeValue(context))</span>
+            ? Boolean.TRUE
+            : Boolean.FALSE;
+    }
+
+    /**
+     * not() implementation.
+     * @param context evaluation context
+     * @return Boolean
+     */
+    protected Object functionNot(EvalContext context) {
+<span class="fc" id="L738">        assertArgCount(1);</span>
+<span class="fc bfc" id="L739" title="All 2 branches covered.">        return InfoSetUtil.booleanValue(getArg1().computeValue(context))</span>
+            ? Boolean.FALSE
+            : Boolean.TRUE;
+    }
+
+    /**
+     * true() implementation.
+     * @param context evaluation context
+     * @return Boolean.TRUE
+     */
+    protected Object functionTrue(EvalContext context) {
+<span class="fc" id="L750">        assertArgCount(0);</span>
+<span class="fc" id="L751">        return Boolean.TRUE;</span>
+    }
+
+    /**
+     * false() implementation.
+     * @param context evaluation context
+     * @return Boolean.FALSE
+     */
+    protected Object functionFalse(EvalContext context) {
+<span class="fc" id="L760">        assertArgCount(0);</span>
+<span class="fc" id="L761">        return Boolean.FALSE;</span>
+    }
+
+    /**
+     * null() implementation.
+     * @param context evaluation context
+     * @return null
+     */
+    protected Object functionNull(EvalContext context) {
+<span class="fc" id="L770">        assertArgCount(0);</span>
+<span class="fc" id="L771">        return null;</span>
+    }
+
+    /**
+     * number() implementation.
+     * @param context evaluation context
+     * @return Number
+     */
+    protected Object functionNumber(EvalContext context) {
+<span class="pc bpc" id="L780" title="1 of 2 branches missed.">        if (getArgumentCount() == 0) {</span>
+<span class="nc" id="L781">            return InfoSetUtil.number(context.getCurrentNodePointer());</span>
+        }
+<span class="fc" id="L783">        assertArgCount(1);</span>
+<span class="fc" id="L784">        return InfoSetUtil.number(getArg1().computeValue(context));</span>
+    }
+
+    /**
+     * sum() implementation.
+     * @param context evaluation context
+     * @return Number
+     */
+    protected Object functionSum(EvalContext context) {
+<span class="fc" id="L793">        assertArgCount(1);</span>
+<span class="fc" id="L794">        Object v = getArg1().compute(context);</span>
+<span class="pc bpc" id="L795" title="1 of 2 branches missed.">        if (v == null) {</span>
+<span class="nc" id="L796">            return ZERO;</span>
+        }
+<span class="pc bpc" id="L798" title="1 of 2 branches missed.">        if (v instanceof EvalContext) {</span>
+<span class="fc" id="L799">            double sum = 0.0;</span>
+<span class="fc" id="L800">            EvalContext ctx = (EvalContext) v;</span>
+<span class="fc bfc" id="L801" title="All 2 branches covered.">            while (ctx.hasNext()) {</span>
+<span class="fc" id="L802">                NodePointer ptr = (NodePointer) ctx.next();</span>
+<span class="fc" id="L803">                sum += InfoSetUtil.doubleValue(ptr);</span>
+<span class="fc" id="L804">            }</span>
+<span class="fc" id="L805">            return new Double(sum);</span>
+        }
+<span class="nc" id="L807">        throw new JXPathException(</span>
+<span class="nc" id="L808">            &quot;Invalid argument type for 'sum': &quot; + v.getClass().getName());</span>
+    }
+
+    /**
+     * floor() implementation.
+     * @param context evaluation context
+     * @return Number
+     */
+    protected Object functionFloor(EvalContext context) {
+<span class="fc" id="L817">        assertArgCount(1);</span>
+<span class="fc" id="L818">        double v = InfoSetUtil.doubleValue(getArg1().computeValue(context));</span>
+<span class="fc bfc" id="L819" title="All 4 branches covered.">        if (Double.isNaN(v) || Double.isInfinite(v)) {</span>
+<span class="fc" id="L820">            return new Double(v);</span>
+        }
+<span class="fc" id="L822">        return new Double(Math.floor(v));</span>
+    }
+
+    /**
+     * ceiling() implementation.
+     * @param context evaluation context
+     * @return Number
+     */
+    protected Object functionCeiling(EvalContext context) {
+<span class="fc" id="L831">        assertArgCount(1);</span>
+<span class="fc" id="L832">        double v = InfoSetUtil.doubleValue(getArg1().computeValue(context));</span>
+<span class="fc bfc" id="L833" title="All 4 branches covered.">        if (Double.isNaN(v) || Double.isInfinite(v)) {</span>
+<span class="fc" id="L834">            return new Double(v);</span>
+        }
+<span class="fc" id="L836">        return new Double(Math.ceil(v));</span>
+    }
+
+    /**
+     * round() implementation.
+     * @param context evaluation context
+     * @return Number
+     */
+    protected Object functionRound(EvalContext context) {
+<span class="fc" id="L845">        assertArgCount(1);</span>
+<span class="fc" id="L846">        double v = InfoSetUtil.doubleValue(getArg1().computeValue(context));</span>
+<span class="fc bfc" id="L847" title="All 4 branches covered.">        if (Double.isNaN(v) || Double.isInfinite(v)) {</span>
+<span class="fc" id="L848">            return new Double(v);</span>
+        }
+<span class="fc" id="L850">        return new Double(Math.round(v));</span>
+    }
+
+    /**
+     * format-number() implementation.
+     * @param context evaluation context
+     * @return String
+     */
+    private Object functionFormatNumber(EvalContext context) {
+<span class="fc" id="L859">        final int minArgs = 2;</span>
+<span class="fc" id="L860">        final int maxArgs = 3;</span>
+<span class="fc" id="L861">        assertArgRange(minArgs, maxArgs);</span>
+
+<span class="fc" id="L863">        double number =</span>
+<span class="fc" id="L864">            InfoSetUtil.doubleValue(getArg1().computeValue(context));</span>
+<span class="fc" id="L865">        String pattern =</span>
+<span class="fc" id="L866">            InfoSetUtil.stringValue(getArg2().computeValue(context));</span>
+
+<span class="fc" id="L868">        DecimalFormatSymbols symbols = null;</span>
+<span class="fc bfc" id="L869" title="All 2 branches covered.">        if (getArgumentCount() == maxArgs) {</span>
+<span class="fc" id="L870">            String symbolsName =</span>
+<span class="fc" id="L871">                InfoSetUtil.stringValue(getArg3().computeValue(context));</span>
+<span class="fc" id="L872">            symbols =</span>
+<span class="fc" id="L873">                context.getJXPathContext().getDecimalFormatSymbols(symbolsName);</span>
+<span class="fc" id="L874">        }</span>
+        else {
+<span class="fc" id="L876">            NodePointer pointer = context.getCurrentNodePointer();</span>
+            Locale locale;
+<span class="pc bpc" id="L878" title="1 of 2 branches missed.">            if (pointer != null) {</span>
+<span class="fc" id="L879">                locale = pointer.getLocale();</span>
+            }
+            else {
+<span class="nc" id="L882">                locale = context.getJXPathContext().getLocale();</span>
+            }
+<span class="fc" id="L884">            symbols = new DecimalFormatSymbols(locale);</span>
+        }
+
+<span class="fc" id="L887">        DecimalFormat format = (DecimalFormat) NumberFormat.getInstance();</span>
+<span class="fc" id="L888">        format.setDecimalFormatSymbols(symbols);</span>
+<span class="fc" id="L889">        format.applyLocalizedPattern(pattern);</span>
+<span class="fc" id="L890">        return format.format(number);</span>
+    }
+
+    /**
+     * Assert &lt;code&gt;count&lt;/code&gt; args.
+     * @param count int
+     */
+    private void assertArgCount(int count) {
+<span class="fc" id="L898">        assertArgRange(count, count);</span>
+<span class="fc" id="L899">    }</span>
+
+    /**
+     * Assert at least &lt;code&gt;min&lt;/code&gt;/at most &lt;code&gt;max&lt;/code&gt; args.
+     * @param min int
+     * @param max int
+     */
+    private void assertArgRange(int min, int max) {
+<span class="fc" id="L907">        int ct = getArgumentCount();</span>
+<span class="pc bpc" id="L908" title="2 of 4 branches missed.">        if (ct &lt; min || ct &gt; max) {</span>
+<span class="nc" id="L909">            throw new JXPathInvalidSyntaxException(</span>
+                    &quot;Incorrect number of arguments: &quot; + this);
+        }
+<span class="fc" id="L912">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

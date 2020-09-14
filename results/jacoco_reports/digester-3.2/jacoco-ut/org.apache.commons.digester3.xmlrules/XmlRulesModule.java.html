@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>XmlRulesModule.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester3.xmlrules</a> &gt; <span class="el_source">XmlRulesModule.java</span></div><h1>XmlRulesModule.java</h1><pre class="source lang-java linenums">package org.apache.commons.digester3.xmlrules;
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import java.util.Set;
+
+import org.apache.commons.digester3.binder.LinkedRuleBuilder;
+import org.apache.commons.digester3.binder.RulesBinder;
+import org.apache.commons.digester3.binder.RulesModule;
+
+/**
+ *
+ */
+final class XmlRulesModule
+    implements RulesModule
+{
+
+    private final NameSpaceURIRulesBinder targetRulesBinder;
+
+    private final Set&lt;String&gt; rootSystemIds;
+
+    private final String rootPath;
+
+    private WithMemoryRulesBinder memoryRulesBinder;
+
+    public XmlRulesModule( final NameSpaceURIRulesBinder targetRulesBinder, Set&lt;String&gt; rootSystemIds,
+    /* @Nullable */String rootPath )
+<span class="fc" id="L45">    {</span>
+<span class="fc" id="L46">        this.targetRulesBinder = targetRulesBinder;</span>
+<span class="fc" id="L47">        this.rootSystemIds = rootSystemIds;</span>
+<span class="fc" id="L48">        this.rootPath = rootPath;</span>
+<span class="fc" id="L49">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    public void configure( RulesBinder rulesBinder )
+    {
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">        if ( rulesBinder instanceof WithMemoryRulesBinder )</span>
+        {
+<span class="nc" id="L58">            memoryRulesBinder = (WithMemoryRulesBinder) rulesBinder;</span>
+        }
+        else
+        {
+<span class="fc" id="L62">            memoryRulesBinder = new WithMemoryRulesBinder( rulesBinder );</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">            if ( !rootSystemIds.isEmpty() )</span>
+            {
+<span class="fc" id="L65">                memoryRulesBinder.getIncludedFiles().addAll( rootSystemIds );</span>
+            }
+        }
+
+<span class="fc" id="L69">        PatternStack patternStack = memoryRulesBinder.getPatternStack();</span>
+
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        if ( rootPath != null )</span>
+        {
+<span class="fc" id="L73">            patternStack.push( rootPath );</span>
+        }
+
+        try
+        {
+<span class="fc" id="L78">            forPattern( &quot;digester-rules&quot; ).addRule( new SetNamespaceURIRule( targetRulesBinder ) );</span>
+
+<span class="fc" id="L80">            forPattern( &quot;*/pattern&quot; ).addRule( new PatternRule( patternStack ) );</span>
+<span class="fc" id="L81">            forPattern( &quot;*/include&quot; ).addRule( new IncludeRule( memoryRulesBinder, targetRulesBinder ) );</span>
+
+<span class="fc" id="L83">            forPattern( &quot;*/bean-property-setter-rule&quot; ).addRule( new BeanPropertySetterRule( targetRulesBinder,</span>
+                                                                                             patternStack ) );
+
+<span class="fc" id="L86">            forPattern( &quot;*/call-method-rule&quot; ).addRule( new CallMethodRule( targetRulesBinder, patternStack ) );</span>
+<span class="fc" id="L87">            forPattern( &quot;*/call-param-rule&quot; ).addRule( new CallParamRule( targetRulesBinder, patternStack ) );</span>
+
+<span class="fc" id="L89">            forPattern( &quot;*/factory-create-rule&quot; ).addRule( new FactoryCreateRule( targetRulesBinder, patternStack ) );</span>
+<span class="fc" id="L90">            forPattern( &quot;*/node-create-rule&quot; ).addRule( new NodeCreateRule( targetRulesBinder, patternStack ) );</span>
+<span class="fc" id="L91">            forPattern( &quot;*/object-create-rule&quot; ).addRule( new ObjectCreateRule( targetRulesBinder, patternStack ) );</span>
+<span class="fc" id="L92">            forPattern( &quot;*/object-param-rule&quot; ).addRule( new ObjectParamRule( targetRulesBinder, patternStack ) );</span>
+
+<span class="fc" id="L94">            forPattern( &quot;*/set-properties-rule&quot; ).addRule( new SetPropertiesRule( targetRulesBinder, patternStack ) );</span>
+<span class="fc" id="L95">            forPattern( &quot;*/set-properties-rule/alias&quot; )</span>
+<span class="fc" id="L96">                .addRule( new SetPropertiesAliasRule() );</span>
+<span class="fc" id="L97">            forPattern( &quot;*/set-properties-rule/ignore&quot; )</span>
+<span class="fc" id="L98">                .addRule( new SetPropertiesIgnoreRule() );</span>
+
+<span class="fc" id="L100">            forPattern( &quot;*/set-property-rule&quot; ).addRule( new SetPropertyRule( targetRulesBinder, patternStack ) );</span>
+
+<span class="fc" id="L102">            forPattern( &quot;*/set-nested-properties-rule&quot; )</span>
+<span class="fc" id="L103">                .addRule( new SetNestedPropertiesRule( targetRulesBinder, patternStack ) );</span>
+<span class="fc" id="L104">            forPattern( &quot;*/set-nested-properties-rule/alias&quot; )</span>
+<span class="fc" id="L105">                .addRule( new SetNestedPropertiesAliasRule() );</span>
+<span class="fc" id="L106">            forPattern( &quot;*/set-nested-properties-rule/ignore&quot; )</span>
+<span class="fc" id="L107">                .addRule( new SetNestedPropertiesIgnoreRule() );</span>
+
+<span class="fc" id="L109">            forPattern( &quot;*/set-top-rule&quot; ).addRule( new SetTopRule( targetRulesBinder, patternStack ) );</span>
+<span class="fc" id="L110">            forPattern( &quot;*/set-next-rule&quot; ).addRule( new SetNextRule( targetRulesBinder, patternStack ) );</span>
+<span class="fc" id="L111">            forPattern( &quot;*/set-root-rule&quot; ).addRule( new SetRootRule( targetRulesBinder, patternStack ) );</span>
+        }
+        finally
+        {
+<span class="pc" id="L115">            memoryRulesBinder = null;</span>
+<span class="pc" id="L116">        }</span>
+<span class="fc" id="L117">    }</span>
+
+    /**
+     * @param pattern
+     * @return
+     */
+    protected LinkedRuleBuilder forPattern( String pattern )
+    {
+<span class="fc" id="L125">        return memoryRulesBinder.forPattern( pattern );</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NullElementPointer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri.model.beans</a> &gt; <span class="el_source">NullElementPointer.java</span></div><h1>NullElementPointer.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri.model.beans;
+
+import org.apache.commons.jxpath.JXPathContext;
+import org.apache.commons.jxpath.ri.QName;
+import org.apache.commons.jxpath.ri.model.NodePointer;
+
+/**
+ * Used when there is a need to construct a Pointer for a collection element
+ * that does not exist.  For example, if the path is &quot;foo[3]&quot;, but the
+ * collection &quot;foo&quot; only has one element or is empty or is null, the
+ * NullElementPointer can be used to capture this situation without putting a
+ * regular NodePointer into an invalid state.  Just create a NullElementPointer
+ * with index 2 (= 3 - 1) and a &quot;foo&quot; pointer as the parent.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision: 652884 $ $Date: 2008-05-02 15:02:00 -0500 (Fri, 02 May 2008) $
+ */
+public class NullElementPointer extends CollectionPointer {
+
+    private static final long serialVersionUID = 8714236818791036721L;
+
+    /**
+     * Create a new NullElementPointer.
+     * @param parent parent pointer
+     * @param index int
+     */
+    public NullElementPointer(NodePointer parent, int index) {
+<span class="fc" id="L44">        super(parent, (Object) null);</span>
+<span class="fc" id="L45">        this.index = index;</span>
+<span class="fc" id="L46">    }</span>
+
+    public QName getName() {
+<span class="fc" id="L49">        return null;</span>
+    }
+
+    public Object getBaseValue() {
+<span class="nc" id="L53">        return null;</span>
+    }
+
+    public Object getImmediateNode() {
+<span class="nc" id="L57">        return null;</span>
+    }
+
+    public boolean isLeaf() {
+<span class="nc" id="L61">        return true;</span>
+    }
+
+    public boolean isCollection() {
+<span class="nc" id="L65">        return false;</span>
+    }
+
+    /**
+     * Get the property pointer for this.
+     * @return PropertyPointer
+     */
+    public PropertyPointer getPropertyPointer() {
+<span class="nc" id="L73">        return new NullPropertyPointer(this);</span>
+    }
+
+    public NodePointer getValuePointer() {
+<span class="fc" id="L77">        return new NullPointer(this, getName());</span>
+    }
+
+    public void setValue(Object value) {
+<span class="fc" id="L81">        throw new UnsupportedOperationException(</span>
+            &quot;Collection element does not exist: &quot; + this);
+    }
+
+    public boolean isActual() {
+<span class="nc" id="L86">        return false;</span>
+    }
+
+    public boolean isContainer() {
+<span class="fc" id="L90">        return true;</span>
+    }
+
+    public NodePointer createPath(JXPathContext context) {
+<span class="fc" id="L94">        return parent.createChild(context, null, index);</span>
+    }
+
+    public NodePointer createPath(JXPathContext context, Object value) {
+<span class="fc" id="L98">        return parent.createChild(context, null, index, value);</span>
+    }
+
+    public int hashCode() {
+<span class="nc" id="L102">        return getImmediateParentPointer().hashCode() + index;</span>
+    }
+
+    public boolean equals(Object object) {
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        if (object == this) {</span>
+<span class="nc" id="L107">            return true;</span>
+        }
+
+<span class="nc bnc" id="L110" title="All 2 branches missed.">        if (!(object instanceof NullElementPointer)) {</span>
+<span class="nc" id="L111">            return false;</span>
+        }
+
+<span class="nc" id="L114">        NullElementPointer other = (NullElementPointer) object;</span>
+<span class="nc bnc" id="L115" title="All 4 branches missed.">        return getImmediateParentPointer() == other.getImmediateParentPointer()</span>
+                &amp;&amp; index == other.index;
+    }
+
+    public int getLength() {
+<span class="nc" id="L120">        return 0;</span>
+    }
+
+    public String asPath() {
+<span class="fc" id="L124">        StringBuffer buffer = new StringBuffer();</span>
+<span class="fc" id="L125">        NodePointer parent = getImmediateParentPointer();</span>
+<span class="pc bpc" id="L126" title="1 of 2 branches missed.">        if (parent != null) {</span>
+<span class="fc" id="L127">            buffer.append(parent.asPath());</span>
+        }
+<span class="pc bpc" id="L129" title="1 of 2 branches missed.">        if (index != WHOLE_COLLECTION) {</span>
+            // Address the list[1][2] case
+<span class="pc bpc" id="L131" title="2 of 4 branches missed.">            if (parent != null &amp;&amp; parent.getIndex() != WHOLE_COLLECTION) {</span>
+<span class="nc" id="L132">                buffer.append(&quot;/.&quot;);</span>
+            }
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">            else if (parent != null</span>
+<span class="fc bfc" id="L135" title="All 2 branches covered.">                    &amp;&amp; parent.getImmediateParentPointer() != null</span>
+<span class="fc bfc" id="L136" title="All 2 branches covered.">                    &amp;&amp; parent.getImmediateParentPointer().getIndex() != WHOLE_COLLECTION) {</span>
+<span class="fc" id="L137">                buffer.append(&quot;/.&quot;);</span>
+            }
+<span class="fc" id="L139">            buffer.append(&quot;[&quot;).append(index + 1).append(']');</span>
+        }
+
+<span class="fc" id="L142">        return buffer.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

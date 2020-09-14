@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>FinderSetProperties.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester.plugins.strategies</a> &gt; <span class="el_source">FinderSetProperties.java</span></div><h1>FinderSetProperties.java</h1><pre class="source lang-java linenums">/* $Id$
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.digester.plugins.strategies;
+
+import java.util.Properties;
+
+import org.apache.commons.digester.Digester;
+import org.apache.commons.digester.plugins.RuleFinder;
+import org.apache.commons.digester.plugins.RuleLoader;
+
+/**
+ * A rule-finding algorithm which expects the user to specify whether
+ * &quot;automatic property setting&quot; is desired. If this class discovers that
+ * this is in fact the case for a declaration, then a RuleLoader is returned
+ * which, when invoked, adds a single SetPropertiesRule instance to the
+ * digester.
+ * &lt;p&gt;
+ * This allows ordinary JavaBean classes to be used as plugins, and have
+ * xml attributes be mapped to bean properties of the same name, without
+ * any custom plugin rules being created for them.
+ * &lt;p&gt;
+ * This RuleFinder is typically used as the &lt;i&gt;last&lt;/i&gt; RuleFinder, so that
+ * automatic property setting only occurs if there is no other source of
+ * custom rules available.
+ *
+ * @since 1.6
+ */
+
+public class FinderSetProperties extends RuleFinder {
+<span class="fc" id="L45">    public static String DFLT_PROPS_ATTR = &quot;setprops&quot;;</span>
+<span class="fc" id="L46">    public static String DFLT_FALSEVAL = &quot;false&quot;;</span>
+
+    private String propsAttr;
+    private String falseval;
+    
+    /** See {@link #findLoader}. */
+    public FinderSetProperties() {
+<span class="fc" id="L53">        this(DFLT_PROPS_ATTR, DFLT_FALSEVAL);</span>
+<span class="fc" id="L54">    }</span>
+    
+    /**
+     * Create a rule-finder which will arrange for a SetPropertiesRule to
+     * be defined for each instance of a plugin, so that xml attributes
+     * map to bean properties.
+     * &lt;p&gt;
+     * Param falseval will commonly be the string &quot;false&quot; for config files 
+     * written in English.
+     *
+     * @param propsAttr must be non-null.
+     * @param falseval must be non-null.
+     */
+<span class="fc" id="L67">    public FinderSetProperties(String propsAttr, String falseval) { </span>
+<span class="fc" id="L68">        this.propsAttr = propsAttr;</span>
+<span class="fc" id="L69">        this.falseval = falseval;</span>
+<span class="fc" id="L70">    }</span>
+    
+    /**
+     * Returns a RuleLoader &lt;i&gt;unless&lt;/i&gt; the properties contain an entry
+     * with the name matching constructor param propsAttr, and the value 
+     * matching what is in falseval.
+     * &lt;p&gt;
+     * If no custom source of rules for a plugin is found, then the user
+     * almost always wants xml attributes to map to java bean properties,
+     * so this is the default behaviour unless the user explicitly indicates
+     * that they do &lt;i&gt;not&lt;/i&gt; want a SetPropertiesRule to be provided for
+     * the plugged-in class.
+     * &lt;p&gt;
+     * The returned object (when non-null) will add a SetPropertiesRule to
+     * the digester whenever its addRules method is invoked.
+     */
+    @Override
+    public RuleLoader findLoader(Digester d, Class&lt;?&gt; pluginClass, Properties p) {
+<span class="fc" id="L88">        String state = p.getProperty(propsAttr);</span>
+<span class="pc bpc" id="L89" title="3 of 4 branches missed.">        if ((state != null)  &amp;&amp; state.equals(falseval)) {</span>
+            // user has explicitly disabled automatic setting of properties.
+            // this is not expected to be common, but allowed.
+<span class="nc" id="L92">            return null;</span>
+        }
+        
+<span class="fc" id="L95">        return new LoaderSetProperties();</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

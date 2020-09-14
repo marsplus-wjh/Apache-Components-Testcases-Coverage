@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>GenericParser.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester.parser</a> &gt; <span class="el_source">GenericParser.java</span></div><h1>GenericParser.java</h1><pre class="source lang-java linenums">/* $Id$
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+package org.apache.commons.digester.parser;
+
+import java.util.Properties;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
+
+/**
+ * Create a &lt;code&gt;SAXParser&lt;/code&gt; configured to support XML Schema and DTD.
+ *
+ * @since 1.6
+ * @deprecated Create an XMLParser instance yourself, configure validation
+ *             appropriately, and pass it as a parameter to the
+ *             {@link org.apache.commons.digester.Digester} constructor, or use
+ *             {@link org.apache.commons.digester.Digester#setXMLSchema(javax.xml.validation.Schema)} for validation.
+ */
+
+@Deprecated
+<span class="nc" id="L44">public class GenericParser{</span>
+
+    /**
+     * The Log to which all SAX event related logging calls will be made.
+     */
+<span class="nc" id="L49">    protected static Log log =</span>
+<span class="nc" id="L50">        LogFactory.getLog(&quot;org.apache.commons.digester.Digester.sax&quot;);</span>
+
+    /**
+     * The JAXP 1.2 property required to set up the schema location.
+     */
+    private static final String JAXP_SCHEMA_SOURCE =
+        &quot;http://java.sun.com/xml/jaxp/properties/schemaSource&quot;;
+
+    /**
+     * The JAXP 1.2 property to set up the schemaLanguage used.
+     */
+<span class="nc" id="L61">    protected static String JAXP_SCHEMA_LANGUAGE =</span>
+        &quot;http://java.sun.com/xml/jaxp/properties/schemaLanguage&quot;;
+
+    /**
+     * Create a &lt;code&gt;SAXParser&lt;/code&gt; configured to support XML Scheman and DTD
+     * @param properties parser specific properties/features
+     * @return an XML Schema/DTD enabled &lt;code&gt;SAXParser&lt;/code&gt;
+     */
+    public static SAXParser newSAXParser(Properties properties)
+            throws ParserConfigurationException, 
+                   SAXException,
+                   SAXNotRecognizedException{ 
+
+<span class="nc" id="L74">        SAXParserFactory factory = </span>
+<span class="nc" id="L75">                        (SAXParserFactory)properties.get(&quot;SAXParserFactory&quot;);</span>
+<span class="nc" id="L76">        SAXParser parser = factory.newSAXParser();</span>
+<span class="nc" id="L77">        String schemaLocation = (String)properties.get(&quot;schemaLocation&quot;);</span>
+<span class="nc" id="L78">        String schemaLanguage = (String)properties.get(&quot;schemaLanguage&quot;);</span>
+
+        try{
+<span class="nc bnc" id="L81" title="All 2 branches missed.">            if (schemaLocation != null) {</span>
+<span class="nc" id="L82">                parser.setProperty(JAXP_SCHEMA_LANGUAGE, schemaLanguage);</span>
+<span class="nc" id="L83">                parser.setProperty(JAXP_SCHEMA_SOURCE, schemaLocation);</span>
+            }
+<span class="nc" id="L85">        } catch (SAXNotRecognizedException e){</span>
+<span class="nc" id="L86">            log.info(parser.getClass().getName() + &quot;: &quot;  </span>
+<span class="nc" id="L87">                                        + e.getMessage() + &quot; not supported.&quot;); </span>
+<span class="nc" id="L88">        }</span>
+<span class="nc" id="L89">        return parser;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

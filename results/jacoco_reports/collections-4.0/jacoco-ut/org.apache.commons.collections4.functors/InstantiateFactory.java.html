@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>InstantiateFactory.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.functors</a> &gt; <span class="el_source">InstantiateFactory.java</span></div><h1>InstantiateFactory.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.collections4.functors;
+
+import java.io.Serializable;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+
+import org.apache.commons.collections4.Factory;
+import org.apache.commons.collections4.FunctorException;
+
+/**
+ * Factory implementation that creates a new object instance by reflection.
+ *
+ * @since 3.0
+ * @version $Id$
+ */
+public class InstantiateFactory&lt;T&gt; implements Factory&lt;T&gt;, Serializable {
+
+    /** The serial version */
+    private static final long serialVersionUID = -7732226881069447957L;
+
+    /** The class to create */
+    private final Class&lt;T&gt; iClassToInstantiate;
+    /** The constructor parameter types */
+    private final Class&lt;?&gt;[] iParamTypes;
+    /** The constructor arguments */
+    private final Object[] iArgs;
+    /** The constructor */
+<span class="pc" id="L44">    private transient Constructor&lt;T&gt; iConstructor = null;</span>
+
+    /**
+     * Factory method that performs validation.
+     *
+     * @param &lt;T&gt;  the type the factory creates
+     * @param classToInstantiate  the class to instantiate, not null
+     * @param paramTypes  the constructor parameter types, cloned
+     * @param args  the constructor arguments, cloned
+     * @return a new instantiate factory
+     */
+    public static &lt;T&gt; Factory&lt;T&gt; instantiateFactory(final Class&lt;T&gt; classToInstantiate,
+                                                    final Class&lt;?&gt;[] paramTypes,
+                                                    final Object[] args) {
+<span class="nc bnc" id="L58" title="All 2 branches missed.">        if (classToInstantiate == null) {</span>
+<span class="nc" id="L59">            throw new IllegalArgumentException(&quot;Class to instantiate must not be null&quot;);</span>
+        }
+<span class="nc bnc" id="L61" title="All 14 branches missed.">        if (paramTypes == null &amp;&amp; args != null</span>
+            || paramTypes != null &amp;&amp; args == null
+            || paramTypes != null &amp;&amp; args != null &amp;&amp; paramTypes.length != args.length) {
+<span class="nc" id="L64">            throw new IllegalArgumentException(&quot;Parameter types must match the arguments&quot;);</span>
+        }
+
+<span class="nc bnc" id="L67" title="All 4 branches missed.">        if (paramTypes == null || paramTypes.length == 0) {</span>
+<span class="nc" id="L68">            return new InstantiateFactory&lt;T&gt;(classToInstantiate);</span>
+        }
+<span class="nc" id="L70">        return new InstantiateFactory&lt;T&gt;(classToInstantiate, paramTypes, args);</span>
+    }
+
+    /**
+     * Constructor that performs no validation.
+     * Use &lt;code&gt;instantiateFactory&lt;/code&gt; if you want that.
+     *
+     * @param classToInstantiate  the class to instantiate
+     */
+    public InstantiateFactory(final Class&lt;T&gt; classToInstantiate) {
+<span class="nc" id="L80">        super();</span>
+<span class="nc" id="L81">        iClassToInstantiate = classToInstantiate;</span>
+<span class="nc" id="L82">        iParamTypes = null;</span>
+<span class="nc" id="L83">        iArgs = null;</span>
+<span class="nc" id="L84">        findConstructor();</span>
+<span class="nc" id="L85">    }</span>
+
+    /**
+     * Constructor that performs no validation.
+     * Use &lt;code&gt;instantiateFactory&lt;/code&gt; if you want that.
+     *
+     * @param classToInstantiate  the class to instantiate
+     * @param paramTypes  the constructor parameter types, cloned
+     * @param args  the constructor arguments, cloned
+     */
+    public InstantiateFactory(final Class&lt;T&gt; classToInstantiate, final Class&lt;?&gt;[] paramTypes, final Object[] args) {
+<span class="fc" id="L96">        super();</span>
+<span class="fc" id="L97">        iClassToInstantiate = classToInstantiate;</span>
+<span class="fc" id="L98">        iParamTypes = paramTypes.clone();</span>
+<span class="fc" id="L99">        iArgs = args.clone();</span>
+<span class="fc" id="L100">        findConstructor();</span>
+<span class="fc" id="L101">    }</span>
+
+    /**
+     * Find the Constructor for the class specified.
+     */
+    private void findConstructor() {
+        try {
+<span class="fc" id="L108">            iConstructor = iClassToInstantiate.getConstructor(iParamTypes);</span>
+<span class="nc" id="L109">        } catch (final NoSuchMethodException ex) {</span>
+<span class="nc" id="L110">            throw new IllegalArgumentException(&quot;InstantiateFactory: The constructor must exist and be public &quot;);</span>
+<span class="fc" id="L111">        }</span>
+<span class="fc" id="L112">    }</span>
+
+    /**
+     * Creates an object using the stored constructor.
+     *
+     * @return the new object
+     */
+    public T create() {
+        // needed for post-serialization
+<span class="pc bpc" id="L121" title="1 of 2 branches missed.">        if (iConstructor == null) {</span>
+<span class="nc" id="L122">            findConstructor();</span>
+        }
+
+        try {
+<span class="fc" id="L126">            return iConstructor.newInstance(iArgs);</span>
+<span class="nc" id="L127">        } catch (final InstantiationException ex) {</span>
+<span class="nc" id="L128">            throw new FunctorException(&quot;InstantiateFactory: InstantiationException&quot;, ex);</span>
+<span class="nc" id="L129">        } catch (final IllegalAccessException ex) {</span>
+<span class="nc" id="L130">            throw new FunctorException(&quot;InstantiateFactory: Constructor must be public&quot;, ex);</span>
+<span class="nc" id="L131">        } catch (final InvocationTargetException ex) {</span>
+<span class="nc" id="L132">            throw new FunctorException(&quot;InstantiateFactory: Constructor threw an exception&quot;, ex);</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

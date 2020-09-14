@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>PredicateContext.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri.axes</a> &gt; <span class="el_source">PredicateContext.java</span></div><h1>PredicateContext.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri.axes;
+
+import java.util.Iterator;
+
+import org.apache.commons.jxpath.ri.EvalContext;
+import org.apache.commons.jxpath.ri.InfoSetUtil;
+import org.apache.commons.jxpath.ri.compiler.Expression;
+import org.apache.commons.jxpath.ri.compiler.NameAttributeTest;
+import org.apache.commons.jxpath.ri.model.NodePointer;
+import org.apache.commons.jxpath.ri.model.beans.PropertyOwnerPointer;
+import org.apache.commons.jxpath.ri.model.beans.PropertyPointer;
+
+/**
+ * EvalContext that checks predicates.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision$ $Date$
+ */
+public class PredicateContext extends EvalContext {
+    private Expression expression;
+<span class="fc" id="L37">    private boolean done = false;</span>
+    private Expression nameTestExpression;
+    private PropertyPointer dynamicPropertyPointer;
+
+    /**
+     * Create a new PredicateContext.
+     * @param parentContext parent context
+     * @param expression compiled Expression
+     */
+    public PredicateContext(EvalContext parentContext, Expression expression) {
+<span class="fc" id="L47">        super(parentContext);</span>
+<span class="fc" id="L48">        this.expression = expression;</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        if (expression instanceof NameAttributeTest) {</span>
+<span class="fc" id="L50">            nameTestExpression =</span>
+<span class="fc" id="L51">                ((NameAttributeTest) expression).getNameTestExpression();</span>
+        }
+<span class="fc" id="L53">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean nextNode() {
+<span class="fc bfc" id="L59" title="All 2 branches covered.">        if (done) {</span>
+<span class="fc" id="L60">            return false;</span>
+        }
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        while (parentContext.nextNode()) {</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">            if (setupDynamicPropertyPointer()) {</span>
+<span class="fc" id="L64">                Object pred = nameTestExpression.computeValue(parentContext);</span>
+<span class="fc" id="L65">                String propertyName = InfoSetUtil.stringValue(pred);</span>
+
+                // At this point it would be nice to say:
+                // dynamicPropertyPointer.setPropertyName(propertyName)
+                // and then: dynamicPropertyPointer.isActual().
+                // However some PropertyPointers, e.g. DynamicPropertyPointer
+                // will declare that any property you ask for is actual.
+                // That's not acceptable for us: we really need to know
+                // if the property is currently declared. Thus,
+                // we'll need to perform a search.
+<span class="fc" id="L75">                boolean ok = false;</span>
+<span class="fc" id="L76">                String[] names = dynamicPropertyPointer.getPropertyNames();</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">                for (int i = 0; i &lt; names.length; i++) {</span>
+<span class="fc bfc" id="L78" title="All 2 branches covered.">                    if (names[i].equals(propertyName)) {</span>
+<span class="fc" id="L79">                        ok = true;</span>
+<span class="fc" id="L80">                        break;</span>
+                    }
+                }
+<span class="fc bfc" id="L83" title="All 2 branches covered.">                if (ok) {</span>
+<span class="fc" id="L84">                    dynamicPropertyPointer.setPropertyName(propertyName);</span>
+<span class="fc" id="L85">                    position++;</span>
+<span class="fc" id="L86">                    return true;</span>
+                }
+<span class="fc" id="L88">            }</span>
+            else {
+<span class="fc" id="L90">                Object pred = expression.computeValue(parentContext);</span>
+<span class="fc bfc" id="L91" title="All 2 branches covered.">                if (pred instanceof Iterator) {</span>
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">                    if (!((Iterator) pred).hasNext()) {</span>
+<span class="nc" id="L93">                        return false;</span>
+                    }
+<span class="fc" id="L95">                    pred = ((Iterator) pred).next();</span>
+                }
+
+<span class="fc bfc" id="L98" title="All 2 branches covered.">                if (pred instanceof NodePointer) {</span>
+<span class="fc" id="L99">                    pred = ((NodePointer) pred).getNode();</span>
+                }
+
+<span class="fc bfc" id="L102" title="All 2 branches covered.">                if (pred instanceof Number) {</span>
+<span class="fc" id="L103">                    int pos = (int) InfoSetUtil.doubleValue(pred);</span>
+<span class="fc" id="L104">                    position++;</span>
+<span class="fc" id="L105">                    done = true;</span>
+<span class="fc" id="L106">                    return parentContext.setPosition(pos);</span>
+                }
+<span class="fc bfc" id="L108" title="All 2 branches covered.">                if (InfoSetUtil.booleanValue(pred)) {</span>
+<span class="fc" id="L109">                    position++;</span>
+<span class="fc" id="L110">                    return true;</span>
+                }
+<span class="fc" id="L112">            }</span>
+        }
+<span class="fc" id="L114">        return false;</span>
+    }
+
+    /**
+     * Used for an optimized access to dynamic properties using the
+     * &quot;map[@name = 'name']&quot; syntax
+     * @return whether valid
+     */
+    private boolean setupDynamicPropertyPointer() {
+<span class="fc bfc" id="L123" title="All 2 branches covered.">        if (nameTestExpression == null) {</span>
+<span class="fc" id="L124">            return false;</span>
+        }
+
+<span class="fc" id="L127">        NodePointer parent = parentContext.getCurrentNodePointer();</span>
+<span class="pc bpc" id="L128" title="1 of 2 branches missed.">        if (parent == null) {</span>
+<span class="nc" id="L129">            return false;</span>
+        }
+<span class="fc" id="L131">        parent = parent.getValuePointer();</span>
+<span class="fc bfc" id="L132" title="All 2 branches covered.">        if (!(parent instanceof PropertyOwnerPointer)) {</span>
+<span class="fc" id="L133">            return false;</span>
+        }
+<span class="fc" id="L135">        dynamicPropertyPointer =</span>
+            (PropertyPointer) ((PropertyOwnerPointer) parent)
+<span class="fc" id="L137">                .getPropertyPointer()</span>
+<span class="fc" id="L138">                .clone();</span>
+<span class="fc" id="L139">        return true;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean setPosition(int position) {
+<span class="nc bnc" id="L146" title="All 2 branches missed.">        if (nameTestExpression == null) {</span>
+<span class="nc" id="L147">            return setPositionStandard(position);</span>
+        }
+        else {
+<span class="nc bnc" id="L150" title="All 2 branches missed.">            if (dynamicPropertyPointer == null) {</span>
+<span class="nc bnc" id="L151" title="All 2 branches missed.">                if (!setupDynamicPropertyPointer()) {</span>
+<span class="nc" id="L152">                    return setPositionStandard(position);</span>
+                }
+            }
+<span class="nc bnc" id="L155" title="All 2 branches missed.">            if (position &lt; 1</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">                || position &gt; dynamicPropertyPointer.getLength()) {</span>
+<span class="nc" id="L157">                return false;</span>
+            }
+<span class="nc" id="L159">            dynamicPropertyPointer.setIndex(position - 1);</span>
+<span class="nc" id="L160">            return true;</span>
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public NodePointer getCurrentNodePointer() {
+<span class="pc bpc" id="L168" title="1 of 2 branches missed.">        if (position == 0) {</span>
+<span class="nc bnc" id="L169" title="All 2 branches missed.">            if (!setPosition(1)) {</span>
+<span class="nc" id="L170">                return null;</span>
+            }
+        }
+<span class="fc bfc" id="L173" title="All 2 branches covered.">        if (dynamicPropertyPointer != null) {</span>
+<span class="fc" id="L174">            return dynamicPropertyPointer.getValuePointer();</span>
+        }
+<span class="fc" id="L176">        return parentContext.getCurrentNodePointer();</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void reset() {
+<span class="fc" id="L183">        super.reset();</span>
+<span class="fc" id="L184">        parentContext.reset();</span>
+<span class="fc" id="L185">        done = false;</span>
+<span class="fc" id="L186">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean nextSet() {
+<span class="fc" id="L192">        reset();</span>
+<span class="fc" id="L193">        return parentContext.nextSet();</span>
+    }
+
+    /**
+     * Basic setPosition
+     * @param position to set
+     * @return whether valid
+     */
+    private boolean setPositionStandard(int position) {
+<span class="nc bnc" id="L202" title="All 2 branches missed.">        if (this.position &gt; position) {</span>
+<span class="nc" id="L203">            reset();</span>
+        }
+
+<span class="nc bnc" id="L206" title="All 2 branches missed.">        while (this.position &lt; position) {</span>
+<span class="nc bnc" id="L207" title="All 2 branches missed.">            if (!nextNode()) {</span>
+<span class="nc" id="L208">                return false;</span>
+            }
+        }
+<span class="nc" id="L211">        return true;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

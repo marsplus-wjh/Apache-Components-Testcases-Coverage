@@ -1,0 +1,422 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>VariablePointer.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri.model</a> &gt; <span class="el_source">VariablePointer.java</span></div><h1>VariablePointer.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri.model;
+
+import org.apache.commons.jxpath.AbstractFactory;
+import org.apache.commons.jxpath.JXPathAbstractFactoryException;
+import org.apache.commons.jxpath.JXPathContext;
+import org.apache.commons.jxpath.JXPathException;
+import org.apache.commons.jxpath.JXPathIntrospector;
+import org.apache.commons.jxpath.JXPathInvalidAccessException;
+import org.apache.commons.jxpath.Variables;
+import org.apache.commons.jxpath.ri.QName;
+import org.apache.commons.jxpath.ri.compiler.NodeTest;
+import org.apache.commons.jxpath.ri.model.beans.NullPointer;
+import org.apache.commons.jxpath.util.ValueUtils;
+
+/**
+ * Pointer to a context variable.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision$ $Date$
+ */
+public class VariablePointer extends NodePointer {
+    private Variables variables;
+    private QName name;
+    private NodePointer valuePointer;
+    private boolean actual;
+
+    /**
+     * Create a new VariablePointer.
+     * @param variables Variables instance
+     * @param name variable name
+     */
+    public VariablePointer(Variables variables, QName name) {
+<span class="fc" id="L49">        super(null);</span>
+<span class="fc" id="L50">        this.variables = variables;</span>
+<span class="fc" id="L51">        this.name = name;</span>
+<span class="fc" id="L52">        actual = true;</span>
+<span class="fc" id="L53">    }</span>
+
+    /**
+     * Create a new (non-actual) VariablePointer.
+     * @param name variable name
+     */
+    public VariablePointer(QName name) {
+<span class="fc" id="L60">        super(null);</span>
+<span class="fc" id="L61">        this.name = name;</span>
+<span class="fc" id="L62">        actual = false;</span>
+<span class="fc" id="L63">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean isContainer() {
+<span class="fc" id="L69">        return true;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public QName getName() {
+<span class="fc" id="L76">        return name;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public Object getBaseValue() {
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">        if (!actual) {</span>
+<span class="nc" id="L84">            throw new JXPathException(&quot;Undefined variable: &quot; + name);</span>
+        }
+<span class="fc" id="L86">        return variables.getVariable(name.toString());</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean isLeaf() {
+<span class="fc" id="L93">        Object value = getNode();</span>
+<span class="pc bpc" id="L94" title="2 of 4 branches missed.">        return value == null || JXPathIntrospector.getBeanInfo(value.getClass()).isAtomic();</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean isCollection() {
+<span class="fc" id="L101">        Object value = getBaseValue();</span>
+<span class="pc bpc" id="L102" title="1 of 4 branches missed.">        return value != null &amp;&amp; ValueUtils.isCollection(value);</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public Object getImmediateNode() {
+<span class="fc" id="L109">        Object value = getBaseValue();</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">        return index == WHOLE_COLLECTION ? ValueUtils.getValue(value)</span>
+<span class="fc" id="L111">                : ValueUtils.getValue(value, index);</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void setValue(Object value) {
+<span class="fc bfc" id="L118" title="All 2 branches covered.">        if (!actual) {</span>
+<span class="fc" id="L119">            throw new JXPathException(&quot;Cannot set undefined variable: &quot; + name);</span>
+        }
+<span class="fc" id="L121">        valuePointer = null;</span>
+<span class="fc bfc" id="L122" title="All 2 branches covered.">        if (index != WHOLE_COLLECTION) {</span>
+<span class="fc" id="L123">            Object collection = getBaseValue();</span>
+<span class="fc" id="L124">            ValueUtils.setValue(collection, index, value);</span>
+<span class="fc" id="L125">        }</span>
+        else {
+<span class="fc" id="L127">            variables.declareVariable(name.toString(), value);</span>
+        }
+<span class="fc" id="L129">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean isActual() {
+<span class="fc" id="L135">        return actual;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void setIndex(int index) {
+<span class="fc" id="L142">        super.setIndex(index);</span>
+<span class="fc" id="L143">        valuePointer = null;</span>
+<span class="fc" id="L144">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    public NodePointer getImmediateValuePointer() {
+<span class="fc bfc" id="L150" title="All 2 branches covered.">        if (valuePointer == null) {</span>
+<span class="fc" id="L151">            Object value = null;</span>
+<span class="fc bfc" id="L152" title="All 2 branches covered.">            if (actual) {</span>
+<span class="fc" id="L153">                value = getImmediateNode();</span>
+<span class="fc" id="L154">                valuePointer =</span>
+<span class="fc" id="L155">                    NodePointer.newChildNodePointer(this, null, value);</span>
+            }
+            else {
+<span class="fc" id="L158">                return new NullPointer(this, getName()) {</span>
+                    public Object getImmediateNode() {
+<span class="nc" id="L160">                        throw new JXPathException(</span>
+<span class="nc" id="L161">                            &quot;Undefined variable: &quot; + name);</span>
+                    }
+                };
+            }
+        }
+<span class="fc" id="L166">        return valuePointer;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public int getLength() {
+<span class="pc bpc" id="L173" title="1 of 2 branches missed.">        if (actual) {</span>
+<span class="fc" id="L174">            Object value = getBaseValue();</span>
+<span class="pc bpc" id="L175" title="1 of 2 branches missed.">            return value == null ? 1 : ValueUtils.getLength(value);</span>
+        }
+<span class="nc" id="L177">        return 0;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public NodePointer createPath(JXPathContext context, Object value) {
+<span class="pc bpc" id="L184" title="1 of 2 branches missed.">        if (actual) {</span>
+<span class="nc" id="L185">            setValue(value);</span>
+<span class="nc" id="L186">            return this;</span>
+        }
+<span class="fc" id="L188">        NodePointer ptr = createPath(context);</span>
+<span class="fc" id="L189">        ptr.setValue(value);</span>
+<span class="fc" id="L190">        return ptr;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public NodePointer createPath(JXPathContext context) {
+<span class="fc bfc" id="L197" title="All 2 branches covered.">        if (!actual) {</span>
+<span class="fc" id="L198">            AbstractFactory factory = getAbstractFactory(context);</span>
+<span class="pc bpc" id="L199" title="1 of 2 branches missed.">            if (!factory.declareVariable(context, name.toString())) {</span>
+<span class="nc" id="L200">                throw new JXPathAbstractFactoryException(</span>
+                        &quot;Factory cannot define variable '&quot; + name
+<span class="nc" id="L202">                                + &quot;' for path: &quot; + asPath());</span>
+            }
+<span class="fc" id="L204">            findVariables(context);</span>
+            // Assert: actual == true
+        }
+<span class="fc" id="L207">        return this;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public NodePointer createChild(
+        JXPathContext context,
+        QName name,
+        int index) {
+<span class="fc" id="L217">        Object collection = createCollection(context, index);</span>
+<span class="pc bpc" id="L218" title="3 of 6 branches missed.">        if (!isActual() || (index != 0 &amp;&amp; index != WHOLE_COLLECTION)) {</span>
+<span class="fc" id="L219">            AbstractFactory factory = getAbstractFactory(context);</span>
+<span class="fc" id="L220">            boolean success =</span>
+<span class="fc" id="L221">                factory.createObject(</span>
+                    context,
+                    this,
+                    collection,
+<span class="fc" id="L225">                    getName().toString(),</span>
+                    index);
+<span class="pc bpc" id="L227" title="1 of 2 branches missed.">            if (!success) {</span>
+<span class="nc" id="L228">                throw new JXPathAbstractFactoryException(</span>
+<span class="nc" id="L229">                        &quot;Factory could not create object path: &quot; + asPath());</span>
+            }
+<span class="fc" id="L231">            NodePointer cln = (NodePointer) clone();</span>
+<span class="fc" id="L232">            cln.setIndex(index);</span>
+<span class="fc" id="L233">            return cln;</span>
+        }
+<span class="nc" id="L235">        return this;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public NodePointer createChild(
+            JXPathContext context,
+            QName name,
+            int index,
+            Object value) {
+<span class="fc" id="L246">        Object collection = createCollection(context, index);</span>
+<span class="fc" id="L247">        ValueUtils.setValue(collection, index, value);</span>
+<span class="fc" id="L248">        NodePointer cl = (NodePointer) clone();</span>
+<span class="fc" id="L249">        cl.setIndex(index);</span>
+<span class="fc" id="L250">        return cl;</span>
+    }
+
+    /**
+     * Create a collection.
+     * @param context JXPathContext
+     * @param index collection index
+     * @return Object
+     */
+    private Object createCollection(JXPathContext context, int index) {
+<span class="fc" id="L260">        createPath(context);</span>
+
+<span class="fc" id="L262">        Object collection = getBaseValue();</span>
+<span class="pc bpc" id="L263" title="1 of 2 branches missed.">        if (collection == null) {</span>
+<span class="nc" id="L264">            throw new JXPathAbstractFactoryException(</span>
+                &quot;Factory did not assign a collection to variable '&quot;
+                    + name
+                    + &quot;' for path: &quot;
+<span class="nc" id="L268">                    + asPath());</span>
+        }
+
+<span class="pc bpc" id="L271" title="1 of 2 branches missed.">        if (index == WHOLE_COLLECTION) {</span>
+<span class="nc" id="L272">            index = 0;</span>
+        }
+<span class="pc bpc" id="L274" title="1 of 2 branches missed.">        else if (index &lt; 0) {</span>
+<span class="nc" id="L275">            throw new JXPathInvalidAccessException(&quot;Index is less than 1: &quot;</span>
+<span class="nc" id="L276">                    + asPath());</span>
+        }
+
+<span class="pc bpc" id="L279" title="1 of 2 branches missed.">        if (index &gt;= getLength()) {</span>
+<span class="fc" id="L280">            collection = ValueUtils.expandCollection(collection, index + 1);</span>
+<span class="fc" id="L281">            variables.declareVariable(name.toString(), collection);</span>
+        }
+
+<span class="fc" id="L284">        return collection;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void remove() {
+<span class="pc bpc" id="L291" title="1 of 2 branches missed.">        if (actual) {</span>
+<span class="fc bfc" id="L292" title="All 2 branches covered.">            if (index == WHOLE_COLLECTION) {</span>
+<span class="fc" id="L293">                variables.undeclareVariable(name.toString());</span>
+            }
+            else {
+<span class="pc bpc" id="L296" title="1 of 2 branches missed.">                if (index &lt; 0) {</span>
+<span class="nc" id="L297">                    throw new JXPathInvalidAccessException(</span>
+<span class="nc" id="L298">                        &quot;Index is less than 1: &quot; + asPath());</span>
+                }
+
+<span class="fc" id="L301">                Object collection = getBaseValue();</span>
+<span class="pc bpc" id="L302" title="2 of 4 branches missed.">                if (collection != null &amp;&amp; index &lt; getLength()) {</span>
+<span class="fc" id="L303">                    collection = ValueUtils.remove(collection, index);</span>
+<span class="fc" id="L304">                    variables.declareVariable(name.toString(), collection);</span>
+                }
+            }
+        }
+<span class="fc" id="L308">    }</span>
+
+    /**
+     * Assimilate the Variables instance associated with the specified context.
+     * @param context JXPathContext to search
+     */
+    protected void findVariables(JXPathContext context) {
+<span class="fc" id="L315">        valuePointer = null;</span>
+<span class="fc" id="L316">        JXPathContext varCtx = context;</span>
+<span class="pc bpc" id="L317" title="1 of 2 branches missed.">        while (varCtx != null) {</span>
+<span class="fc" id="L318">            variables = varCtx.getVariables();</span>
+<span class="pc bpc" id="L319" title="1 of 2 branches missed.">            if (variables.isDeclaredVariable(name.toString())) {</span>
+<span class="fc" id="L320">                actual = true;</span>
+<span class="fc" id="L321">                break;</span>
+            }
+<span class="nc" id="L323">            varCtx = varCtx.getParentContext();</span>
+<span class="nc" id="L324">            variables = null;</span>
+        }
+<span class="fc" id="L326">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    public int hashCode() {
+<span class="pc bpc" id="L332" title="1 of 2 branches missed.">        return (actual ? System.identityHashCode(variables) : 0)</span>
+<span class="fc" id="L333">            + name.hashCode()</span>
+            + index;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean equals(Object object) {
+<span class="nc bnc" id="L341" title="All 2 branches missed.">        if (object == this) {</span>
+<span class="nc" id="L342">            return true;</span>
+        }
+
+<span class="nc bnc" id="L345" title="All 2 branches missed.">        if (!(object instanceof VariablePointer)) {</span>
+<span class="nc" id="L346">            return false;</span>
+        }
+
+<span class="nc" id="L349">        VariablePointer other = (VariablePointer) object;</span>
+<span class="nc bnc" id="L350" title="All 2 branches missed.">        return variables == other.variables</span>
+<span class="nc bnc" id="L351" title="All 4 branches missed.">            &amp;&amp; name.equals(other.name)</span>
+            &amp;&amp; index == other.index;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String asPath() {
+<span class="fc" id="L359">        StringBuffer buffer = new StringBuffer();</span>
+<span class="fc" id="L360">        buffer.append('$');</span>
+<span class="fc" id="L361">        buffer.append(name);</span>
+<span class="fc bfc" id="L362" title="All 2 branches covered.">        if (!actual) {</span>
+<span class="pc bpc" id="L363" title="1 of 2 branches missed.">            if (index != WHOLE_COLLECTION) {</span>
+<span class="nc" id="L364">                buffer.append('[').append(index + 1).append(']');</span>
+            }
+        }
+<span class="fc bfc" id="L367" title="All 2 branches covered.">        else if (</span>
+            index != WHOLE_COLLECTION
+<span class="pc bpc" id="L369" title="1 of 4 branches missed.">                &amp;&amp; (getNode() == null || isCollection())) {</span>
+<span class="fc" id="L370">            buffer.append('[').append(index + 1).append(']');</span>
+        }
+<span class="fc" id="L372">        return buffer.toString();</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public NodeIterator childIterator(
+        NodeTest test,
+        boolean reverse,
+        NodePointer startWith) {
+<span class="fc" id="L382">        return getValuePointer().childIterator(test, reverse, startWith);</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public NodeIterator attributeIterator(QName name) {
+<span class="nc" id="L389">        return getValuePointer().attributeIterator(name);</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public NodeIterator namespaceIterator() {
+<span class="nc" id="L396">        return getValuePointer().namespaceIterator();</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public NodePointer namespacePointer(String name) {
+<span class="nc" id="L403">        return getValuePointer().namespacePointer(name);</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean testNode(NodeTest nodeTest) {
+<span class="fc" id="L410">        return getValuePointer().testNode(nodeTest);</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public int compareChildNodePointers(
+        NodePointer pointer1,
+        NodePointer pointer2) {
+<span class="nc" id="L419">        return pointer1.getIndex() - pointer2.getIndex();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

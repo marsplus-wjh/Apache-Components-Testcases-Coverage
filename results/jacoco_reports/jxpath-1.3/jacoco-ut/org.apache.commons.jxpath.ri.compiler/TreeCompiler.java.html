@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TreeCompiler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri.compiler</a> &gt; <span class="el_source">TreeCompiler.java</span></div><h1>TreeCompiler.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri.compiler;
+
+import org.apache.commons.jxpath.ri.Compiler;
+import org.apache.commons.jxpath.ri.QName;
+
+/**
+ * @author Dmitri Plotnikov
+ * @version $Revision: 652845 $ $Date: 2008-05-02 12:46:46 -0500 (Fri, 02 May 2008) $
+ */
+<span class="fc" id="L26">public class TreeCompiler implements Compiler {</span>
+
+<span class="fc" id="L28">    private static final QName QNAME_NAME = new QName(null, &quot;name&quot;);</span>
+
+    public Object number(String value) {
+<span class="fc" id="L31">        return new Constant(new Double(value));</span>
+    }
+
+    public Object literal(String value) {
+<span class="fc" id="L35">        return new Constant(value);</span>
+    }
+
+    public Object qname(String prefix, String name) {
+<span class="fc" id="L39">        return new QName(prefix, name);</span>
+    }
+
+    public Object sum(Object[] arguments) {
+<span class="fc" id="L43">        return new CoreOperationAdd(toExpressionArray(arguments));</span>
+    }
+
+    public Object minus(Object left, Object right) {
+<span class="fc" id="L47">        return new CoreOperationSubtract(</span>
+            (Expression) left,
+            (Expression) right);
+    }
+
+    public Object multiply(Object left, Object right) {
+<span class="fc" id="L53">        return new CoreOperationMultiply((Expression) left, (Expression) right);</span>
+    }
+
+    public Object divide(Object left, Object right) {
+<span class="fc" id="L57">        return new CoreOperationDivide((Expression) left, (Expression) right);</span>
+    }
+
+    public Object mod(Object left, Object right) {
+<span class="fc" id="L61">        return new CoreOperationMod((Expression) left, (Expression) right);</span>
+    }
+
+    public Object lessThan(Object left, Object right) {
+<span class="fc" id="L65">        return new CoreOperationLessThan((Expression) left, (Expression) right);</span>
+    }
+
+    public Object lessThanOrEqual(Object left, Object right) {
+<span class="fc" id="L69">        return new CoreOperationLessThanOrEqual(</span>
+            (Expression) left,
+            (Expression) right);
+    }
+
+    public Object greaterThan(Object left, Object right) {
+<span class="fc" id="L75">        return new CoreOperationGreaterThan(</span>
+            (Expression) left,
+            (Expression) right);
+    }
+
+    public Object greaterThanOrEqual(Object left, Object right) {
+<span class="fc" id="L81">        return new CoreOperationGreaterThanOrEqual(</span>
+            (Expression) left,
+            (Expression) right);
+    }
+
+    public Object equal(Object left, Object right) {
+<span class="fc bfc" id="L87" title="All 2 branches covered.">        return isNameAttributeTest((Expression) left)</span>
+                ? new NameAttributeTest((Expression) left, (Expression) right)
+                : new CoreOperationEqual((Expression) left, (Expression) right);
+    }
+
+    public Object notEqual(Object left, Object right) {
+<span class="fc" id="L93">        return new CoreOperationNotEqual((Expression) left, (Expression) right);</span>
+    }
+
+    public Object minus(Object argument) {
+<span class="fc" id="L97">        return new CoreOperationNegate((Expression) argument);</span>
+    }
+
+    public Object variableReference(Object qName) {
+<span class="fc" id="L101">        return new VariableReference((QName) qName);</span>
+    }
+
+    public Object function(int code, Object[] args) {
+<span class="fc" id="L105">        return new CoreFunction(code, toExpressionArray(args));</span>
+    }
+
+    public Object function(Object name, Object[] args) {
+<span class="fc" id="L109">        return new ExtensionFunction((QName) name, toExpressionArray(args));</span>
+    }
+
+    public Object and(Object[] arguments) {
+<span class="fc" id="L113">        return new CoreOperationAnd(toExpressionArray(arguments));</span>
+    }
+
+    public Object or(Object[] arguments) {
+<span class="fc" id="L117">        return new CoreOperationOr(toExpressionArray(arguments));</span>
+    }
+
+    public Object union(Object[] arguments) {
+<span class="fc" id="L121">        return new CoreOperationUnion(toExpressionArray(arguments));</span>
+    }
+
+    public Object locationPath(boolean absolute, Object[] steps) {
+<span class="fc" id="L125">        return new LocationPath(absolute, toStepArray(steps));</span>
+    }
+
+    public Object expressionPath(Object expression, Object[] predicates,
+            Object[] steps) {
+<span class="fc" id="L130">        return new ExpressionPath(</span>
+            (Expression) expression,
+<span class="fc" id="L132">            toExpressionArray(predicates),</span>
+<span class="fc" id="L133">            toStepArray(steps));</span>
+    }
+
+    public Object nodeNameTest(Object qname) {
+<span class="fc" id="L137">        return new NodeNameTest((QName) qname);</span>
+    }
+
+    public Object nodeTypeTest(int nodeType) {
+<span class="fc" id="L141">        return new NodeTypeTest(nodeType);</span>
+    }
+
+    public Object processingInstructionTest(String instruction) {
+<span class="fc" id="L145">        return new ProcessingInstructionTest(instruction);</span>
+    }
+
+    public Object step(int axis, Object nodeTest, Object[] predicates) {
+<span class="fc" id="L149">        return new Step(</span>
+            axis,
+            (NodeTest) nodeTest,
+<span class="fc" id="L152">            toExpressionArray(predicates));</span>
+    }
+
+    /**
+     * Get an Object[] as an Expression[].
+     * @param array Object[]
+     * @return Expression[]
+     */
+    private Expression[] toExpressionArray(Object[] array) {
+<span class="fc" id="L161">        Expression[] expArray = null;</span>
+<span class="fc bfc" id="L162" title="All 2 branches covered.">        if (array != null) {</span>
+<span class="fc" id="L163">            expArray = new Expression[array.length];</span>
+<span class="fc bfc" id="L164" title="All 2 branches covered.">            for (int i = 0; i &lt; expArray.length; i++) {</span>
+<span class="fc" id="L165">                expArray[i] = (Expression) array[i];</span>
+            }
+        }
+<span class="fc" id="L168">        return expArray;</span>
+    }
+
+    /**
+     * Get an Object[] as a Step[].
+     * @param array Object[]
+     * @return Step[]
+     */
+    private Step[] toStepArray(Object[] array) {
+<span class="fc" id="L177">        Step[] stepArray = null;</span>
+<span class="pc bpc" id="L178" title="1 of 2 branches missed.">        if (array != null) {</span>
+<span class="fc" id="L179">            stepArray = new Step[array.length];</span>
+<span class="fc bfc" id="L180" title="All 2 branches covered.">            for (int i = 0; i &lt; stepArray.length; i++) {</span>
+<span class="fc" id="L181">                stepArray[i] = (Step) array[i];</span>
+            }
+        }
+<span class="fc" id="L184">        return stepArray;</span>
+    }
+
+    /**
+     * Learn whether arg is a name attribute test.
+     * @param arg Expression to test
+     * @return boolean
+     */
+    private boolean isNameAttributeTest(Expression arg) {
+<span class="fc bfc" id="L193" title="All 2 branches covered.">        if (!(arg instanceof LocationPath)) {</span>
+<span class="fc" id="L194">            return false;</span>
+        }
+
+<span class="fc" id="L197">        Step[] steps = ((LocationPath) arg).getSteps();</span>
+<span class="fc bfc" id="L198" title="All 2 branches covered.">        if (steps.length != 1) {</span>
+<span class="fc" id="L199">            return false;</span>
+        }
+<span class="fc bfc" id="L201" title="All 2 branches covered.">        if (steps[0].getAxis() != Compiler.AXIS_ATTRIBUTE) {</span>
+<span class="fc" id="L202">            return false;</span>
+        }
+<span class="fc" id="L204">        NodeTest test = steps[0].getNodeTest();</span>
+<span class="pc bpc" id="L205" title="1 of 2 branches missed.">        if (!(test instanceof NodeNameTest)) {</span>
+<span class="nc" id="L206">            return false;</span>
+        }
+<span class="fc bfc" id="L208" title="All 2 branches covered.">        if (!((NodeNameTest) test).getNodeName().equals(QNAME_NAME)) {</span>
+<span class="fc" id="L209">            return false;</span>
+        }
+<span class="fc" id="L211">        return true;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

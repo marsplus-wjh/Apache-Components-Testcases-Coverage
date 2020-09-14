@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>RootContext.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri.axes</a> &gt; <span class="el_source">RootContext.java</span></div><h1>RootContext.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri.axes;
+
+import org.apache.commons.jxpath.Function;
+import org.apache.commons.jxpath.JXPathContext;
+import org.apache.commons.jxpath.NodeSet;
+import org.apache.commons.jxpath.ri.EvalContext;
+import org.apache.commons.jxpath.ri.JXPathContextReferenceImpl;
+import org.apache.commons.jxpath.ri.QName;
+import org.apache.commons.jxpath.ri.model.NodePointer;
+
+/**
+ * EvalContext that is used to hold the root node for the path traversal.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision$ $Date$
+ */
+public class RootContext extends EvalContext {
+    private JXPathContextReferenceImpl jxpathContext;
+    private NodePointer pointer;
+    private Object[] registers;
+<span class="fc" id="L37">    private int availableRegister = 0;</span>
+<span class="fc" id="L38">    public static final Object UNKNOWN_VALUE = new Object();</span>
+    private static final int MAX_REGISTER = 4;
+
+    /**
+     * Create a new RootContext.
+     * @param jxpathContext context
+     * @param pointer pointer
+     */
+    public RootContext(JXPathContextReferenceImpl jxpathContext,
+            NodePointer pointer) {
+<span class="fc" id="L48">        super(null);</span>
+<span class="fc" id="L49">        this.jxpathContext = jxpathContext;</span>
+<span class="fc" id="L50">        this.pointer = pointer;</span>
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">        if (pointer != null) {</span>
+<span class="fc" id="L52">            pointer.setNamespaceResolver(jxpathContext.getNamespaceResolver());</span>
+        }
+<span class="fc" id="L54">    }</span>
+
+    public JXPathContext getJXPathContext() {
+<span class="fc" id="L57">        return jxpathContext;</span>
+    }
+
+    public RootContext getRootContext() {
+<span class="fc" id="L61">        return this;</span>
+    }
+
+    /**
+     * Get absolute root context
+     * @return EvalContext
+     */
+    public EvalContext getAbsoluteRootContext() {
+<span class="fc" id="L69">        return jxpathContext.getAbsoluteRootContext();</span>
+    }
+
+    public NodePointer getCurrentNodePointer() {
+<span class="fc" id="L73">        return pointer;</span>
+    }
+
+    public Object getValue() {
+<span class="nc" id="L77">        return pointer;</span>
+    }
+
+    public int getCurrentPosition() {
+<span class="nc" id="L81">        throw new UnsupportedOperationException();</span>
+    }
+
+    public boolean nextNode() {
+<span class="nc" id="L85">        throw new UnsupportedOperationException();</span>
+    }
+
+    public boolean nextSet() {
+<span class="nc" id="L89">        throw new UnsupportedOperationException();</span>
+    }
+
+    public boolean setPosition(int position) {
+<span class="nc" id="L93">        throw new UnsupportedOperationException();</span>
+    }
+
+    /**
+     * Get a context that points to the specified object.
+     * @param constant object
+     * @return EvalContext
+     */
+    public EvalContext getConstantContext(Object constant) {
+<span class="pc bpc" id="L102" title="1 of 2 branches missed.">        if (constant instanceof NodeSet) {</span>
+<span class="nc" id="L103">            return new NodeSetContext(</span>
+                new RootContext(jxpathContext, null),
+                (NodeSet) constant);
+        }
+
+        NodePointer pointer;
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        if (constant instanceof NodePointer) {</span>
+<span class="fc" id="L110">            pointer = (NodePointer) constant;</span>
+        }
+        else {
+<span class="fc" id="L113">            pointer = NodePointer.newNodePointer(</span>
+                    new QName(null, &quot;&quot;),
+                    constant,
+                    null);
+        }
+<span class="fc" id="L118">        return new InitialContext(new RootContext(jxpathContext, pointer));</span>
+    }
+
+    /**
+     * Get variable context.
+     * @param variableName variable name
+     * @return EvalContext
+     */
+    public EvalContext getVariableContext(QName variableName) {
+<span class="fc" id="L127">        return new InitialContext(</span>
+            new RootContext(
+                jxpathContext,
+<span class="fc" id="L130">                jxpathContext.getVariablePointer(variableName)));</span>
+    }
+
+    /**
+     * Get the specified function from the context.
+     * @param functionName QName
+     * @param parameters Object[]
+     * @return Function
+     */
+    public Function getFunction(QName functionName, Object[] parameters) {
+<span class="fc" id="L140">        return jxpathContext.getFunction(functionName, parameters);</span>
+    }
+
+    /**
+     * Get a registered value.
+     * @param id int
+     * @return Object
+     */
+    public Object getRegisteredValue(int id) {
+<span class="nc bnc" id="L149" title="All 6 branches missed.">        if (registers == null || id &gt;= MAX_REGISTER || id == -1) {</span>
+<span class="nc" id="L150">            return UNKNOWN_VALUE;</span>
+        }
+<span class="nc" id="L152">        return registers[id];</span>
+    }
+
+    /**
+     * Set the next registered value.
+     * @param value Object
+     * @return the id that can reclaim value.
+     */
+    public int setRegisteredValue(Object value) {
+<span class="nc bnc" id="L161" title="All 2 branches missed.">        if (registers == null) {</span>
+<span class="nc" id="L162">            registers = new Object[MAX_REGISTER];</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">            for (int i = 0; i &lt; MAX_REGISTER; i++) {</span>
+<span class="nc" id="L164">                registers[i] = UNKNOWN_VALUE;</span>
+            }
+        }
+<span class="nc bnc" id="L167" title="All 2 branches missed.">        if (availableRegister &gt;= MAX_REGISTER) {</span>
+<span class="nc" id="L168">            return -1;</span>
+        }
+<span class="nc" id="L170">        registers[availableRegister] = value;</span>
+<span class="nc" id="L171">        availableRegister++;</span>
+<span class="nc" id="L172">        return availableRegister - 1;</span>
+    }
+
+    public String toString() {
+<span class="nc" id="L176">        return super.toString() + &quot;:&quot; + pointer.asPath();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

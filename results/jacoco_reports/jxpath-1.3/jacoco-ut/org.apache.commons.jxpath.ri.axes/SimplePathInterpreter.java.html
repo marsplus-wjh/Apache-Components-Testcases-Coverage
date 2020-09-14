@@ -1,0 +1,919 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SimplePathInterpreter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri.axes</a> &gt; <span class="el_source">SimplePathInterpreter.java</span></div><h1>SimplePathInterpreter.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri.axes;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import org.apache.commons.jxpath.JXPathException;
+import org.apache.commons.jxpath.ri.Compiler;
+import org.apache.commons.jxpath.ri.EvalContext;
+import org.apache.commons.jxpath.ri.InfoSetUtil;
+import org.apache.commons.jxpath.ri.QName;
+import org.apache.commons.jxpath.ri.compiler.Expression;
+import org.apache.commons.jxpath.ri.compiler.NameAttributeTest;
+import org.apache.commons.jxpath.ri.compiler.NodeNameTest;
+import org.apache.commons.jxpath.ri.compiler.NodeTest;
+import org.apache.commons.jxpath.ri.compiler.Step;
+import org.apache.commons.jxpath.ri.model.NodeIterator;
+import org.apache.commons.jxpath.ri.model.NodePointer;
+import org.apache.commons.jxpath.ri.model.beans.LangAttributePointer;
+import org.apache.commons.jxpath.ri.model.beans.NullElementPointer;
+import org.apache.commons.jxpath.ri.model.beans.NullPropertyPointer;
+import org.apache.commons.jxpath.ri.model.beans.PropertyOwnerPointer;
+import org.apache.commons.jxpath.ri.model.beans.PropertyPointer;
+
+/**
+ * An evaluation mechanism for simple XPaths, which
+ * is much faster than the usual process. It is only used for
+ * xpaths which have no context-dependent parts, consist entirely of
+ * &lt;code&gt;child::name&lt;/code&gt; and &lt;code&gt;self::node()&lt;/code&gt; steps with
+ * predicates that either integer or have the form &lt;code&gt;[@name = ...]&lt;/code&gt;.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision: 652845 $ $Date: 2008-05-02 12:46:46 -0500 (Fri, 02 May 2008) $
+ */
+<span class="nc" id="L51">public class SimplePathInterpreter {</span>
+
+    // Because of the complexity caused by the variety of situations
+    // that need to be addressed by this class, we attempt to break up
+    // the class into individual methods addressing those situations
+    // individually.  The names of the methods are supposed to
+    // give brief descriptions of those situations.
+
+<span class="fc" id="L59">    private static final QName QNAME_NAME = new QName(null, &quot;name&quot;);</span>
+    private static final int PERFECT_MATCH = 1000;
+
+    // Uncomment this variable and the PATH = ... lines in
+    // the two following methods in order to be able to print the
+    // currently evaluated path for debugging of this class
+//    private static String PATH;       // Debugging
+
+    /**
+     * Interpret a simple path that starts with the given root and
+     * follows the given steps. All steps must have the axis &quot;child::&quot;
+     * and a name test.  They can also optionally have predicates
+     * of type [@name=expression] or simply [expression] interpreted
+     * as an index.
+     * @param context evaluation context
+     * @param root root pointer
+     * @param steps path steps
+     * @return NodePointer
+     */
+    public static NodePointer interpretSimpleLocationPath(
+            EvalContext context, NodePointer root, Step[] steps) {
+//        PATH = createNullPointer(context, root, steps, 0).toString();  // Dbg
+<span class="fc" id="L81">        NodePointer pointer = doStep(context, root, steps, 0);</span>
+//        return valuePointer(pointer);
+<span class="fc" id="L83">        return pointer;</span>
+    }
+
+    /**
+     * Interpret the steps of a simple expression path that
+     * starts with the given root, which is the result of evaluation
+     * of the root expression of the expression path, applies the
+     * given predicates to it and then follows the given steps.
+     * All steps must have the axis &quot;child::&quot; or &quot;attribute::&quot;
+     * and a name test.  They can also optionally have predicates
+     * of type [@name=...] or simply [...] interpreted as an index.
+     * @param context evaluation context
+     * @param root root pointer
+     * @param predicates predicates corresponding to &lt;code&gt;steps&lt;/code&gt;
+     * @param steps path steps
+     * @return NodePointer
+     */
+    public static NodePointer interpretSimpleExpressionPath(
+                EvalContext context, NodePointer root,
+                Expression[] predicates, Step[] steps) {
+//        PATH = createNullPointerForPredicates(context, root,
+//                    steps, -1, predicates, 0).toString();  // Debugging
+<span class="fc" id="L105">        NodePointer pointer =</span>
+<span class="fc" id="L106">            doPredicate(context, root, steps, -1, predicates, 0);</span>
+//        return valuePointer(pointer);
+<span class="fc" id="L108">        return pointer;</span>
+    }
+
+    /**
+     * Recursive evaluation of a path. The general plan is:
+     * Look at the current step,
+     * find nodes that match it,
+     * iterate over those nodes and
+     * for each of them call doStep again for subsequent steps.
+     * @param context evaluation context
+     * @param parent parent pointer
+     * @param steps path steps
+     * @param currentStep step number
+     * @return NodePointer
+     */
+    private static NodePointer doStep(
+            EvalContext context, NodePointer parent,
+            Step[] steps, int currentStep) {
+<span class="pc bpc" id="L126" title="1 of 2 branches missed.">        if (parent == null) {</span>
+<span class="nc" id="L127">            return null;</span>
+        }
+
+<span class="fc bfc" id="L130" title="All 2 branches covered.">        if (currentStep == steps.length) {</span>
+            // We have reached the end of the list of steps
+<span class="fc" id="L132">            return parent;</span>
+        }
+
+        // Open all containers
+<span class="fc" id="L136">        parent = valuePointer(parent);</span>
+
+<span class="fc" id="L138">        Step step = steps[currentStep];</span>
+<span class="fc" id="L139">        Expression[] predicates = step.getPredicates();</span>
+
+        // Divide and conquer: the process is broken out into
+        // four major use cases.
+        // 1. Current step has no predicates and
+        //    the root is a property owner (e.g. bean or map)
+        // 2. Current step has predicates and
+        //    the root is a property owner (e.g. bean or map)
+        // 3. Current step has no predicates and
+        //    the root is an InfoSet standard node (e.g. DOM Node)
+        // 4. Current step has predicates and
+        //    the root is an InfoSet standard node (e.g. DOM Node)
+
+<span class="fc bfc" id="L152" title="All 2 branches covered.">        if (parent instanceof PropertyOwnerPointer) {</span>
+<span class="pc bpc" id="L153" title="1 of 4 branches missed.">            if (predicates == null || predicates.length == 0) {</span>
+<span class="fc" id="L154">                return doStepNoPredicatesPropertyOwner(</span>
+                    context,
+                    (PropertyOwnerPointer) parent,
+                    steps,
+                    currentStep);
+            }
+<span class="fc" id="L160">            return doStepPredicatesPropertyOwner(</span>
+                context,
+                (PropertyOwnerPointer) parent,
+                steps,
+                currentStep);
+        }
+<span class="pc bpc" id="L166" title="1 of 4 branches missed.">        if (predicates == null || predicates.length == 0) {</span>
+<span class="fc" id="L167">            return doStepNoPredicatesStandard(</span>
+                context,
+                parent,
+                steps,
+                currentStep);
+        }
+<span class="fc" id="L173">        return doStepPredicatesStandard(</span>
+            context,
+            parent,
+            steps,
+            currentStep);
+    }
+
+    /**
+     * We have a step that starts with a property owner (bean, map, etc) and has
+     * no predicates.  The name test of the step may map to a scalar property
+     * or to a collection.  If it is a collection, we should apply the tail of
+     * the path to each element until we find a match. If we don't find
+     * a perfect match, we should return the &quot;best quality&quot; pointer, which
+     * has the longest chain of steps mapping to existing nodes and the shortes
+     * tail of Null* pointers.
+     * @param context evaluation context
+     * @param parentPointer property owner pointer
+     * @param steps path steps
+     * @param currentStep step number
+     * @return NodePointer
+     */
+    private static NodePointer doStepNoPredicatesPropertyOwner(
+                EvalContext context, PropertyOwnerPointer parentPointer,
+                Step[] steps, int currentStep) {
+<span class="fc" id="L197">        Step step = steps[currentStep];</span>
+<span class="fc" id="L198">        NodePointer childPointer =</span>
+<span class="fc" id="L199">            createChildPointerForStep(parentPointer, step);</span>
+
+<span class="fc bfc" id="L201" title="All 2 branches covered.">        if (childPointer == null) {</span>
+<span class="fc" id="L202">            return null;</span>
+        }
+<span class="fc bfc" id="L204" title="All 2 branches covered.">        if (!childPointer.isActual()) {</span>
+            // The property does not exist - create a null pointer.
+<span class="fc" id="L206">            return createNullPointer(</span>
+                context,
+                parentPointer,
+                steps,
+                currentStep);
+        }
+<span class="fc bfc" id="L212" title="All 2 branches covered.">        if (currentStep == steps.length - 1) {</span>
+            // If this is the last step - we are done, we found it
+<span class="fc" id="L214">            return childPointer;</span>
+        }
+<span class="fc bfc" id="L216" title="All 2 branches covered.">        if (childPointer.isCollection()) {</span>
+            // Iterate over all values and
+            // execute remaining steps for each node,
+            // looking for the best quality match
+<span class="fc" id="L220">            int bestQuality = 0;</span>
+<span class="fc" id="L221">            childPointer = (NodePointer) childPointer.clone();</span>
+<span class="fc" id="L222">            NodePointer bestMatch = null;</span>
+<span class="fc" id="L223">            int count = childPointer.getLength();</span>
+<span class="fc bfc" id="L224" title="All 2 branches covered.">            for (int i = 0; i &lt; count; i++) {</span>
+<span class="fc" id="L225">                childPointer.setIndex(i);</span>
+<span class="fc" id="L226">                NodePointer pointer =</span>
+<span class="fc" id="L227">                    doStep(context, childPointer, steps, currentStep + 1);</span>
+<span class="fc" id="L228">                int quality = computeQuality(pointer);</span>
+<span class="fc bfc" id="L229" title="All 2 branches covered.">                if (quality == PERFECT_MATCH) {</span>
+<span class="fc" id="L230">                    return pointer;</span>
+                }
+<span class="fc bfc" id="L232" title="All 2 branches covered.">                else if (quality &gt; bestQuality) {</span>
+<span class="fc" id="L233">                    bestQuality = quality;</span>
+<span class="fc" id="L234">                    bestMatch = (NodePointer) pointer.clone();</span>
+                }
+            }
+<span class="pc bpc" id="L237" title="1 of 2 branches missed.">            if (bestMatch != null) {</span>
+<span class="fc" id="L238">                return bestMatch;</span>
+            }
+            // This step did not find anything - return a null pointer
+<span class="nc" id="L241">            return createNullPointer(context, childPointer, steps, currentStep);</span>
+        }
+        // Evaluate subsequent steps
+<span class="fc" id="L244">        return doStep(context, childPointer, steps, currentStep + 1);</span>
+    }
+
+    /**
+     * A path that starts with a standard InfoSet node (e.g. DOM Node) and
+     * has no predicates.  Get a child iterator and apply the tail of
+     * the path to each element until we find a match. If we don't find
+     * a perfect match, we should return the &quot;best quality&quot; pointer, which
+     * has the longest chain of steps mapping to existing nodes and the shortes
+     * tail of Null* pointers.
+     * @param context evaluation context
+     * @param parentPointer parent pointer
+     * @param steps path steps
+     * @param currentStep step number
+     * @return NodePointer
+     */
+    private static NodePointer doStepNoPredicatesStandard(
+                EvalContext context, NodePointer parentPointer,
+                Step[] steps, int currentStep) {
+<span class="fc" id="L263">        Step step = steps[currentStep];</span>
+
+<span class="pc bpc" id="L265" title="1 of 2 branches missed.">        if (step.getAxis() == Compiler.AXIS_SELF) {</span>
+<span class="nc" id="L266">            return doStep(context, parentPointer, steps, currentStep + 1);</span>
+        }
+
+<span class="fc" id="L269">        int bestQuality = 0;</span>
+<span class="fc" id="L270">        NodePointer bestMatch = null;</span>
+<span class="fc" id="L271">        NodeIterator it = getNodeIterator(context, parentPointer, step);</span>
+<span class="pc bpc" id="L272" title="1 of 2 branches missed.">        if (it != null) {</span>
+<span class="fc bfc" id="L273" title="All 2 branches covered.">            for (int i = 1; it.setPosition(i); i++) {</span>
+<span class="fc" id="L274">                NodePointer childPointer = it.getNodePointer();</span>
+<span class="fc bfc" id="L275" title="All 2 branches covered.">                if (steps.length == currentStep + 1) {</span>
+                    // If this is the last step - we are done, we found it
+<span class="fc" id="L277">                    return childPointer;</span>
+                }
+<span class="fc" id="L279">                NodePointer pointer = doStep(</span>
+                        context, childPointer, steps, currentStep + 1);
+<span class="fc" id="L281">                int quality = computeQuality(pointer);</span>
+<span class="fc bfc" id="L282" title="All 2 branches covered.">                if (quality == PERFECT_MATCH) {</span>
+<span class="fc" id="L283">                    return pointer;</span>
+                }
+<span class="fc bfc" id="L285" title="All 2 branches covered.">                if (quality &gt; bestQuality) {</span>
+<span class="fc" id="L286">                    bestQuality = quality;</span>
+<span class="fc" id="L287">                    bestMatch = (NodePointer) pointer.clone();</span>
+                }
+            }
+        }
+<span class="fc bfc" id="L291" title="All 2 branches covered.">        return bestMatch != null ? bestMatch</span>
+<span class="fc" id="L292">                : createNullPointer(context, parentPointer, steps, currentStep);</span>
+    }
+
+    /**
+     * A path that starts with a property owner. The method evaluates
+     * the first predicate in a special way and then forwards to
+     * a general predicate processing method.
+     * @param context evaluation context
+     * @param parentPointer parent pointer
+     * @param steps path steps
+     * @param currentStep step number
+     * @return NodePointer
+     */
+    private static NodePointer doStepPredicatesPropertyOwner(
+            EvalContext context, PropertyOwnerPointer parentPointer,
+            Step[] steps, int currentStep) {
+<span class="fc" id="L308">        Step step = steps[currentStep];</span>
+<span class="fc" id="L309">        Expression[] predicates = step.getPredicates();</span>
+
+<span class="fc" id="L311">        NodePointer childPointer =</span>
+<span class="fc" id="L312">            createChildPointerForStep(parentPointer, step);</span>
+<span class="fc bfc" id="L313" title="All 2 branches covered.">        if (!childPointer.isActual()) {</span>
+            // Property does not exist - return a null pointer
+<span class="fc" id="L315">            return createNullPointer(</span>
+                context,
+                parentPointer,
+                steps,
+                currentStep);
+        }
+
+        // Evaluate predicates
+<span class="fc" id="L323">        return doPredicate(</span>
+            context,
+            childPointer,
+            steps,
+            currentStep,
+            predicates,
+            0);
+    }
+
+    /**
+     * Create the child pointer for a given step.
+     * @param parentPointer parent pointer
+     * @param step associated step
+     * @return NodePointer
+     */
+    private static NodePointer createChildPointerForStep(
+                PropertyOwnerPointer parentPointer, Step step) {
+<span class="fc" id="L340">        int axis = step.getAxis();</span>
+<span class="fc bfc" id="L341" title="All 4 branches covered.">        if (axis == Compiler.AXIS_CHILD || axis == Compiler.AXIS_ATTRIBUTE) {</span>
+<span class="fc" id="L342">            QName name = ((NodeNameTest) step.getNodeTest()).getNodeName();</span>
+<span class="fc bfc" id="L343" title="All 4 branches covered.">            if (axis == Compiler.AXIS_ATTRIBUTE &amp;&amp; isLangAttribute(name)) {</span>
+<span class="fc" id="L344">                return new LangAttributePointer(parentPointer);</span>
+            }
+<span class="fc bfc" id="L346" title="All 2 branches covered.">            if (parentPointer.isValidProperty(name)) {</span>
+<span class="fc" id="L347">                NodePointer childPointer = parentPointer.getPropertyPointer();</span>
+<span class="fc" id="L348">                ((PropertyPointer) childPointer).setPropertyName(</span>
+<span class="fc" id="L349">                        name.toString());</span>
+<span class="fc bfc" id="L350" title="All 2 branches covered.">                childPointer.setAttribute(axis == Compiler.AXIS_ATTRIBUTE);</span>
+<span class="fc" id="L351">                return childPointer;</span>
+            }
+            //invalid property gets nothing, not even a NullPointer
+<span class="fc" id="L354">            return null;</span>
+        }
+<span class="fc" id="L356">        return parentPointer;</span>
+    }
+
+    /**
+     * A path that starts with a standard InfoSet node, e.g. a DOM Node.
+     * The method evaluates the first predicate in a special way and
+     * then forwards to a general predicate processing method.
+     * @param context evaluation context
+     * @param parent parent pointer
+     * @param steps path steps
+     * @param currentStep step number
+     * @return NodePointer
+     */
+    private static NodePointer doStepPredicatesStandard(
+            EvalContext context, NodePointer parent,
+            Step[] steps, int currentStep) {
+<span class="fc" id="L372">        Step step = steps[currentStep];</span>
+<span class="fc" id="L373">        Expression[] predicates = step.getPredicates();</span>
+
+<span class="fc" id="L375">        int axis = step.getAxis();</span>
+<span class="fc bfc" id="L376" title="All 2 branches covered.">        if (axis == Compiler.AXIS_SELF) {</span>
+<span class="fc" id="L377">            return doPredicate(</span>
+                context,
+                parent,
+                steps,
+                currentStep,
+                predicates,
+                0);
+        }
+
+<span class="fc" id="L386">        Expression predicate = predicates[0];</span>
+
+        // Optimize for a single predicate to avoid building a list
+        // and to allow the direct access to the index'th element
+        // in the case of a simple subscript predecate
+        // It is a very common use case, so it deserves individual
+        // attention
+<span class="fc bfc" id="L393" title="All 2 branches covered.">        if (predicates.length == 1) {</span>
+<span class="fc" id="L394">            NodeIterator it = getNodeIterator(context, parent, step);</span>
+<span class="fc" id="L395">            NodePointer pointer = null;</span>
+<span class="pc bpc" id="L396" title="1 of 2 branches missed.">            if (it != null) {</span>
+<span class="fc bfc" id="L397" title="All 2 branches covered.">                if (predicate instanceof NameAttributeTest) { // [@name = key]</span>
+<span class="fc" id="L398">                    String key = keyFromPredicate(context, predicate);</span>
+<span class="fc bfc" id="L399" title="All 2 branches covered.">                    for (int i = 1; it.setPosition(i); i++) {</span>
+<span class="fc" id="L400">                        NodePointer ptr = it.getNodePointer();</span>
+<span class="fc bfc" id="L401" title="All 2 branches covered.">                        if (isNameAttributeEqual(ptr, key)) {</span>
+<span class="fc" id="L402">                            pointer = ptr;</span>
+<span class="fc" id="L403">                            break;</span>
+                        }
+                    }
+<span class="fc" id="L406">                }</span>
+                else {
+<span class="fc" id="L408">                    int index = indexFromPredicate(context, predicate);</span>
+<span class="fc bfc" id="L409" title="All 2 branches covered.">                    if (it.setPosition(index + 1)) {</span>
+<span class="fc" id="L410">                        pointer = it.getNodePointer();</span>
+                    }
+                }
+            }
+<span class="fc bfc" id="L414" title="All 2 branches covered.">            if (pointer != null) {</span>
+<span class="fc" id="L415">                return doStep(context, pointer, steps, currentStep + 1);</span>
+            }
+<span class="fc" id="L417">        }</span>
+        else {
+<span class="fc" id="L419">            NodeIterator it = getNodeIterator(context, parent, step);</span>
+<span class="pc bpc" id="L420" title="1 of 2 branches missed.">            if (it != null) {</span>
+<span class="fc" id="L421">                List list = new ArrayList();</span>
+<span class="fc bfc" id="L422" title="All 2 branches covered.">                for (int i = 1; it.setPosition(i); i++) {</span>
+<span class="fc" id="L423">                    list.add(it.getNodePointer());</span>
+                }
+<span class="fc" id="L425">                NodePointer pointer =</span>
+<span class="fc" id="L426">                    doPredicatesStandard(</span>
+                        context,
+                        list,
+                        steps,
+                        currentStep,
+                        predicates,
+                        0);
+<span class="fc bfc" id="L433" title="All 2 branches covered.">                if (pointer != null) {</span>
+<span class="fc" id="L434">                    return pointer;</span>
+                }
+            }
+        }
+<span class="fc" id="L438">        return createNullPointer(context, parent, steps, currentStep);</span>
+    }
+
+    /**
+     * Evaluates predicates and proceeds with the subsequent steps
+     * of the path.
+     * @param context evaluation context
+     * @param parent parent pointer
+     * @param steps path steps
+     * @param currentStep step number
+     * @param predicates predicate expressions
+     * @param currentPredicate int predicate number
+     * @return NodePointer
+     */
+    private static NodePointer doPredicate(
+                EvalContext context, NodePointer parent,
+                Step[] steps, int currentStep,
+                Expression[] predicates, int currentPredicate) {
+<span class="fc bfc" id="L456" title="All 2 branches covered.">        if (currentPredicate == predicates.length) {</span>
+<span class="fc" id="L457">            return doStep(context, parent, steps, currentStep + 1);</span>
+        }
+
+<span class="fc" id="L460">        Expression predicate = predicates[currentPredicate];</span>
+<span class="fc bfc" id="L461" title="All 2 branches covered.">        if (predicate instanceof NameAttributeTest) { // [@name = key1]</span>
+<span class="fc" id="L462">            return doPredicateName(</span>
+                context,
+                parent,
+                steps,
+                currentStep,
+                predicates,
+                currentPredicate);
+        }
+        // else [index]
+<span class="fc" id="L471">        return doPredicateIndex(</span>
+            context,
+            parent,
+            steps,
+            currentStep,
+            predicates,
+            currentPredicate);
+    }
+
+    /**
+     * Execute a NameAttributeTest predicate
+     * @param context evaluation context
+     * @param parent parent pointer
+     * @param steps path steps
+     * @param currentStep int step number
+     * @param predicates predicates
+     * @param currentPredicate int predicate number
+     * @return NodePointer
+     */
+    private static NodePointer doPredicateName(
+            EvalContext context, NodePointer parent,
+            Step[] steps, int currentStep,
+            Expression[] predicates, int currentPredicate) {
+<span class="fc" id="L494">        Expression predicate = predicates[currentPredicate];</span>
+<span class="fc" id="L495">        String key = keyFromPredicate(context, predicate);</span>
+<span class="fc" id="L496">        NodePointer child = valuePointer(parent);</span>
+<span class="fc bfc" id="L497" title="All 2 branches covered.">        if (child instanceof PropertyOwnerPointer) {</span>
+<span class="fc" id="L498">            PropertyPointer pointer =</span>
+<span class="fc" id="L499">                ((PropertyOwnerPointer) child).getPropertyPointer();</span>
+<span class="fc" id="L500">            pointer.setPropertyName(key);</span>
+<span class="fc bfc" id="L501" title="All 2 branches covered.">            if (pointer.isActual()) {</span>
+<span class="fc" id="L502">                return doPredicate(</span>
+                    context,
+                    pointer,
+                    steps,
+                    currentStep,
+                    predicates,
+                    currentPredicate + 1);
+            }
+<span class="fc" id="L510">        }</span>
+<span class="fc bfc" id="L511" title="All 2 branches covered.">        else if (child.isCollection()) {</span>
+            // For each node in the collection, perform the following:
+            // if the node is a property owner, apply this predicate to it;
+            // if the node is a collection, apply this predicate to each elem.;
+            // if the node is not a prop owner or a collection,
+            //  see if it has the attribute &quot;name&quot; with the right value,
+            //  if so - proceed to the next predicate
+<span class="fc" id="L518">            NodePointer bestMatch = null;</span>
+<span class="fc" id="L519">            int bestQuality = 0;</span>
+<span class="fc" id="L520">            child = (NodePointer) child.clone();</span>
+<span class="fc" id="L521">            int count = child.getLength();</span>
+<span class="fc bfc" id="L522" title="All 2 branches covered.">            for (int i = 0; i &lt; count; i++) {</span>
+<span class="fc" id="L523">                child.setIndex(i);</span>
+<span class="fc" id="L524">                NodePointer valuePointer = valuePointer(child);</span>
+                NodePointer pointer;
+<span class="fc bfc" id="L526" title="All 2 branches covered.">                if ((valuePointer instanceof PropertyOwnerPointer)</span>
+<span class="fc bfc" id="L527" title="All 2 branches covered.">                    || valuePointer.isCollection()) {</span>
+<span class="fc" id="L528">                    pointer =</span>
+<span class="fc" id="L529">                        doPredicateName(</span>
+                            context,
+                            valuePointer,
+                            steps,
+                            currentStep,
+                            predicates,
+                            currentPredicate);
+                }
+<span class="fc bfc" id="L537" title="All 2 branches covered.">                else if (isNameAttributeEqual(valuePointer, key)) {</span>
+<span class="fc" id="L538">                    pointer =</span>
+<span class="fc" id="L539">                        doPredicate(</span>
+                            context,
+                            valuePointer,
+                            steps,
+                            currentStep,
+                            predicates,
+                            currentPredicate + 1);
+                }
+                else {
+<span class="fc" id="L548">                    pointer = null;</span>
+                }
+<span class="fc bfc" id="L550" title="All 2 branches covered.">                if (pointer != null) {</span>
+<span class="fc" id="L551">                    int quality = computeQuality(pointer);</span>
+<span class="fc bfc" id="L552" title="All 2 branches covered.">                    if (quality == PERFECT_MATCH) {</span>
+<span class="fc" id="L553">                        return pointer;</span>
+                    }
+<span class="fc bfc" id="L555" title="All 2 branches covered.">                    if (quality &gt; bestQuality) {</span>
+<span class="fc" id="L556">                        bestMatch = (NodePointer) pointer.clone();</span>
+<span class="fc" id="L557">                        bestQuality = quality;</span>
+                    }
+                }
+            }
+<span class="fc bfc" id="L561" title="All 2 branches covered.">            if (bestMatch != null) {</span>
+<span class="fc" id="L562">                return bestMatch;</span>
+            }
+<span class="fc" id="L564">        }</span>
+        else {
+            // If the node is a standard InfoSet node (e.g. DOM Node),
+            // employ doPredicates_standard, which will iterate through
+            // the node's children and apply all predicates
+<span class="fc" id="L569">            NodePointer found =</span>
+<span class="fc" id="L570">                doPredicatesStandard(</span>
+                    context,
+<span class="fc" id="L572">                    Collections.singletonList(child),</span>
+                    steps,
+                    currentStep,
+                    predicates,
+                    currentPredicate);
+<span class="fc bfc" id="L577" title="All 2 branches covered.">            if (found != null) {</span>
+<span class="fc" id="L578">                return found;</span>
+            }
+        }
+        // If nothing worked - return a null pointer
+<span class="fc" id="L582">        return createNullPointerForPredicates(</span>
+            context,
+            child,
+            steps,
+            currentStep,
+            predicates,
+            currentPredicate);
+    }
+
+    /**
+     * Called exclusively for standard InfoSet nodes, e.g. DOM nodes
+     * to evaluate predicate sequences like [@name=...][@name=...][index].
+     * @param context evaluation context
+     * @param parents List of parent pointers
+     * @param steps path steps
+     * @param currentStep step number
+     * @param predicates predicates
+     * @param currentPredicate int predicate number
+     * @return NodePointer
+     */
+    private static NodePointer doPredicatesStandard(
+                EvalContext context, List parents,
+                Step[] steps, int currentStep,
+                Expression[] predicates, int currentPredicate) {
+<span class="pc bpc" id="L606" title="1 of 2 branches missed.">        if (parents.size() == 0) {</span>
+<span class="nc" id="L607">            return null;</span>
+        }
+
+        // If all predicates have been processed, take the first
+        // element from the list of results and proceed to the
+        // remaining steps with that element.
+<span class="fc bfc" id="L613" title="All 2 branches covered.">        if (currentPredicate == predicates.length) {</span>
+<span class="fc" id="L614">            NodePointer pointer = (NodePointer) parents.get(0);</span>
+<span class="fc" id="L615">            return doStep(context, pointer, steps, currentStep + 1);</span>
+        }
+
+<span class="fc" id="L618">        Expression predicate = predicates[currentPredicate];</span>
+<span class="fc bfc" id="L619" title="All 2 branches covered.">        if (predicate instanceof NameAttributeTest) {</span>
+<span class="fc" id="L620">            String key = keyFromPredicate(context, predicate);</span>
+<span class="fc" id="L621">            List newList = new ArrayList();</span>
+<span class="fc bfc" id="L622" title="All 2 branches covered.">            for (int i = 0; i &lt; parents.size(); i++) {</span>
+<span class="fc" id="L623">                NodePointer pointer = (NodePointer) parents.get(i);</span>
+<span class="fc bfc" id="L624" title="All 2 branches covered.">                if (isNameAttributeEqual(pointer, key)) {</span>
+<span class="fc" id="L625">                    newList.add(pointer);</span>
+                }
+            }
+<span class="fc bfc" id="L628" title="All 2 branches covered.">            if (newList.size() == 0) {</span>
+<span class="fc" id="L629">                return null;</span>
+            }
+<span class="fc" id="L631">            return doPredicatesStandard(</span>
+                context,
+                newList,
+                steps,
+                currentStep,
+                predicates,
+                currentPredicate + 1);
+        }
+        else {
+            // For a subscript, simply take the corresponding
+            // element from the list of results and
+            // proceed to the remaining predicates with that element
+<span class="fc" id="L643">            int index = indexFromPredicate(context, predicate);</span>
+<span class="pc bpc" id="L644" title="1 of 4 branches missed.">            if (index &lt; 0 || index &gt;= parents.size()) {</span>
+<span class="fc" id="L645">                return null;</span>
+            }
+<span class="fc" id="L647">            NodePointer ptr = (NodePointer) parents.get(index);</span>
+<span class="fc" id="L648">            return doPredicate(</span>
+                context,
+                ptr,
+                steps,
+                currentStep,
+                predicates,
+                currentPredicate + 1);
+        }
+    }
+
+    /**
+     * Evaluate a subscript predicate: see if the node is a collection and
+     * if the index is inside the collection.
+     * @param context evaluation context
+     * @param parent parent pointer
+     * @param steps path steps
+     * @param currentStep step number
+     * @param predicates predicates
+     * @param currentPredicate int predicate number
+     * @return NodePointer
+     */
+    private static NodePointer doPredicateIndex(
+            EvalContext context, NodePointer parent,
+            Step[] steps, int currentStep,
+            Expression[] predicates, int currentPredicate) {
+<span class="fc" id="L673">        Expression predicate = predicates[currentPredicate];</span>
+<span class="fc" id="L674">        int index = indexFromPredicate(context, predicate);</span>
+<span class="fc" id="L675">        NodePointer pointer = parent;</span>
+<span class="fc bfc" id="L676" title="All 2 branches covered.">        if (isCollectionElement(pointer, index)) {</span>
+<span class="fc" id="L677">            pointer = (NodePointer) pointer.clone();</span>
+<span class="fc" id="L678">            pointer.setIndex(index);</span>
+<span class="fc" id="L679">            return doPredicate(</span>
+                context,
+                pointer,
+                steps,
+                currentStep,
+                predicates,
+                currentPredicate + 1);
+        }
+<span class="fc" id="L687">        return createNullPointerForPredicates(</span>
+            context,
+            parent,
+            steps,
+            currentStep,
+            predicates,
+            currentPredicate);
+    }
+
+    /**
+     * Extract an integer from a subscript predicate. The returned index
+     * starts with 0, even though the subscript starts with 1.
+     * @param context evaluation context
+     * @param predicate to evaluate
+     * @return calculated index
+     */
+    private static int indexFromPredicate(
+        EvalContext context,
+        Expression predicate) {
+<span class="fc" id="L706">        Object value = predicate.computeValue(context);</span>
+<span class="pc bpc" id="L707" title="1 of 2 branches missed.">        if (value instanceof EvalContext) {</span>
+<span class="nc" id="L708">            value = ((EvalContext) value).getSingleNodePointer();</span>
+        }
+<span class="pc bpc" id="L710" title="1 of 2 branches missed.">        if (value instanceof NodePointer) {</span>
+<span class="nc" id="L711">            value = ((NodePointer) value).getValue();</span>
+        }
+<span class="pc bpc" id="L713" title="1 of 2 branches missed.">        if (value == null) {</span>
+<span class="nc" id="L714">            throw new JXPathException(&quot;Predicate value is null: &quot; + predicate);</span>
+        }
+
+<span class="pc bpc" id="L717" title="1 of 2 branches missed.">        if (value instanceof Number) {</span>
+<span class="fc" id="L718">            final double round = 0.5;</span>
+<span class="fc" id="L719">            return (int) (InfoSetUtil.doubleValue(value) + round) - 1;</span>
+        }
+<span class="nc bnc" id="L721" title="All 2 branches missed.">        return InfoSetUtil.booleanValue(value) ? 0 : -1;</span>
+    }
+
+    /**
+     * Extracts the string value of the expression from a predicate like
+     * [@name=expression].
+     * @param context evaluation context
+     * @param predicate predicate to evaluate
+     * @return String key extracted
+     */
+    private static String keyFromPredicate(EvalContext context,
+                Expression predicate) {
+<span class="fc" id="L733">        Expression expr =</span>
+<span class="fc" id="L734">            ((NameAttributeTest) predicate).getNameTestExpression();</span>
+<span class="fc" id="L735">        return InfoSetUtil.stringValue(expr.computeValue(context));</span>
+    }
+
+    /**
+     * For a pointer that matches an actual node, returns 0.
+     * For a pointer that does not match an actual node, but whose
+     * parent pointer does returns -1, etc.
+     * @param pointer input pointer
+     * @return int match quality code
+     */
+    private static int computeQuality(NodePointer pointer) {
+<span class="fc" id="L746">        int quality = PERFECT_MATCH;</span>
+<span class="pc bpc" id="L747" title="1 of 4 branches missed.">        while (pointer != null &amp;&amp; !pointer.isActual()) {</span>
+<span class="fc" id="L748">            quality--;</span>
+<span class="fc" id="L749">            pointer = pointer.getImmediateParentPointer();</span>
+        }
+<span class="fc" id="L751">        return quality;</span>
+    }
+
+    /**
+     * Returns true if the pointer has an attribute called &quot;name&quot; and
+     * its value is equal to the supplied string.
+     * @param pointer input pointer
+     * @param name name to check
+     * @return boolean
+     */
+    private static boolean isNameAttributeEqual(
+        NodePointer pointer,
+        String name) {
+<span class="fc" id="L764">        NodeIterator it = pointer.attributeIterator(QNAME_NAME);</span>
+<span class="pc bpc" id="L765" title="1 of 2 branches missed.">        return it != null</span>
+<span class="fc bfc" id="L766" title="All 2 branches covered.">            &amp;&amp; it.setPosition(1)</span>
+<span class="fc bfc" id="L767" title="All 2 branches covered.">            &amp;&amp; name.equals(it.getNodePointer().getValue());</span>
+    }
+
+    /**
+     * Returns true if the pointer is a collection and the index is
+     * withing the bounds of the collection.
+     * @param pointer input pointer
+     * @param index to check
+     * @return boolean
+     */
+    private static boolean isCollectionElement(
+        NodePointer pointer,
+        int index) {
+<span class="fc bfc" id="L780" title="All 4 branches covered.">        return pointer.isActual()</span>
+            &amp;&amp; (index == 0
+<span class="pc bpc" id="L782" title="1 of 4 branches missed.">                || (pointer.isCollection()</span>
+                    &amp;&amp; index &gt;= 0
+<span class="fc bfc" id="L784" title="All 2 branches covered.">                    &amp;&amp; index &lt; pointer.getLength()));</span>
+    }
+
+    /**
+     * For an intermediate pointer (e.g. PropertyPointer, ContainerPointer)
+     * returns a pointer for the contained value.
+     * @param pointer input pointer
+     * @return NodePointer
+     */
+    private static NodePointer valuePointer(NodePointer pointer) {
+<span class="pc bpc" id="L794" title="1 of 2 branches missed.">        return pointer == null ? null : pointer.getValuePointer();</span>
+    }
+
+    /**
+     * Creates a &quot;null pointer&quot; that
+     * a) represents the requested path and
+     * b) can be used for creation of missing nodes in the path.
+     * @param context evaluation context
+     * @param parent parent pointer
+     * @param steps path steps
+     * @param currentStep step number
+     * @return NodePointer
+     */
+    public static NodePointer createNullPointer(
+            EvalContext context, NodePointer parent, Step[] steps,
+            int currentStep) {
+<span class="fc bfc" id="L810" title="All 2 branches covered.">        if (currentStep == steps.length) {</span>
+<span class="fc" id="L811">            return parent;</span>
+        }
+
+<span class="fc" id="L814">        parent = valuePointer(parent);</span>
+
+<span class="fc" id="L816">        Step step = steps[currentStep];</span>
+
+<span class="fc" id="L818">        int axis = step.getAxis();</span>
+<span class="fc bfc" id="L819" title="All 4 branches covered.">        if (axis == Compiler.AXIS_CHILD || axis == Compiler.AXIS_ATTRIBUTE) {</span>
+<span class="fc" id="L820">            NullPropertyPointer pointer = new NullPropertyPointer(parent);</span>
+<span class="fc" id="L821">            QName name = ((NodeNameTest) step.getNodeTest()).getNodeName();</span>
+<span class="fc" id="L822">            pointer.setPropertyName(name.toString());</span>
+<span class="fc bfc" id="L823" title="All 2 branches covered.">            pointer.setAttribute(axis == Compiler.AXIS_ATTRIBUTE);</span>
+<span class="fc" id="L824">            parent = pointer;</span>
+        }
+        // else { it is self::node() }
+
+<span class="fc" id="L828">        Expression[] predicates = step.getPredicates();</span>
+<span class="fc" id="L829">        return createNullPointerForPredicates(</span>
+            context,
+            parent,
+            steps,
+            currentStep,
+            predicates,
+            0);
+    }
+
+    /**
+     * Creates a &quot;null pointer&quot; that starts with predicates.
+     * @param context evaluation context
+     * @param parent parent pointer
+     * @param steps path steps
+     * @param currentStep step number
+     * @param predicates predicates
+     * @param currentPredicate int predicate number
+     * @return NodePointer
+     */
+    private static NodePointer createNullPointerForPredicates(
+            EvalContext context, NodePointer parent,
+            Step[] steps, int currentStep,
+            Expression[] predicates, int currentPredicate) {
+<span class="fc bfc" id="L852" title="All 2 branches covered.">        for (int i = currentPredicate; i &lt; predicates.length; i++) {</span>
+<span class="fc" id="L853">            Expression predicate = predicates[i];</span>
+<span class="fc bfc" id="L854" title="All 2 branches covered.">            if (predicate instanceof NameAttributeTest) {</span>
+<span class="fc" id="L855">                String key = keyFromPredicate(context, predicate);</span>
+<span class="fc" id="L856">                parent = valuePointer(parent);</span>
+<span class="fc" id="L857">                NullPropertyPointer pointer = new NullPropertyPointer(parent);</span>
+<span class="fc" id="L858">                pointer.setNameAttributeValue(key);</span>
+<span class="fc" id="L859">                parent = pointer;</span>
+<span class="fc" id="L860">            }</span>
+            else {
+<span class="fc" id="L862">                int index = indexFromPredicate(context, predicate);</span>
+<span class="fc bfc" id="L863" title="All 2 branches covered.">                if (parent instanceof NullPropertyPointer) {</span>
+<span class="fc" id="L864">                    parent.setIndex(index);</span>
+                }
+                else {
+<span class="fc" id="L867">                    parent = new NullElementPointer(parent, index);</span>
+                }
+            }
+        }
+        // Proceed with the remaining steps
+<span class="fc" id="L872">        return createNullPointer(</span>
+                    context, parent, steps, currentStep + 1);
+    }
+
+    /**
+     * Get a NodeIterator.
+     * @param context evaluation context
+     * @param pointer owning pointer
+     * @param step triggering step
+     * @return NodeIterator
+     */
+    private static NodeIterator getNodeIterator(
+        EvalContext context,
+        NodePointer pointer,
+        Step step) {
+<span class="fc bfc" id="L887" title="All 2 branches covered.">        if (step.getAxis() == Compiler.AXIS_CHILD) {</span>
+<span class="fc" id="L888">            NodeTest nodeTest = step.getNodeTest();</span>
+<span class="fc" id="L889">            QName qname = ((NodeNameTest) nodeTest).getNodeName();</span>
+<span class="fc" id="L890">            String prefix = qname.getPrefix();</span>
+<span class="fc bfc" id="L891" title="All 2 branches covered.">            if (prefix != null) {</span>
+<span class="fc" id="L892">                String namespaceURI = context.getJXPathContext()</span>
+<span class="fc" id="L893">                        .getNamespaceURI(prefix);</span>
+<span class="fc" id="L894">                nodeTest = new NodeNameTest(qname, namespaceURI);</span>
+            }
+<span class="fc" id="L896">            return pointer.childIterator(nodeTest, false, null);</span>
+        }
+        // else Compiler.AXIS_ATTRIBUTE
+<span class="pc bpc" id="L899" title="1 of 2 branches missed.">        if (!(step.getNodeTest() instanceof NodeNameTest)) {</span>
+<span class="nc" id="L900">            throw new UnsupportedOperationException(</span>
+                &quot;Not supported node test for attributes: &quot;
+<span class="nc" id="L902">                    + step.getNodeTest());</span>
+        }
+<span class="fc" id="L904">        return pointer.attributeIterator(</span>
+<span class="fc" id="L905">            ((NodeNameTest) step.getNodeTest()).getNodeName());</span>
+    }
+
+    /**
+     * Learn whether &lt;code&gt;name&lt;/code&gt; is a lang attribute.
+     * @param name to compare
+     * @return boolean
+     */
+    private static boolean isLangAttribute(QName name) {
+<span class="fc bfc" id="L914" title="All 2 branches covered.">        return name.getPrefix() != null</span>
+<span class="pc bpc" id="L915" title="1 of 2 branches missed.">            &amp;&amp; name.getPrefix().equals(&quot;xml&quot;)</span>
+<span class="pc bpc" id="L916" title="1 of 2 branches missed.">            &amp;&amp; name.getName().equals(&quot;lang&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

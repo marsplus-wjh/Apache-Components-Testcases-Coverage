@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InfoSetUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri</a> &gt; <span class="el_source">InfoSetUtil.java</span></div><h1>InfoSetUtil.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri;
+
+import org.apache.commons.jxpath.Pointer;
+import org.apache.commons.jxpath.ri.model.NodePointer;
+import org.apache.commons.jxpath.ri.model.VariablePointer;
+
+/**
+ * Type conversions, XPath style.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision: 652845 $ $Date: 2008-05-02 12:46:46 -0500 (Fri, 02 May 2008) $
+ */
+<span class="nc" id="L29">public class InfoSetUtil {</span>
+
+<span class="fc" id="L31">    private static final Double ZERO = new Double(0);</span>
+<span class="fc" id="L32">    private static final Double ONE = new Double(1);</span>
+<span class="fc" id="L33">    private static final Double NOT_A_NUMBER = new Double(Double.NaN);</span>
+
+    /**
+     * Converts the supplied object to String.
+     * @param object to convert
+     * @return String value
+     */
+    public static String stringValue(Object object) {
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        if (object instanceof String) {</span>
+<span class="fc" id="L42">            return (String) object;</span>
+        }
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        if (object instanceof Number) {</span>
+<span class="fc" id="L45">            double d = ((Number) object).doubleValue();</span>
+<span class="fc" id="L46">            long l = ((Number) object).longValue();</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">            return d == l ? String.valueOf(l) : String.valueOf(d);</span>
+        }
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">        if (object instanceof Boolean) {</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">            return ((Boolean) object).booleanValue() ? &quot;true&quot; : &quot;false&quot;;</span>
+        }
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">        if (object == null) {</span>
+<span class="nc" id="L53">            return &quot;&quot;;</span>
+        }
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        if (object instanceof NodePointer) {</span>
+<span class="fc" id="L56">            return stringValue(((NodePointer) object).getValue());</span>
+        }
+<span class="fc bfc" id="L58" title="All 2 branches covered.">        if (object instanceof EvalContext) {</span>
+<span class="fc" id="L59">            EvalContext ctx = (EvalContext) object;</span>
+<span class="fc" id="L60">            Pointer ptr = ctx.getSingleNodePointer();</span>
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">            return ptr == null ? &quot;&quot; : stringValue(ptr);</span>
+        }
+<span class="fc" id="L63">        return String.valueOf(object);</span>
+    }
+
+    /**
+     * Converts the supplied object to Number.
+     * @param object to convert
+     * @return Number result
+     */
+    public static Number number(Object object) {
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">        if (object instanceof Number) {</span>
+<span class="nc" id="L73">            return (Number) object;</span>
+        }
+<span class="fc bfc" id="L75" title="All 2 branches covered.">        if (object instanceof Boolean) {</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">            return ((Boolean) object).booleanValue() ? ONE : ZERO;</span>
+        }
+<span class="fc bfc" id="L78" title="All 2 branches covered.">        if (object instanceof String) {</span>
+            try {
+<span class="fc" id="L80">                return new Double((String) object);</span>
+            }
+<span class="nc" id="L82">            catch (NumberFormatException ex) {</span>
+<span class="nc" id="L83">                return NOT_A_NUMBER;</span>
+            }
+        }
+<span class="fc bfc" id="L86" title="All 2 branches covered.">        if (object instanceof EvalContext) {</span>
+<span class="fc" id="L87">            EvalContext ctx = (EvalContext) object;</span>
+<span class="fc" id="L88">            Pointer ptr = ctx.getSingleNodePointer();</span>
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">            return ptr == null ? NOT_A_NUMBER : number(ptr);</span>
+        }
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">        if (object instanceof NodePointer) {</span>
+<span class="fc" id="L92">            return number(((NodePointer) object).getValue());</span>
+        }
+<span class="nc" id="L94">        return number(stringValue(object));</span>
+    }
+
+    /**
+     * Converts the supplied object to double.
+     * @param object to convert
+     * @return double
+     */
+    public static double doubleValue(Object object) {
+<span class="fc bfc" id="L103" title="All 2 branches covered.">        if (object instanceof Number) {</span>
+<span class="fc" id="L104">            return ((Number) object).doubleValue();</span>
+        }
+<span class="fc bfc" id="L106" title="All 2 branches covered.">        if (object instanceof Boolean) {</span>
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">            return ((Boolean) object).booleanValue() ? 0.0 : 1.0;</span>
+        }
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        if (object instanceof String) {</span>
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">            if (object.equals(&quot;&quot;)) {</span>
+<span class="nc" id="L111">                return 0.0;</span>
+            }
+            try {
+<span class="fc" id="L114">                return Double.parseDouble((String) object);</span>
+            }
+<span class="nc" id="L116">            catch (NumberFormatException ex) {</span>
+<span class="nc" id="L117">                return Double.NaN;</span>
+            }
+        }
+<span class="fc bfc" id="L120" title="All 2 branches covered.">        if (object instanceof NodePointer) {</span>
+<span class="fc" id="L121">            return doubleValue(((NodePointer) object).getValue());</span>
+        }
+<span class="pc bpc" id="L123" title="1 of 2 branches missed.">        if (object instanceof EvalContext) {</span>
+<span class="fc" id="L124">            EvalContext ctx = (EvalContext) object;</span>
+<span class="fc" id="L125">            Pointer ptr = ctx.getSingleNodePointer();</span>
+<span class="pc bpc" id="L126" title="1 of 2 branches missed.">            return ptr == null ? Double.NaN : doubleValue(ptr);</span>
+        }
+<span class="nc" id="L128">        return doubleValue(stringValue(object));</span>
+    }
+
+    /**
+     * Converts the supplied object to boolean.
+     * @param object to convert
+     * @return boolean
+     */
+    public static boolean booleanValue(Object object) {
+<span class="fc bfc" id="L137" title="All 2 branches covered.">        if (object instanceof Number) {</span>
+<span class="fc" id="L138">            double value = ((Number) object).doubleValue();</span>
+<span class="fc" id="L139">            final int negZero = -0;</span>
+<span class="pc bpc" id="L140" title="2 of 6 branches missed.">            return value != 0 &amp;&amp; value != negZero &amp;&amp; !Double.isNaN(value);</span>
+        }
+<span class="fc bfc" id="L142" title="All 2 branches covered.">        if (object instanceof Boolean) {</span>
+<span class="fc" id="L143">            return ((Boolean) object).booleanValue();</span>
+        }
+<span class="pc bpc" id="L145" title="1 of 2 branches missed.">        if (object instanceof EvalContext) {</span>
+<span class="nc" id="L146">            EvalContext ctx = (EvalContext) object;</span>
+<span class="nc" id="L147">            Pointer ptr = ctx.getSingleNodePointer();</span>
+<span class="nc bnc" id="L148" title="All 2 branches missed.">            return ptr == null ? false : booleanValue(ptr);</span>
+        }
+<span class="fc bfc" id="L150" title="All 2 branches covered.">        if (object instanceof String) {</span>
+<span class="fc bfc" id="L151" title="All 2 branches covered.">            return ((String) object).length() != 0;</span>
+        }
+<span class="fc bfc" id="L153" title="All 2 branches covered.">        if (object instanceof NodePointer) {</span>
+<span class="fc" id="L154">            NodePointer pointer = (NodePointer) object;</span>
+<span class="pc bpc" id="L155" title="1 of 2 branches missed.">            if (pointer instanceof VariablePointer) {</span>
+<span class="nc" id="L156">                return booleanValue(pointer.getNode());</span>
+            }
+<span class="fc" id="L158">            pointer = pointer.getValuePointer();</span>
+<span class="fc" id="L159">            return pointer.isActual();</span>
+        }
+<span class="pc bpc" id="L161" title="1 of 2 branches missed.">        return object != null;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

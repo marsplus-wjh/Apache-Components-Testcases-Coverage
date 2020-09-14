@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="../style.css">
+</head>
+<body>
+
+
+<h1>NodeTypeTest.java</h1>
+
+<table class="src">
+
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_1'/>
+1
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_1'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>/*</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_2'/>
+2
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_2'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * Licensed to the Apache Software Foundation (ASF) under one or more</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_3'/>
+3
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_3'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * contributor license agreements.  See the NOTICE file distributed with</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_4'/>
+4
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_4'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * this work for additional information regarding copyright ownership.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_5'/>
+5
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_5'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * The ASF licenses this file to You under the Apache License, Version 2.0</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_6'/>
+6
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_6'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * (the &#34;License&#34;); you may not use this file except in compliance with</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_7'/>
+7
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_7'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * the License.  You may obtain a copy of the License at</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_8'/>
+8
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_8'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> *</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_9'/>
+9
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_9'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> *     http://www.apache.org/licenses/LICENSE-2.0</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_10'/>
+10
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_10'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> *</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_11'/>
+11
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_11'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * Unless required by applicable law or agreed to in writing, software</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_12'/>
+12
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_12'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * distributed under the License is distributed on an &#34;AS IS&#34; BASIS,</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_13'/>
+13
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_13'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_14'/>
+14
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_14'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * See the License for the specific language governing permissions and</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_15'/>
+15
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_15'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * limitations under the License.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_16'/>
+16
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_16'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> */</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_17'/>
+17
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_17'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>package org.apache.commons.jxpath.ri.compiler;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_18'/>
+18
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_18'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_19'/>
+19
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_19'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>import org.apache.commons.jxpath.ri.Compiler;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_20'/>
+20
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_20'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_21'/>
+21
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_21'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>/**</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_22'/>
+22
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_22'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * @author Dmitri Plotnikov</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_23'/>
+23
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_23'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * @version $Revision: 652845 $ $Date: 2008-05-02 12:46:46 -0500 (Fri, 02 May 2008) $</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_24'/>
+24
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_24'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> */</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_25'/>
+25
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_25'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>public class NodeTypeTest extends NodeTest {</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_26'/>
+26
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_26'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    private int nodeType;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_27'/>
+27
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_27'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_28'/>
+28
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_28'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    /**</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_29'/>
+29
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_29'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * Create a new NodeTypeTest.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_30'/>
+30
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_30'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * @param nodeType to match</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_31'/>
+31
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_31'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     */</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_32'/>
+32
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_32'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>    public NodeTypeTest(int nodeType) {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_33'/>
+33
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_33'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>        this.nodeType = nodeType;</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_34'/>
+34
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_34'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>    }</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_35'/>
+35
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_35'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_36'/>
+36
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_36'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    /**</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_37'/>
+37
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_37'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * Get the nodeType.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_38'/>
+38
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_38'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * @return int</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_39'/>
+39
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_39'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     */</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_40'/>
+40
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_40'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    public int getNodeType() {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_41'/>
+41
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_41'>1</a>
+<span>
+1. getNodeType : replaced return of integer sized value with (x == 0 ? 1 : 0) &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        return nodeType;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_42'/>
+42
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_42'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    }</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_43'/>
+43
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_43'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_44'/>
+44
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_44'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    public String toString() {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_45'/>
+45
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_45'>1</a>
+<span>
+1. toString : mutated return of Object value for org/apache/commons/jxpath/ri/compiler/NodeTypeTest::toString to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        return nodeTypeToString(nodeType) + &#34;()&#34;;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_46'/>
+46
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_46'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    }</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_47'/>
+47
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_47'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_48'/>
+48
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_48'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    /**</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_49'/>
+49
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_49'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * Render the given node type as a String.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_50'/>
+50
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_50'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * @param code int</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_51'/>
+51
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_51'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * @return String</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_52'/>
+52
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_52'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     */</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_53'/>
+53
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_53'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    public static String nodeTypeToString(int code) {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_54'/>
+54
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_54'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>        switch (code) {</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_55'/>
+55
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_55'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>            case Compiler.NODE_TYPE_NODE :</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_56'/>
+56
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_56'>1</a>
+<span>
+1. nodeTypeToString : mutated return of Object value for org/apache/commons/jxpath/ri/compiler/NodeTypeTest::nodeTypeToString to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>                return &#34;node&#34;;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_57'/>
+57
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_57'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>            case Compiler.NODE_TYPE_TEXT :</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_58'/>
+58
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_58'>1</a>
+<span>
+1. nodeTypeToString : mutated return of Object value for org/apache/commons/jxpath/ri/compiler/NodeTypeTest::nodeTypeToString to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>                return &#34;text&#34;;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_59'/>
+59
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_59'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>            case Compiler.NODE_TYPE_COMMENT :</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_60'/>
+60
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_60'>1</a>
+<span>
+1. nodeTypeToString : mutated return of Object value for org/apache/commons/jxpath/ri/compiler/NodeTypeTest::nodeTypeToString to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>                return &#34;comment&#34;;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_61'/>
+61
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_61'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>            case Compiler.NODE_TYPE_PI :</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_62'/>
+62
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_62'>1</a>
+<span>
+1. nodeTypeToString : mutated return of Object value for org/apache/commons/jxpath/ri/compiler/NodeTypeTest::nodeTypeToString to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>                return &#34;processing-instruction&#34;;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_63'/>
+63
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_63'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>            default:</span></pre></td></tr>
+
+
+<tr>
+<td class='uncovered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_64'/>
+64
+</td>
+<td class='survived'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_64'>1</a>
+<span>
+1. nodeTypeToString : mutated return of Object value for org/apache/commons/jxpath/ri/compiler/NodeTypeTest::nodeTypeToString to ( if (x != null) null else throw new RuntimeException ) &rarr; NO_COVERAGE<br/>
+
+</span>
+</span>
+</td>
+<td class='uncovered'><pre><span  class='survived'>                return &#34;UNKNOWN&#34;;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_65'/>
+65
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_65'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        }</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_66'/>
+66
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_66'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    }</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@72cfe415_67'/>
+67
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_67'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>}</span></pre></td></tr>
+
+
+
+<tr><td></td><td></td><td><h2>Mutations</h2></td></tr>
+
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@72cfe415_41'>41</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_41'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>getNodeType<br/><b>Killed by : </b>org.apache.commons.jxpath.ri.model.EmbeddedColonMapKeysTest.testSelectSingleNode(org.apache.commons.jxpath.ri.model.EmbeddedColonMapKeysTest)</span></span> replaced return of integer sized value with (x == 0 ? 1 : 0) &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@72cfe415_45'>45</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_45'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>toString<br/><b>Killed by : </b>org.apache.commons.jxpath.ri.JXPathCompiledExpressionTest.testLocationPathNodeTest(org.apache.commons.jxpath.ri.JXPathCompiledExpressionTest)</span></span> mutated return of Object value for org/apache/commons/jxpath/ri/compiler/NodeTypeTest::toString to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@72cfe415_56'>56</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_56'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>nodeTypeToString<br/><b>Killed by : </b>org.apache.commons.jxpath.ri.JXPathCompiledExpressionTest.testLocationPathNodeTest(org.apache.commons.jxpath.ri.JXPathCompiledExpressionTest)</span></span> mutated return of Object value for org/apache/commons/jxpath/ri/compiler/NodeTypeTest::nodeTypeToString to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@72cfe415_58'>58</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_58'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>nodeTypeToString<br/><b>Killed by : </b>org.apache.commons.jxpath.ri.JXPathCompiledExpressionTest.testLocationPathNodeTest(org.apache.commons.jxpath.ri.JXPathCompiledExpressionTest)</span></span> mutated return of Object value for org/apache/commons/jxpath/ri/compiler/NodeTypeTest::nodeTypeToString to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@72cfe415_60'>60</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_60'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>nodeTypeToString<br/><b>Killed by : </b>org.apache.commons.jxpath.ri.JXPathCompiledExpressionTest.testLocationPathNodeTest(org.apache.commons.jxpath.ri.JXPathCompiledExpressionTest)</span></span> mutated return of Object value for org/apache/commons/jxpath/ri/compiler/NodeTypeTest::nodeTypeToString to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@72cfe415_62'>62</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_62'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>nodeTypeToString<br/><b>Killed by : </b>org.apache.commons.jxpath.ri.JXPathCompiledExpressionTest.testLocationPathNodeTest(org.apache.commons.jxpath.ri.JXPathCompiledExpressionTest)</span></span> mutated return of Object value for org/apache/commons/jxpath/ri/compiler/NodeTypeTest::nodeTypeToString to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@72cfe415_64'>64</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@72cfe415_64'/> 
+
+<p class='NO_COVERAGE'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>nodeTypeToString<br/><b>Killed by : </b>none</span></span> mutated return of Object value for org/apache/commons/jxpath/ri/compiler/NodeTypeTest::nodeTypeToString to ( if (x != null) null else throw new RuntimeException ) &rarr; NO_COVERAGE</p> 
+</td>
+</tr>
+
+</table>
+
+
+<h2>Active mutators</h2>
+<ul>
+<li class='mutator'>INCREMENTS_MUTATOR</li>
+<li class='mutator'>VOID_METHOD_CALL_MUTATOR</li>
+<li class='mutator'>RETURN_VALS_MUTATOR</li>
+<li class='mutator'>MATH_MUTATOR</li>
+<li class='mutator'>NEGATE_CONDITIONALS_MUTATOR</li>
+<li class='mutator'>INVERT_NEGS_MUTATOR</li>
+<li class='mutator'>CONDITIONALS_BOUNDARY_MUTATOR</li>
+
+</ul>
+
+<h2>Tests examined</h2>
+<ul>
+<li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testCoreFunctions(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.dom.DOMModelTest.testAxisPrecedingSibling(org.apache.commons.jxpath.ri.model.dom.DOMModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest.testAxisChild(org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest) (7 ms)</li><li>org.apache.commons.jxpath.ri.JXPathCompiledExpressionTest.testLocationPathAxisAttribute(org.apache.commons.jxpath.ri.JXPathCompiledExpressionTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testAxisDescendant(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (9 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testAxisPreceding(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testAxisFollowingSibling(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (7 ms)</li><li>org.apache.commons.jxpath.ri.JXPathCompiledExpressionTest.testLocationPathAxisDescendantOrSelf(org.apache.commons.jxpath.ri.JXPathCompiledExpressionTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest.testNodeTypeText(org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testUnion(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest.testFunctionsLastAndPosition(org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.model.dom.DOMModelTest.testLang(org.apache.commons.jxpath.ri.model.dom.DOMModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testAxisParent(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (7 ms)</li><li>org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest.testExpressionContext(org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest) (21 ms)</li><li>org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest.testAxisFollowing(org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest) (5 ms)</li><li>org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest.testAxisPrecedingSibling(org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.dom.DOMModelTest.testNodeTypeComment(org.apache.commons.jxpath.ri.model.dom.DOMModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.dom.DOMModelTest.testAxisFollowing(org.apache.commons.jxpath.ri.model.dom.DOMModelTest) (5 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testRelativeContextParent(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest.testNamespaceMapping(org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.JXPathCompiledExpressionTest.testLocationPathNodeTest(org.apache.commons.jxpath.ri.JXPathCompiledExpressionTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.JXPathCompiledExpressionTest.testLocationPathAxisSelf(org.apache.commons.jxpath.ri.JXPathCompiledExpressionTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest.testDocument(org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest) (6 ms)</li><li>org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest.testNodeTypeProcessingInstruction(org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest) (6 ms)</li><li>org.apache.commons.jxpath.ri.model.dom.DOMModelTest.testAxisDescendant(org.apache.commons.jxpath.ri.model.dom.DOMModelTest) (24 ms)</li><li>org.apache.commons.jxpath.ri.model.dom.DOMModelTest.testAxisChild(org.apache.commons.jxpath.ri.model.dom.DOMModelTest) (19 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testAxisFollowing(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testCreatePathAndSetValueWithMatrix(org.apache.commons.jxpath.ri.model.MixedModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest.testGetNode(org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest) (7 ms)</li><li>org.apache.commons.jxpath.ri.model.dom.DOMModelTest.testGetNode(org.apache.commons.jxpath.ri.model.dom.DOMModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest.testAxisDescendant(org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest) (5 ms)</li><li>org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest.testAxisDescendant(org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest) (6 ms)</li><li>org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest.testEstablishNodeSetBaseline(org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest) (7 ms)</li><li>org.apache.commons.jxpath.ri.model.dom.DOMModelTest.testRemovePath(org.apache.commons.jxpath.ri.model.dom.DOMModelTest) (5 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testAxisPrecedingSibling(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.axes.RecursiveAxesTest.testInfiniteDescent(org.apache.commons.jxpath.ri.axes.RecursiveAxesTest) (9 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testBooleanPredicate(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (28 ms)</li><li>org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest.testAttributeName(org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testAxisDescendant(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (6 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testBooleanPredicate(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (6 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testUnion(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (5 ms)</li><li>org.apache.commons.jxpath.ri.model.dom.DOMModelTest.testAxisParent(org.apache.commons.jxpath.ri.model.dom.DOMModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest.testSetNewKey(org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.dom.DOMModelTest.testAxisPreceding(org.apache.commons.jxpath.ri.model.dom.DOMModelTest) (8 ms)</li><li>org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest.testDocumentOrder(org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest) (5 ms)</li><li>org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest.testAxisAttribute(org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest) (7 ms)</li><li>org.apache.commons.jxpath.ri.model.dom.DOMModelTest.testAxisSelf(org.apache.commons.jxpath.ri.model.dom.DOMModelTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.JXPathCompiledExpressionTest.testLocationPathAxisParent(org.apache.commons.jxpath.ri.JXPathCompiledExpressionTest) (0 ms)</li><li>org.apache.commons.jxpath.ri.axes.SimplePathInterpreterTest.testDoStepNoPredicatesPropertyOwner(org.apache.commons.jxpath.ri.axes.SimplePathInterpreterTest) (9 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testAxisChild(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testCoreFunctions(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (7 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testAxisParent(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (7 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testAxisAncestor(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.dom.DOMModelTest.testNamespaceMapping(org.apache.commons.jxpath.ri.model.dom.DOMModelTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testAxisPreceding(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.EmbeddedColonMapKeysTest.testSelectNodes(org.apache.commons.jxpath.ri.model.EmbeddedColonMapKeysTest) (0 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testAxisPrecedingSibling(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (7 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testAxisAncestor(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.dom.DOMModelTest.testContainer(org.apache.commons.jxpath.ri.model.dom.DOMModelTest) (8 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testAxisFollowing(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.axes.SimplePathInterpreterTest.testDoPredicateIndex(org.apache.commons.jxpath.ri.axes.SimplePathInterpreterTest) (19 ms)</li><li>org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest.testAxisFollowingSibling(org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.model.EmbeddedColonMapKeysTest.testSelectSingleNode(org.apache.commons.jxpath.ri.model.EmbeddedColonMapKeysTest) (0 ms)</li><li>org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest.testBCNodeSetHack(org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest) (17 ms)</li><li>org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest.testRemovePath(org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.dom.DOMModelTest.testDocument(org.apache.commons.jxpath.ri.model.dom.DOMModelTest) (5 ms)</li><li>org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest.testAxisParent(org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.axes.SimplePathInterpreterTest.testDoPredicatesStandard(org.apache.commons.jxpath.ri.axes.SimplePathInterpreterTest) (7 ms)</li><li>org.apache.commons.jxpath.ri.model.dom.DOMModelTest.testBooleanFunction(org.apache.commons.jxpath.ri.model.dom.DOMModelTest) (9 ms)</li><li>org.apache.commons.jxpath.ri.model.dom.DOMModelTest.testAxisAttribute(org.apache.commons.jxpath.ri.model.dom.DOMModelTest) (7 ms)</li><li>org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest.testAxisPreceding(org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testAxisDescendantOrSelf(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (12 ms)</li><li>org.apache.commons.jxpath.ri.model.container.ContainerModelTest.testContainerRootWithCollection(org.apache.commons.jxpath.ri.model.container.ContainerModelTest) (0 ms)</li><li>org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest.testAxisSelf(org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest.testBooleanFunction(org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest) (5 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testIteratePointersArray(org.apache.commons.jxpath.ri.model.MixedModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.dom.DOMModelTest.testFunctionsLastAndPosition(org.apache.commons.jxpath.ri.model.dom.DOMModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testListList(org.apache.commons.jxpath.ri.model.MixedModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.axes.SimplePathInterpreterTest.testDoPredicateName(org.apache.commons.jxpath.ri.axes.SimplePathInterpreterTest) (19 ms)</li><li>org.apache.commons.jxpath.ri.model.dom.DOMModelTest.testNodeTypeProcessingInstruction(org.apache.commons.jxpath.ri.model.dom.DOMModelTest) (5 ms)</li><li>org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest.testLang(org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest) (5 ms)</li><li>org.apache.commons.jxpath.ri.model.dom.DOMModelTest.testNodeTypeText(org.apache.commons.jxpath.ri.model.dom.DOMModelTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest.testNodeTypeComment(org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest) (5 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testErrorProperty(org.apache.commons.jxpath.ri.model.MixedModelTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.compiler.CoreFunctionTest.testIDFunction(org.apache.commons.jxpath.ri.compiler.CoreFunctionTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.model.dom.DOMModelTest.testID(org.apache.commons.jxpath.ri.model.dom.DOMModelTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest.testMapOfMaps(org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.dom.DOMModelTest.testAxisFollowingSibling(org.apache.commons.jxpath.ri.model.dom.DOMModelTest) (5 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testRelativeContextParent(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (5 ms)</li><li>org.apache.commons.jxpath.ri.model.dom.DOMModelTest.testDocumentOrder(org.apache.commons.jxpath.ri.model.dom.DOMModelTest) (5 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testMatrix(org.apache.commons.jxpath.ri.model.MixedModelTest) (10 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testAxisFollowingSibling(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (7 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testCollectionPointer(org.apache.commons.jxpath.ri.model.MixedModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest.testContainer(org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest) (10 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testAxisDescendantOrSelf(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (9 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testAxisChild(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testRootAsCollection(org.apache.commons.jxpath.ri.model.MixedModelTest) (2 ms)</li>
+</ul>
+
+<br/>
+
+Report generated by <a href='http://pitest.org'>PIT</a> 1.4.3
+
+</body>
+</html>

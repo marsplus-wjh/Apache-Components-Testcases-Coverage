@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>PluginException.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester.plugins</a> &gt; <span class="el_source">PluginException.java</span></div><h1>PluginException.java</h1><pre class="source lang-java linenums">/* $Id$
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.digester.plugins;
+
+/**
+ * Thrown when some plugin-related error has occurred, and none of the
+ * other exception types are appropriate.
+ *
+ * @since 1.6
+ */
+
+public class PluginException extends Exception {
+
+    private static final long serialVersionUID = 1L;
+<span class="nc" id="L31">    private Throwable cause = null;</span>
+
+    /**
+     * @param cause underlying exception that caused this to be thrown
+     */
+    public PluginException(Throwable cause) {
+<span class="nc" id="L37">        this(cause.getMessage());</span>
+<span class="nc" id="L38">        this.cause = cause;</span>
+<span class="nc" id="L39">    }</span>
+
+    /**
+     * @param msg describes the reason this exception is being thrown.
+     */
+    public PluginException(String msg) {
+<span class="nc" id="L45">        super(msg);</span>
+<span class="nc" id="L46">    }</span>
+
+    /**
+     * @param msg describes the reason this exception is being thrown.
+     * @param cause underlying exception that caused this to be thrown
+     */
+    public PluginException(String msg, Throwable cause) {
+<span class="nc" id="L53">        this(msg);</span>
+<span class="nc" id="L54">        this.cause = cause;</span>
+<span class="nc" id="L55">    }</span>
+    
+    /**
+     * @return the underlying exception that caused this to be thrown
+     */
+    @Override
+    public Throwable getCause() {
+<span class="nc" id="L62">        return cause;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

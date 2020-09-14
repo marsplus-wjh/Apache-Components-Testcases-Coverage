@@ -1,0 +1,3403 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>Digester.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester</a> &gt; <span class="el_source">Digester.java</span></div><h1>Digester.java</h1><pre class="source lang-java linenums">/* $Id$
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.digester;
+
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.lang.reflect.InvocationTargetException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.EmptyStackException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Stack;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.validation.Schema;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.InputSource;
+import org.xml.sax.Locator;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
+import org.xml.sax.SAXParseException;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.DefaultHandler;
+
+
+
+
+/**
+ * &lt;p&gt;A &lt;strong&gt;Digester&lt;/strong&gt; processes an XML input stream by matching a
+ * series of element nesting patterns to execute Rules that have been added
+ * prior to the start of parsing.&lt;/p&gt;
+ *
+ * &lt;p&gt;See the &lt;a href=&quot;package-summary.html#package_description&quot;&gt;Digester
+ * Developer Guide&lt;/a&gt; for more information.&lt;/p&gt;
+ *
+ * &lt;p&gt;&lt;strong&gt;IMPLEMENTATION NOTE&lt;/strong&gt; - A single Digester instance may
+ * only be used within the context of a single thread at a time, and a call
+ * to &lt;code&gt;parse()&lt;/code&gt; must be completed before another can be initiated
+ * even from the same thread.&lt;/p&gt;
+ * 
+ * &lt;p&gt;A Digester instance should not be used for parsing more than one input
+ * document. The problem is that the Digester class has quite a few member
+ * variables whose values &quot;evolve&quot; as SAX events are received during a parse.
+ * When reusing the Digester instance, all these members must be reset back
+ * to their initial states before the second parse begins. The &quot;clear()&quot;
+ * method makes a stab at resetting these, but it is actually rather a
+ * difficult problem. If you are determined to reuse Digester instances, then
+ * at the least you should call the clear() method before each parse, and must
+ * call it if the Digester parse terminates due to an exception during a parse.
+ * &lt;/p&gt;
+ *
+ * &lt;p&gt;&lt;strong&gt;LEGACY IMPLEMENTATION NOTE&lt;/strong&gt; - When using the legacy XML
+ * schema support (instead of using the {@link Schema} class), a bug in
+ * Xerces 2.0.2 prevents the support of XML schema. You need Xerces 2.1/2.3
+ * and up to make this class work with the legacy XML schema support.&lt;/p&gt;
+ *
+ * &lt;p&gt;This package was inspired by the &lt;code&gt;XmlMapper&lt;/code&gt; class that was
+ * part of Tomcat 3.0 and 3.1, but is organized somewhat differently.&lt;/p&gt;
+ */
+
+public class Digester extends DefaultHandler {
+
+
+    // --------------------------------------------------------- Constructors
+
+
+    /**
+     * Construct a new Digester with default properties.
+     */
+    public Digester() {
+
+<span class="fc" id="L106">        super();</span>
+
+<span class="fc" id="L108">    }</span>
+
+
+    /**
+     * Construct a new Digester, allowing a SAXParser to be passed in.  This
+     * allows Digester to be used in environments which are unfriendly to
+     * JAXP1.1 (such as WebLogic 6.0). This may help in places where
+     * you are able to load JAXP 1.1 classes yourself.
+     */
+    public Digester(SAXParser parser) {
+
+<span class="nc" id="L119">        super();</span>
+
+<span class="nc" id="L121">        this.parser = parser;</span>
+
+<span class="nc" id="L123">    }</span>
+
+
+    /**
+     * Construct a new Digester, allowing an XMLReader to be passed in.  This
+     * allows Digester to be used in environments which are unfriendly to
+     * JAXP1.1 (such as WebLogic 6.0).  Note that if you use this option you
+     * have to configure namespace and validation support yourself, as these
+     * properties only affect the SAXParser and emtpy constructor.
+     */
+    public Digester(XMLReader reader) {
+
+<span class="nc" id="L135">        super();</span>
+
+<span class="nc" id="L137">        this.reader = reader;</span>
+
+<span class="nc" id="L139">    }</span>
+
+
+    // --------------------------------------------------- Instance Variables
+
+
+    /**
+     * The body text of the current element.
+     */
+<span class="pc" id="L148">    protected StringBuffer bodyText = new StringBuffer();</span>
+
+
+    /**
+     * The stack of body text string buffers for surrounding elements.
+     */
+<span class="pc" id="L154">    protected Stack&lt;StringBuffer&gt; bodyTexts = new Stack&lt;StringBuffer&gt;();</span>
+
+
+    /**
+     * Stack whose elements are List objects, each containing a list of
+     * Rule objects as returned from Rules.getMatch(). As each xml element
+     * in the input is entered, the matching rules are pushed onto this
+     * stack. After the end tag is reached, the matches are popped again.
+     * The depth of is stack is therefore exactly the same as the current
+     * &quot;nesting&quot; level of the input xml. 
+     *
+     * @since 1.6
+     */
+<span class="pc" id="L167">    protected Stack&lt;List&lt;Rule&gt;&gt; matches = new Stack&lt;List&lt;Rule&gt;&gt;();</span>
+    
+    /**
+     * The class loader to use for instantiating application objects.
+     * If not specified, the context class loader, or the class loader
+     * used to load Digester itself, is used, based on the value of the
+     * &lt;code&gt;useContextClassLoader&lt;/code&gt; variable.
+     */
+<span class="pc" id="L175">    protected ClassLoader classLoader = null;</span>
+
+
+    /**
+     * Has this Digester been configured yet.
+     */
+<span class="pc" id="L181">    protected boolean configured = false;</span>
+
+
+    /**
+     * The EntityResolver used by the SAX parser. By default it use this class
+     */
+    protected EntityResolver entityResolver;
+    
+    /**
+     * The URLs of entityValidator that have been registered, keyed by the public
+     * identifier that corresponds.
+     */
+<span class="pc" id="L193">    protected HashMap&lt;String, URL&gt; entityValidator = new HashMap&lt;String, URL&gt;();</span>
+
+
+    /**
+     * The application-supplied error handler that is notified when parsing
+     * warnings, errors, or fatal errors occur.
+     */
+<span class="pc" id="L200">    protected ErrorHandler errorHandler = null;</span>
+
+
+    /**
+     * The SAXParserFactory that is created the first time we need it.
+     */
+<span class="pc" id="L206">    protected SAXParserFactory factory = null;</span>
+
+    /**
+     * @deprecated This is now managed by {@link ParserFeatureSetterFactory}
+     */
+<span class="pc" id="L211">    @Deprecated</span>
+    protected String JAXP_SCHEMA_LANGUAGE =
+        &quot;http://java.sun.com/xml/jaxp/properties/schemaLanguage&quot;;
+    
+    
+    /**
+     * The Locator associated with our parser.
+     */
+<span class="pc" id="L219">    protected Locator locator = null;</span>
+
+
+    /**
+     * The current match pattern for nested element processing.
+     */
+<span class="pc" id="L225">    protected String match = &quot;&quot;;</span>
+
+
+    /**
+     * Do we want a &quot;namespace aware&quot; parser.
+     */
+<span class="pc" id="L231">    protected boolean namespaceAware = false;</span>
+
+
+    /**
+     * Registered namespaces we are currently processing.  The key is the
+     * namespace prefix that was declared in the document.  The value is an
+     * Stack of the namespace URIs this prefix has been mapped to --
+     * the top Stack element is the most current one.  (This architecture
+     * is required because documents can declare nested uses of the same
+     * prefix for different Namespace URIs).
+     */
+<span class="pc" id="L242">    protected HashMap&lt;String, Stack&lt;String&gt;&gt; namespaces = new HashMap&lt;String, Stack&lt;String&gt;&gt;();</span>
+
+
+    /**
+     * Do we want a &quot;XInclude aware&quot; parser.
+     */
+<span class="pc" id="L248">    protected boolean xincludeAware = false;</span>
+
+
+    /**
+     * The parameters stack being utilized by CallMethodRule and
+     * CallParamRule rules.
+     *
+     * @since 2.0
+     */
+<span class="pc" id="L257">    protected Stack&lt;Object&gt; params = new Stack&lt;Object&gt;();</span>
+
+
+    /**
+     * The SAXParser we will use to parse the input stream.
+     */
+<span class="pc" id="L263">    protected SAXParser parser = null;</span>
+
+
+    /**
+     * The public identifier of the DTD we are currently parsing under
+     * (if any).
+     */
+<span class="pc" id="L270">    protected String publicId = null;</span>
+
+
+    /**
+     * The XMLReader used to parse digester rules.
+     */
+<span class="pc" id="L276">    protected XMLReader reader = null;</span>
+
+
+    /**
+     * The &quot;root&quot; element of the stack (in other words, the last object
+     * that was popped.
+     */
+<span class="pc" id="L283">    protected Object root = null;</span>
+
+
+    /**
+     * The &lt;code&gt;Rules&lt;/code&gt; implementation containing our collection of
+     * &lt;code&gt;Rule&lt;/code&gt; instances and associated matching policy.  If not
+     * established before the first rule is added, a default implementation
+     * will be provided.
+     */
+<span class="pc" id="L292">    protected Rules rules = null;</span>
+
+   /**
+     * The XML schema language to use for validating an XML instance. By
+     * default this value is set to &lt;code&gt;W3C_XML_SCHEMA&lt;/code&gt;
+     *
+     * @deprecated Use {@link Schema} support instead.
+     */
+<span class="pc" id="L300">    @Deprecated</span>
+    protected String schemaLanguage = W3C_XML_SCHEMA;
+    
+        
+    /**
+     * The XML schema to use for validating an XML instance.
+     *
+     * @deprecated Use {@link Schema} support instead.
+     */
+<span class="pc" id="L309">    @Deprecated</span>
+    protected String schemaLocation = null;
+    
+    
+    /**
+     * The XML schema to use for validating an XML instance.
+     *
+     * @since 2.0
+     */
+<span class="pc" id="L318">    protected Schema schema = null;</span>
+
+
+    /**
+     * The object stack being constructed.
+     */
+<span class="pc" id="L324">    protected Stack&lt;Object&gt; stack = new Stack&lt;Object&gt;();</span>
+
+
+    /**
+     * Do we want to use the Context ClassLoader when loading classes
+     * for instantiating new objects.  Default is &lt;code&gt;false&lt;/code&gt;.
+     */
+<span class="pc" id="L331">    protected boolean useContextClassLoader = false;</span>
+
+
+    /**
+     * Do we want to use a validating parser.
+     */
+<span class="pc" id="L337">    protected boolean validating = false;</span>
+
+
+    /**
+     * The Log to which most logging calls will be made.
+     */
+<span class="pc" id="L343">    protected Log log =</span>
+<span class="pc" id="L344">        LogFactory.getLog(&quot;org.apache.commons.digester.Digester&quot;);</span>
+
+
+    /**
+     * The Log to which all SAX event related logging calls will be made.
+     */
+<span class="pc" id="L350">    protected Log saxLog =</span>
+<span class="pc" id="L351">        LogFactory.getLog(&quot;org.apache.commons.digester.Digester.sax&quot;);</span>
+    
+        
+    /**
+     * The schema language supported. By default, we use this one.
+     */
+    protected static final String W3C_XML_SCHEMA =
+        &quot;http://www.w3.org/2001/XMLSchema&quot;;
+    
+    /**
+     * An optional class that substitutes values in attributes and body text.
+     * This may be null and so a null check is always required before use.
+     */
+    protected Substitutor substitutor;
+    
+    /** Stacks used for interrule communication, indexed by name String */
+<span class="pc" id="L367">    private HashMap&lt;String, Stack&lt;Object&gt;&gt; stacksByName = new HashMap&lt;String, Stack&lt;Object&gt;&gt;();</span>
+    
+    /**
+     * If not null, then calls by the parser to this object's characters, 
+     * startElement, endElement and processingInstruction methods are 
+     * forwarded to the specified object. This is intended to allow rules
+     * to temporarily &quot;take control&quot; of the sax events. In particular, 
+     * this is used by NodeCreateRule.
+     * &lt;p&gt;
+     * See setCustomContentHandler.
+     */
+<span class="pc" id="L378">    private ContentHandler customContentHandler = null;</span>
+
+    /**
+     * Object which will receive callbacks for every pop/push action
+     * on the default stack or named stacks. 
+     */
+<span class="pc" id="L384">    private StackAction stackAction = null;</span>
+
+    // ------------------------------------------------------------- Properties
+
+    /**
+     * Return the currently mapped namespace URI for the specified prefix,
+     * if any; otherwise return &lt;code&gt;null&lt;/code&gt;.  These mappings come and
+     * go dynamically as the document is parsed.
+     *
+     * @param prefix Prefix to look up
+     */
+    public String findNamespaceURI(String prefix) {
+        
+<span class="nc" id="L397">        Stack&lt;String&gt; nsStack = namespaces.get(prefix);</span>
+<span class="nc bnc" id="L398" title="All 2 branches missed.">        if (nsStack == null) {</span>
+<span class="nc" id="L399">            return null;</span>
+        }
+        try {
+<span class="nc" id="L402">            return (nsStack.peek());</span>
+<span class="nc" id="L403">        } catch (EmptyStackException e) {</span>
+<span class="nc" id="L404">            return null;</span>
+        }
+
+    }
+
+
+    /**
+     * Return the class loader to be used for instantiating application objects
+     * when required.  This is determined based upon the following rules:
+     * &lt;ul&gt;
+     * &lt;li&gt;The class loader set by &lt;code&gt;setClassLoader()&lt;/code&gt;, if any&lt;/li&gt;
+     * &lt;li&gt;The thread context class loader, if it exists and the
+     *     &lt;code&gt;useContextClassLoader&lt;/code&gt; property is set to true&lt;/li&gt;
+     * &lt;li&gt;The class loader used to load the Digester class itself.
+     * &lt;/ul&gt;
+     */
+    public ClassLoader getClassLoader() {
+
+<span class="fc bfc" id="L422" title="All 2 branches covered.">        if (this.classLoader != null) {</span>
+<span class="fc" id="L423">            return (this.classLoader);</span>
+        }
+<span class="pc bpc" id="L425" title="1 of 2 branches missed.">        if (this.useContextClassLoader) {</span>
+            ClassLoader classLoader =
+<span class="nc" id="L427">                    Thread.currentThread().getContextClassLoader();</span>
+<span class="nc bnc" id="L428" title="All 2 branches missed.">            if (classLoader != null) {</span>
+<span class="nc" id="L429">                return (classLoader);</span>
+            }
+        }
+<span class="fc" id="L432">        return (this.getClass().getClassLoader());</span>
+
+    }
+
+
+    /**
+     * Set the class loader to be used for instantiating application objects
+     * when required.
+     *
+     * @param classLoader The new class loader to use, or &lt;code&gt;null&lt;/code&gt;
+     *  to revert to the standard rules
+     */
+    public void setClassLoader(ClassLoader classLoader) {
+
+<span class="fc" id="L446">        this.classLoader = classLoader;</span>
+
+<span class="fc" id="L448">    }</span>
+
+
+    /**
+     * Return the current depth of the element stack.
+     */
+    public int getCount() {
+
+<span class="fc" id="L456">        return (stack.size());</span>
+
+    }
+
+
+    /**
+     * Return the name of the XML element that is currently being processed.
+     */
+    public String getCurrentElementName() {
+
+<span class="nc" id="L466">        String elementName = match;</span>
+<span class="nc" id="L467">        int lastSlash = elementName.lastIndexOf('/');</span>
+<span class="nc bnc" id="L468" title="All 2 branches missed.">        if (lastSlash &gt;= 0) {</span>
+<span class="nc" id="L469">            elementName = elementName.substring(lastSlash + 1);</span>
+        }
+<span class="nc" id="L471">        return (elementName);</span>
+
+    }
+
+
+    /**
+     * Return the debugging detail level of our currently enabled logger.
+     *
+     * @deprecated This method now always returns 0. Digester uses the apache
+     * jakarta commons-logging library; see the documentation for that library
+     * for more information.
+     */
+    @Deprecated
+    public int getDebug() {
+
+<span class="nc" id="L486">        return (0);</span>
+
+    }
+
+
+    /**
+     * Set the debugging detail level of our currently enabled logger.
+     *
+     * @param debug New debugging detail level (0=off, increasing integers
+     *  for more detail)
+     *
+     * @deprecated This method now has no effect at all. Digester uses
+     * the apache jakarta comons-logging library; see the documentation
+     * for that library for more information.
+     */
+    @Deprecated
+    public void setDebug(int debug) {
+
+        // No action is taken
+
+<span class="nc" id="L506">    }</span>
+
+
+    /**
+     * Return the error handler for this Digester.
+     */
+    public ErrorHandler getErrorHandler() {
+
+<span class="fc" id="L514">        return (this.errorHandler);</span>
+
+    }
+
+
+    /**
+     * Set the error handler for this Digester.
+     *
+     * @param errorHandler The new error handler
+     */
+    public void setErrorHandler(ErrorHandler errorHandler) {
+
+<span class="fc" id="L526">        this.errorHandler = errorHandler;</span>
+
+<span class="fc" id="L528">    }</span>
+
+
+    /**
+     * Return the SAXParserFactory we will use, creating one if necessary.
+     */
+    public SAXParserFactory getFactory() {
+
+<span class="pc bpc" id="L536" title="1 of 2 branches missed.">        if (factory == null) {</span>
+<span class="fc" id="L537">            factory = SAXParserFactory.newInstance();</span>
+<span class="fc" id="L538">            factory.setNamespaceAware(namespaceAware);</span>
+<span class="fc" id="L539">            factory.setXIncludeAware(xincludeAware);</span>
+<span class="fc" id="L540">            factory.setValidating(validating);</span>
+<span class="fc" id="L541">            factory.setSchema(schema);</span>
+        }
+<span class="fc" id="L543">        return (factory);</span>
+
+    }
+
+
+    /**
+     * Returns a flag indicating whether the requested feature is supported
+     * by the underlying implementation of &lt;code&gt;org.xml.sax.XMLReader&lt;/code&gt;.
+     * See &lt;a href=&quot;http://www.saxproject.org&quot;&gt;the saxproject website&lt;/a&gt;
+     * for information about the standard SAX2 feature flags.
+     *
+     * @param feature Name of the feature to inquire about
+     *
+     * @exception ParserConfigurationException if a parser configuration error
+     *  occurs
+     * @exception SAXNotRecognizedException if the property name is
+     *  not recognized
+     * @exception SAXNotSupportedException if the property name is
+     *  recognized but not supported
+     */
+    public boolean getFeature(String feature)
+        throws ParserConfigurationException, SAXNotRecognizedException,
+        SAXNotSupportedException {
+
+<span class="nc" id="L567">        return (getFactory().getFeature(feature));</span>
+
+    }
+
+
+    /**
+     * Sets a flag indicating whether the requested feature is supported
+     * by the underlying implementation of &lt;code&gt;org.xml.sax.XMLReader&lt;/code&gt;.
+     * See &lt;a href=&quot;http://www.saxproject.org&quot;&gt;the saxproject website&lt;/a&gt;
+     * for information about the standard SAX2 feature flags.  In order to be
+     * effective, this method must be called &lt;strong&gt;before&lt;/strong&gt; the
+     * &lt;code&gt;getParser()&lt;/code&gt; method is called for the first time, either
+     * directly or indirectly.
+     *
+     * @param feature Name of the feature to set the status for
+     * @param value The new value for this feature
+     *
+     * @exception ParserConfigurationException if a parser configuration error
+     *  occurs
+     * @exception SAXNotRecognizedException if the property name is
+     *  not recognized
+     * @exception SAXNotSupportedException if the property name is
+     *  recognized but not supported
+     */
+    public void setFeature(String feature, boolean value)
+        throws ParserConfigurationException, SAXNotRecognizedException,
+        SAXNotSupportedException {
+
+<span class="nc" id="L595">        getFactory().setFeature(feature, value);</span>
+
+<span class="nc" id="L597">    }</span>
+
+
+    /**
+     * Return the current Logger associated with this instance of the Digester
+     */
+    public Log getLogger() {
+
+<span class="fc" id="L605">        return log;</span>
+
+    }
+
+
+    /**
+     * Set the current logger for this Digester.
+     */
+    public void setLogger(Log log) {
+
+<span class="nc" id="L615">        this.log = log;</span>
+
+<span class="nc" id="L617">    }</span>
+
+    /**
+     * Gets the logger used for logging SAX-related information.
+     * &lt;strong&gt;Note&lt;/strong&gt; the output is finely grained.
+     *
+     * @since 1.6
+     */
+    public Log getSAXLogger() {
+        
+<span class="nc" id="L627">        return saxLog;</span>
+    }
+    
+
+    /**
+     * Sets the logger used for logging SAX-related information.
+     * &lt;strong&gt;Note&lt;/strong&gt; the output is finely grained.
+     * @param saxLog Log, not null
+     *
+     * @since 1.6
+     */    
+    public void setSAXLogger(Log saxLog) {
+    
+<span class="nc" id="L640">        this.saxLog = saxLog;</span>
+<span class="nc" id="L641">    }</span>
+
+    /**
+     * Return the current rule match path
+     */
+    public String getMatch() {
+
+<span class="fc" id="L648">        return match;</span>
+
+    }
+
+
+    /**
+     * Return the &quot;namespace aware&quot; flag for parsers we create.
+     */
+    public boolean getNamespaceAware() {
+
+<span class="fc" id="L658">        return (this.namespaceAware);</span>
+
+    }
+
+
+    /**
+     * Set the &quot;namespace aware&quot; flag for parsers we create.
+     *
+     * @param namespaceAware The new &quot;namespace aware&quot; flag
+     */
+    public void setNamespaceAware(boolean namespaceAware) {
+
+<span class="fc" id="L670">        this.namespaceAware = namespaceAware;</span>
+
+<span class="fc" id="L672">    }</span>
+
+
+    /**
+     * Return the XInclude-aware flag for parsers we create. XInclude
+     * functionality additionally requires namespace-awareness.
+     *
+     * @return The XInclude-aware flag
+     *
+     * @see #getNamespaceAware()
+     *
+     * @since 2.0
+     */
+    public boolean getXIncludeAware() {
+
+<span class="nc" id="L687">        return (this.xincludeAware);</span>
+
+    }
+
+
+    /**
+     * Set the XInclude-aware flag for parsers we create. This additionally
+     * requires namespace-awareness.
+     *
+     * @param xincludeAware The new XInclude-aware flag
+     *
+     * @see #setNamespaceAware(boolean)
+     *
+     * @since 2.0
+     */
+    public void setXIncludeAware(boolean xincludeAware) {
+
+<span class="fc" id="L704">        this.xincludeAware = xincludeAware;</span>
+
+<span class="fc" id="L706">    }</span>
+
+    
+    /**
+     * Set the publid id of the current file being parse.
+     * @param publicId the DTD/Schema public's id.
+     */
+    public void setPublicId(String publicId){
+<span class="nc" id="L714">        this.publicId = publicId;</span>
+<span class="nc" id="L715">    }</span>
+    
+    
+    /**
+     * Return the public identifier of the DTD we are currently
+     * parsing under, if any.
+     */
+    public String getPublicId() {
+
+<span class="nc" id="L724">        return (this.publicId);</span>
+
+    }
+
+
+    /**
+     * Return the namespace URI that will be applied to all subsequently
+     * added &lt;code&gt;Rule&lt;/code&gt; objects.
+     */
+    public String getRuleNamespaceURI() {
+
+<span class="fc" id="L735">        return (getRules().getNamespaceURI());</span>
+
+    }
+
+
+    /**
+     * Set the namespace URI that will be applied to all subsequently
+     * added &lt;code&gt;Rule&lt;/code&gt; objects.
+     *
+     * @param ruleNamespaceURI Namespace URI that must match on all
+     *  subsequently added rules, or &lt;code&gt;null&lt;/code&gt; for matching
+     *  regardless of the current namespace URI
+     */
+    public void setRuleNamespaceURI(String ruleNamespaceURI) {
+
+<span class="fc" id="L750">        getRules().setNamespaceURI(ruleNamespaceURI);</span>
+
+<span class="fc" id="L752">    }</span>
+
+
+    /**
+     * Return the SAXParser we will use to parse the input stream.  If there
+     * is a problem creating the parser, return &lt;code&gt;null&lt;/code&gt;.
+     */
+    public SAXParser getParser() {
+
+        // Return the parser we already created (if any)
+<span class="pc bpc" id="L762" title="1 of 2 branches missed.">        if (parser != null) {</span>
+<span class="nc" id="L763">            return (parser);</span>
+        }
+
+        // Create a new parser
+        try {
+<span class="pc bpc" id="L768" title="1 of 4 branches missed.">            if (validating &amp;&amp; (schemaLocation != null)) {</span>
+                // There is no portable way to specify the location of
+                // an xml schema to be applied to the input document, so
+                // we have to use parser-specific code for this. That code
+                // is hidden behind the ParserFeatureSetterFactory class.
+
+                // The above has changed in JDK 1.5 and no longer true. The
+                // functionality used in this block has now been deprecated.
+                // We now use javax.xml.validation.Schema instead.
+
+<span class="nc" id="L778">                Properties properties = new Properties();</span>
+<span class="nc" id="L779">                properties.put(&quot;SAXParserFactory&quot;, getFactory());</span>
+<span class="nc bnc" id="L780" title="All 2 branches missed.">                if (schemaLocation != null) {</span>
+<span class="nc" id="L781">                    properties.put(&quot;schemaLocation&quot;, schemaLocation);</span>
+<span class="nc" id="L782">                    properties.put(&quot;schemaLanguage&quot;, schemaLanguage);</span>
+                }
+<span class="nc" id="L784">                parser = ParserFeatureSetterFactory.newSAXParser(properties);</span>
+<span class="nc" id="L785">            } else {</span>
+                // The user doesn't want to use any non-portable parsing features,
+                // so we can just use the portable API here. Note that method
+                // getFactory returns a factory already configured with the
+                // appropriate namespaceAware and validating properties.
+
+<span class="fc" id="L791">                parser = getFactory().newSAXParser();</span>
+            }
+<span class="nc" id="L793">        } catch (Exception e) {</span>
+<span class="nc" id="L794">            log.error(&quot;Digester.getParser: &quot;, e);</span>
+<span class="nc" id="L795">            return (null);</span>
+<span class="fc" id="L796">        }</span>
+
+<span class="fc" id="L798">        return (parser);</span>
+
+    }
+
+
+    /**
+     * Return the current value of the specified property for the underlying
+     * &lt;code&gt;XMLReader&lt;/code&gt; implementation.
+     * See &lt;a href=&quot;http://www.saxproject.org&quot;&gt;the saxproject website&lt;/a&gt;
+     * for information about the standard SAX2 properties.
+     *
+     * @param property Property name to be retrieved
+     *
+     * @exception SAXNotRecognizedException if the property name is
+     *  not recognized
+     * @exception SAXNotSupportedException if the property name is
+     *  recognized but not supported
+     */
+    public Object getProperty(String property)
+        throws SAXNotRecognizedException, SAXNotSupportedException {
+
+<span class="nc" id="L819">        return (getParser().getProperty(property));</span>
+
+    }
+
+
+    /**
+     * Set the current value of the specified property for the underlying
+     * &lt;code&gt;XMLReader&lt;/code&gt; implementation.
+     * See &lt;a href=&quot;http://www.saxproject.org&quot;&gt;the saxproject website&lt;/a&gt;
+     * for information about the standard SAX2 properties.
+     *
+     * @param property Property name to be set
+     * @param value Property value to be set
+     *
+     * @exception SAXNotRecognizedException if the property name is
+     *  not recognized
+     * @exception SAXNotSupportedException if the property name is
+     *  recognized but not supported
+     */
+    public void setProperty(String property, Object value)
+        throws SAXNotRecognizedException, SAXNotSupportedException {
+
+<span class="nc" id="L841">        getParser().setProperty(property, value);</span>
+
+<span class="nc" id="L843">    }</span>
+
+
+    /**
+     * By setting the reader in the constructor, you can bypass JAXP and
+     * be able to use digester in Weblogic 6.0.  
+     *
+     * @deprecated Use getXMLReader() instead, which can throw a
+     *  SAXException if the reader cannot be instantiated
+     */
+    @Deprecated
+    public XMLReader getReader() {
+
+        try {
+<span class="nc" id="L857">            return (getXMLReader());</span>
+<span class="nc" id="L858">        } catch (SAXException e) {</span>
+<span class="nc" id="L859">            log.error(&quot;Cannot get XMLReader&quot;, e);</span>
+<span class="nc" id="L860">            return (null);</span>
+        }
+
+    }
+
+
+    /**
+     * Return the &lt;code&gt;Rules&lt;/code&gt; implementation object containing our
+     * rules collection and associated matching policy.  If none has been
+     * established, a default implementation will be created and returned.
+     */
+    public Rules getRules() {
+
+<span class="fc bfc" id="L873" title="All 2 branches covered.">        if (this.rules == null) {</span>
+<span class="fc" id="L874">            this.rules = new RulesBase();</span>
+<span class="fc" id="L875">            this.rules.setDigester(this);</span>
+        }
+<span class="fc" id="L877">        return (this.rules);</span>
+
+    }
+
+    
+    /**
+     * Set the &lt;code&gt;Rules&lt;/code&gt; implementation object containing our
+     * rules collection and associated matching policy.
+     *
+     * @param rules New Rules implementation
+     */
+    public void setRules(Rules rules) {
+
+<span class="fc" id="L890">        this.rules = rules;</span>
+<span class="fc" id="L891">        this.rules.setDigester(this);</span>
+
+<span class="fc" id="L893">    }</span>
+
+
+    /**
+     * Return the XML Schema URI used for validating an XML instance.
+     *
+     * @deprecated Use {@link Schema} for validation instead. 
+     * @see #getXMLSchema()
+     * @see #setXMLSchema(Schema)
+     */
+    @Deprecated
+    public String getSchema() {
+
+<span class="nc" id="L906">        return (this.schemaLocation);</span>
+
+    }
+
+
+    /**
+     * Set the XML Schema URI used for validating the input XML.
+     * &lt;p&gt;
+     * It is often desirable to &lt;i&gt;force&lt;/i&gt; the input document to be
+     * validated against a particular schema regardless of what type
+     * the input document declares itself to be. This method allows that
+     * to be done. 
+     * &lt;p&gt;
+     * Note, however, that there is no standard API for enabling this
+     * feature on the underlying SAX parser; this method therefore only works 
+     * for those parsers explicitly supported by Digester's
+     * ParserFeatureSetterFactory class. If the underlying parser does not
+     * support the feature, or is not one of the supported parsers, then
+     * an exception will be thrown when getParser is called (explicitly, 
+     * or implicitly via the parse method).
+     * &lt;p&gt;
+     * See also method setSchemaLanguage which allows the type of the schema
+     * specified here to be defined. By default, the schema is expected to
+     * be a W3C xml schema definition.
+     * &lt;p&gt;
+     * IMPORTANT NOTE: This functionality was never very reliable, and has
+     * been horribly broken since the 1.6 release of Digester. There are
+     * currently no plans to fix it, so you are strongly recommended to
+     * avoid using this method. Instead, create an XMLParser instance
+     * yourself, configure validation appropriately, and pass it as a
+     * parameter to the Digester constructor.
+     *
+     * @param schemaLocation a URI to the schema.
+     * @deprecated Use {@link Schema} for validation instead. 
+     * @see #getXMLSchema()
+     * @see #setXMLSchema(Schema)
+     */
+    @Deprecated
+    public void setSchema(String schemaLocation){
+
+<span class="nc" id="L946">        this.schemaLocation = schemaLocation;</span>
+
+<span class="nc" id="L948">    }   </span>
+    
+
+    /**
+     * Return the XML Schema language used when parsing.
+     *
+     * @deprecated Use {@link Schema} for validation instead. 
+     * @see #getXMLSchema()
+     * @see #setXMLSchema(Schema)
+     */
+    @Deprecated
+    public String getSchemaLanguage() {
+
+<span class="nc" id="L961">        return (this.schemaLanguage);</span>
+
+    }
+
+
+    /**
+     * Set the XML Schema language used when parsing. By default, we use W3C.
+     *
+     * @param schemaLanguage a URI to the schema language.
+     * @deprecated Use {@link Schema} for validation instead. 
+     * @see #getXMLSchema()
+     * @see #setXMLSchema(Schema)
+     */
+    @Deprecated
+    public void setSchemaLanguage(String schemaLanguage){
+
+<span class="nc" id="L977">        this.schemaLanguage = schemaLanguage;</span>
+
+<span class="nc" id="L979">    }   </span>
+    
+
+    /**
+     * Return the XML Schema used when parsing.
+     *
+     * @return The {@link Schema} instance in use.
+     *
+     * @since 2.0
+     */
+    public Schema getXMLSchema() {
+
+<span class="nc" id="L991">        return (this.schema);</span>
+
+    }
+
+
+    /**
+     * Set the XML Schema to be used when parsing.
+     *
+     * @param schema The {@link Schema} instance to use.
+     *
+     * @since 2.0
+     */
+    public void setXMLSchema(Schema schema){
+
+<span class="fc" id="L1005">        this.schema = schema;</span>
+
+<span class="fc" id="L1007">    }</span>
+
+
+    /**
+     * Return the boolean as to whether the context classloader should be used.
+     */
+    public boolean getUseContextClassLoader() {
+
+<span class="nc" id="L1015">        return useContextClassLoader;</span>
+
+    }
+
+
+    /**
+     * Determine whether to use the Context ClassLoader (the one found by
+     * calling &lt;code&gt;Thread.currentThread().getContextClassLoader()&lt;/code&gt;)
+     * to resolve/load classes that are defined in various rules.  If not
+     * using Context ClassLoader, then the class-loading defaults to
+     * using the calling-class' ClassLoader.
+     *
+     * @param use determines whether to use Context ClassLoader.
+     */
+    public void setUseContextClassLoader(boolean use) {
+
+<span class="nc" id="L1031">        useContextClassLoader = use;</span>
+
+<span class="nc" id="L1033">    }</span>
+
+
+    /**
+     * Return the validating parser flag.
+     */
+    public boolean getValidating() {
+
+<span class="fc" id="L1041">        return (this.validating);</span>
+
+    }
+
+
+    /**
+     * Set the validating parser flag.  This must be called before
+     * &lt;code&gt;parse()&lt;/code&gt; is called the first time.
+     *
+     * @param validating The new validating parser flag.
+     */
+    public void setValidating(boolean validating) {
+
+<span class="fc" id="L1054">        this.validating = validating;</span>
+
+<span class="fc" id="L1056">    }</span>
+
+
+    /**
+     * Return the XMLReader to be used for parsing the input document.
+     *
+     * FIX ME: there is a bug in JAXP/XERCES that prevent the use of a 
+     * parser that contains a schema with a DTD.
+     * @exception SAXException if no XMLReader can be instantiated
+     */
+    public XMLReader getXMLReader() throws SAXException {
+<span class="fc bfc" id="L1067" title="All 2 branches covered.">        if (reader == null){</span>
+<span class="fc" id="L1068">            reader = getParser().getXMLReader();</span>
+        }        
+                               
+<span class="fc" id="L1071">        reader.setDTDHandler(this);           </span>
+<span class="fc" id="L1072">        reader.setContentHandler(this);        </span>
+        
+<span class="pc bpc" id="L1074" title="1 of 2 branches missed.">        if (entityResolver == null){</span>
+<span class="fc" id="L1075">            reader.setEntityResolver(this);</span>
+        } else {
+<span class="nc" id="L1077">            reader.setEntityResolver(entityResolver);           </span>
+        }
+        
+<span class="fc" id="L1080">        reader.setErrorHandler(this);</span>
+<span class="fc" id="L1081">        return reader;</span>
+    }
+
+    /**
+     * Gets the &lt;code&gt;Substitutor&lt;/code&gt; used to convert attributes and body text.
+     * @return Substitutor, null if not substitutions are to be performed.
+     */
+    public Substitutor getSubstitutor() {
+<span class="fc" id="L1089">        return substitutor;</span>
+    }
+    
+    /** 
+     * Sets the &lt;code&gt;Substitutor&lt;/code&gt; to be used to convert attributes and body text.
+     * @param substitutor the Substitutor to be used to convert attributes and body text
+     * or null if not substitution of these values is to be performed.
+     */
+    public void setSubstitutor(Substitutor substitutor) {
+<span class="fc" id="L1098">        this.substitutor = substitutor;</span>
+<span class="fc" id="L1099">    }</span>
+
+    /*
+     * See setCustomContentHandler.
+     * 
+     * @since 1.7 
+     */
+    public ContentHandler getCustomContentHandler() {
+<span class="fc" id="L1107">        return customContentHandler;</span>
+    }
+
+    /** 
+     * Redirects (or cancels redirecting) of SAX ContentHandler events to an
+     * external object.
+     * &lt;p&gt;
+     * When this object's customContentHandler is non-null, any SAX events
+     * received from the parser will simply be passed on to the specified 
+     * object instead of this object handling them. This allows Rule classes 
+     * to take control of the SAX event stream for a while in order to do 
+     * custom processing. Such a rule should save the old value before setting
+     * a new one, and restore the old value in order to resume normal digester
+     * processing.
+     * &lt;p&gt;
+     * An example of a Rule which needs this feature is NodeCreateRule.
+     * &lt;p&gt;
+     * Note that saving the old value is probably not needed as it should always
+     * be null; a custom rule that wants to take control could only have been 
+     * called when there was no custom content handler. But it seems cleaner
+     * to properly save/restore the value and maybe some day this will come in
+     * useful.
+     * &lt;p&gt;
+     * Note also that this is not quite equivalent to
+     * &lt;pre&gt;
+     * digester.getXMLReader().setContentHandler(handler)
+     * &lt;/pre&gt;
+     * for these reasons:
+     * &lt;ul&gt;
+     * &lt;li&gt;Some xml parsers don't like having setContentHandler called after
+     * parsing has started. The Aelfred parser is one example.&lt;/li&gt;
+     * &lt;li&gt;Directing the events via the Digester object potentially allows
+     * us to log information about those SAX events at the digester level.&lt;/li&gt;
+     * &lt;/ul&gt;
+     * 
+     * @since 1.7 
+     */
+    public void setCustomContentHandler(ContentHandler handler) {
+<span class="fc" id="L1145">        customContentHandler = handler;</span>
+<span class="fc" id="L1146">    }</span>
+
+    /** 
+     * Define a callback object which is invoked whever an object is pushed onto
+     * a digester object stack, or popped off one.
+     * 
+     * @since 1.8
+     */
+    public void setStackAction(StackAction stackAction) {
+<span class="fc" id="L1155">        this.stackAction = stackAction;</span>
+<span class="fc" id="L1156">    }</span>
+
+    /**
+     * See setStackAction. 
+     * 
+     * @since 1.8
+     */
+    public StackAction getStackAction() {
+<span class="nc" id="L1164">        return stackAction;</span>
+    }
+
+    /**
+     * Get the most current namespaces for all prefixes.
+     *
+     * @return Map A map with namespace prefixes as keys and most current
+     *             namespace URIs for the corresponding prefixes as values
+     *
+     * @since 1.8
+     */
+    public Map&lt;String, String&gt; getCurrentNamespaces() {
+<span class="pc bpc" id="L1176" title="1 of 2 branches missed.">        if (!namespaceAware) {</span>
+<span class="nc" id="L1177">            log.warn(&quot;Digester is not namespace aware&quot;);</span>
+        }
+<span class="fc" id="L1179">        Map&lt;String, String&gt; currentNamespaces = new HashMap&lt;String, String&gt;();</span>
+<span class="fc bfc" id="L1180" title="All 2 branches covered.">        for (Map.Entry&lt;String, Stack&lt;String&gt;&gt; nsEntry : namespaces.entrySet()) {</span>
+             try {
+<span class="fc" id="L1182">                currentNamespaces.put(nsEntry.getKey(),</span>
+<span class="fc" id="L1183">                    nsEntry.getValue().peek());</span>
+<span class="nc" id="L1184">            } catch (RuntimeException e) {</span>
+                // rethrow, after logging
+<span class="nc" id="L1186">                log.error(e.getMessage(), e);</span>
+<span class="nc" id="L1187">                throw e;</span>
+<span class="fc" id="L1188">            }</span>
+<span class="fc" id="L1189">        }</span>
+<span class="fc" id="L1190">        return currentNamespaces;</span>
+    }
+
+    // ------------------------------------------------- ContentHandler Methods
+
+
+    /**
+     * Process notification of character data received from the body of
+     * an XML element.
+     *
+     * @param buffer The characters from the XML document
+     * @param start Starting offset into the buffer
+     * @param length Number of characters from the buffer
+     *
+     * @exception SAXException if a parsing error is to be reported
+     */
+    @Override
+    public void characters(char buffer[], int start, int length)
+            throws SAXException {
+
+<span class="fc bfc" id="L1210" title="All 2 branches covered.">        if (customContentHandler != null) {</span>
+            // forward calls instead of handling them here
+<span class="fc" id="L1212">            customContentHandler.characters(buffer, start, length);</span>
+<span class="fc" id="L1213">            return;</span>
+        }
+
+<span class="pc bpc" id="L1216" title="1 of 2 branches missed.">        if (saxLog.isDebugEnabled()) {</span>
+<span class="nc" id="L1217">            saxLog.debug(&quot;characters(&quot; + new String(buffer, start, length) + &quot;)&quot;);</span>
+        }
+
+<span class="fc" id="L1220">        bodyText.append(buffer, start, length);</span>
+
+<span class="fc" id="L1222">    }</span>
+
+
+    /**
+     * Process notification of the end of the document being reached.
+     *
+     * @exception SAXException if a parsing error is to be reported
+     */
+    @Override
+    public void endDocument() throws SAXException {
+
+<span class="pc bpc" id="L1233" title="1 of 2 branches missed.">        if (saxLog.isDebugEnabled()) {</span>
+<span class="nc bnc" id="L1234" title="All 2 branches missed.">            if (getCount() &gt; 1) {</span>
+<span class="nc" id="L1235">                saxLog.debug(&quot;endDocument():  &quot; + getCount() +</span>
+                             &quot; elements left&quot;);
+            } else {
+<span class="nc" id="L1238">                saxLog.debug(&quot;endDocument()&quot;);</span>
+            }
+        }
+
+        // Fire &quot;finish&quot; events for all defined rules
+<span class="fc bfc" id="L1243" title="All 2 branches covered.">        for (Rule rule : getRules().rules()) {</span>
+            try {
+<span class="fc" id="L1245">                rule.finish();</span>
+<span class="nc" id="L1246">            } catch (Exception e) {</span>
+<span class="nc" id="L1247">                log.error(&quot;Finish event threw exception&quot;, e);</span>
+<span class="nc" id="L1248">                throw createSAXException(e);</span>
+<span class="nc" id="L1249">            } catch (Error e) {</span>
+<span class="nc" id="L1250">                log.error(&quot;Finish event threw error&quot;, e);</span>
+<span class="nc" id="L1251">                throw e;</span>
+<span class="fc" id="L1252">            }</span>
+<span class="fc" id="L1253">        }</span>
+
+        // Perform final cleanup
+<span class="fc" id="L1256">        clear();</span>
+
+<span class="fc" id="L1258">    }</span>
+
+
+    /**
+     * Process notification of the end of an XML element being reached.
+     *
+     * @param namespaceURI - The Namespace URI, or the empty string if the
+     *   element has no Namespace URI or if Namespace processing is not
+     *   being performed.
+     * @param localName - The local name (without prefix), or the empty
+     *   string if Namespace processing is not being performed.
+     * @param qName - The qualified XML 1.0 name (with prefix), or the
+     *   empty string if qualified names are not available.
+     * @exception SAXException if a parsing error is to be reported
+     */
+    @Override
+    public void endElement(String namespaceURI, String localName,
+                           String qName) throws SAXException {
+
+<span class="fc bfc" id="L1277" title="All 2 branches covered.">        if (customContentHandler != null) {</span>
+            // forward calls instead of handling them here
+<span class="fc" id="L1279">            customContentHandler.endElement(namespaceURI, localName, qName);</span>
+<span class="fc" id="L1280">            return;</span>
+        }
+
+<span class="fc" id="L1283">        boolean debug = log.isDebugEnabled();</span>
+
+<span class="pc bpc" id="L1285" title="1 of 2 branches missed.">        if (debug) {</span>
+<span class="nc bnc" id="L1286" title="All 2 branches missed.">            if (saxLog.isDebugEnabled()) {</span>
+<span class="nc" id="L1287">                saxLog.debug(&quot;endElement(&quot; + namespaceURI + &quot;,&quot; + localName +</span>
+                        &quot;,&quot; + qName + &quot;)&quot;);
+            }
+<span class="nc" id="L1290">            log.debug(&quot;  match='&quot; + match + &quot;'&quot;);</span>
+<span class="nc" id="L1291">            log.debug(&quot;  bodyText='&quot; + bodyText + &quot;'&quot;);</span>
+        }
+
+        // the actual element name is either in localName or qName, depending 
+        // on whether the parser is namespace aware
+<span class="fc" id="L1296">        String name = localName;</span>
+<span class="pc bpc" id="L1297" title="1 of 4 branches missed.">        if ((name == null) || (name.length() &lt; 1)) {</span>
+<span class="fc" id="L1298">            name = qName;</span>
+        }
+
+        // Fire &quot;body&quot; events for all relevant rules
+<span class="fc" id="L1302">        List&lt;Rule&gt; rules = matches.pop();</span>
+<span class="pc bpc" id="L1303" title="1 of 4 branches missed.">        if ((rules != null) &amp;&amp; (rules.size() &gt; 0)) {</span>
+<span class="fc" id="L1304">            String bodyText = this.bodyText.toString();</span>
+<span class="fc" id="L1305">            Substitutor substitutor = getSubstitutor();</span>
+<span class="fc bfc" id="L1306" title="All 2 branches covered.">            if (substitutor!= null) {</span>
+<span class="fc" id="L1307">                bodyText = substitutor.substitute(bodyText);</span>
+            }
+<span class="fc bfc" id="L1309" title="All 2 branches covered.">            for (int i = 0; i &lt; rules.size(); i++) {</span>
+                try {
+<span class="fc" id="L1311">                    Rule rule = rules.get(i);</span>
+<span class="pc bpc" id="L1312" title="1 of 2 branches missed.">                    if (debug) {</span>
+<span class="nc" id="L1313">                        log.debug(&quot;  Fire body() for &quot; + rule);</span>
+                    }
+<span class="fc" id="L1315">                    rule.body(namespaceURI, name, bodyText);</span>
+<span class="fc" id="L1316">                } catch (Exception e) {</span>
+<span class="fc" id="L1317">                    log.error(&quot;Body event threw exception&quot;, e);</span>
+<span class="fc" id="L1318">                    throw createSAXException(e);</span>
+<span class="nc" id="L1319">                } catch (Error e) {</span>
+<span class="nc" id="L1320">                    log.error(&quot;Body event threw error&quot;, e);</span>
+<span class="nc" id="L1321">                    throw e;</span>
+<span class="fc" id="L1322">                }</span>
+            }
+<span class="fc" id="L1324">        } else {</span>
+<span class="pc bpc" id="L1325" title="1 of 2 branches missed.">            if (debug) {</span>
+<span class="nc" id="L1326">                log.debug(&quot;  No rules found matching '&quot; + match + &quot;'.&quot;);</span>
+            }
+        }
+
+        // Recover the body text from the surrounding element
+<span class="fc" id="L1331">        bodyText = bodyTexts.pop();</span>
+<span class="pc bpc" id="L1332" title="1 of 2 branches missed.">        if (debug) {</span>
+<span class="nc" id="L1333">            log.debug(&quot;  Popping body text '&quot; + bodyText.toString() + &quot;'&quot;);</span>
+        }
+
+        // Fire &quot;end&quot; events for all relevant rules in reverse order
+<span class="pc bpc" id="L1337" title="1 of 2 branches missed.">        if (rules != null) {</span>
+<span class="fc bfc" id="L1338" title="All 2 branches covered.">            for (int i = 0; i &lt; rules.size(); i++) {</span>
+<span class="fc" id="L1339">                int j = (rules.size() - i) - 1;</span>
+                try {
+<span class="fc" id="L1341">                    Rule rule = rules.get(j);</span>
+<span class="pc bpc" id="L1342" title="1 of 2 branches missed.">                    if (debug) {</span>
+<span class="nc" id="L1343">                        log.debug(&quot;  Fire end() for &quot; + rule);</span>
+                    }
+<span class="fc" id="L1345">                    rule.end(namespaceURI, name);</span>
+<span class="fc" id="L1346">                } catch (Exception e) {</span>
+<span class="fc" id="L1347">                    log.error(&quot;End event threw exception&quot;, e);</span>
+<span class="fc" id="L1348">                    throw createSAXException(e);</span>
+<span class="nc" id="L1349">                } catch (Error e) {</span>
+<span class="nc" id="L1350">                    log.error(&quot;End event threw error&quot;, e);</span>
+<span class="nc" id="L1351">                    throw e;</span>
+<span class="fc" id="L1352">                }</span>
+            }
+        }
+
+        // Recover the previous match expression
+<span class="fc" id="L1357">        int slash = match.lastIndexOf('/');</span>
+<span class="fc bfc" id="L1358" title="All 2 branches covered.">        if (slash &gt;= 0) {</span>
+<span class="fc" id="L1359">            match = match.substring(0, slash);</span>
+        } else {
+<span class="fc" id="L1361">            match = &quot;&quot;;</span>
+        }
+
+<span class="fc" id="L1364">    }</span>
+
+
+    /**
+     * Process notification that a namespace prefix is going out of scope.
+     *
+     * @param prefix Prefix that is going out of scope
+     *
+     * @exception SAXException if a parsing error is to be reported
+     */
+    @Override
+    public void endPrefixMapping(String prefix) throws SAXException {
+
+<span class="pc bpc" id="L1377" title="1 of 2 branches missed.">        if (saxLog.isDebugEnabled()) {</span>
+<span class="nc" id="L1378">            saxLog.debug(&quot;endPrefixMapping(&quot; + prefix + &quot;)&quot;);</span>
+        }
+
+        // Deregister this prefix mapping
+<span class="fc" id="L1382">        Stack&lt;String&gt; stack = namespaces.get(prefix);</span>
+<span class="pc bpc" id="L1383" title="1 of 2 branches missed.">        if (stack == null) {</span>
+<span class="nc" id="L1384">            return;</span>
+        }
+        try {
+<span class="fc" id="L1387">            stack.pop();</span>
+<span class="fc bfc" id="L1388" title="All 2 branches covered.">            if (stack.empty())</span>
+<span class="fc" id="L1389">                namespaces.remove(prefix);</span>
+<span class="nc" id="L1390">        } catch (EmptyStackException e) {</span>
+<span class="nc" id="L1391">            throw createSAXException(&quot;endPrefixMapping popped too many times&quot;);</span>
+<span class="fc" id="L1392">        }</span>
+
+<span class="fc" id="L1394">    }</span>
+
+
+    /**
+     * Process notification of ignorable whitespace received from the body of
+     * an XML element.
+     *
+     * @param buffer The characters from the XML document
+     * @param start Starting offset into the buffer
+     * @param len Number of characters from the buffer
+     *
+     * @exception SAXException if a parsing error is to be reported
+     */
+    @Override
+    public void ignorableWhitespace(char buffer[], int start, int len)
+            throws SAXException {
+
+<span class="pc bpc" id="L1411" title="1 of 2 branches missed.">        if (saxLog.isDebugEnabled()) {</span>
+<span class="nc" id="L1412">            saxLog.debug(&quot;ignorableWhitespace(&quot; +</span>
+                    new String(buffer, start, len) + &quot;)&quot;);
+        }
+
+        // No processing required
+
+<span class="fc" id="L1418">    }</span>
+
+
+    /**
+     * Process notification of a processing instruction that was encountered.
+     *
+     * @param target The processing instruction target
+     * @param data The processing instruction data (if any)
+     *
+     * @exception SAXException if a parsing error is to be reported
+     */
+    @Override
+    public void processingInstruction(String target, String data)
+            throws SAXException {
+
+<span class="nc bnc" id="L1433" title="All 2 branches missed.">        if (customContentHandler != null) {</span>
+            // forward calls instead of handling them here
+<span class="nc" id="L1435">            customContentHandler.processingInstruction(target, data);</span>
+<span class="nc" id="L1436">            return;</span>
+        }
+
+<span class="nc bnc" id="L1439" title="All 2 branches missed.">        if (saxLog.isDebugEnabled()) {</span>
+<span class="nc" id="L1440">            saxLog.debug(&quot;processingInstruction('&quot; + target + &quot;','&quot; + data + &quot;')&quot;);</span>
+        }
+
+        // No processing is required
+
+<span class="nc" id="L1445">    }</span>
+
+
+    /**
+     * Gets the document locator associated with our parser.
+     *
+     * @return the Locator supplied by the document parser
+     */
+    public Locator getDocumentLocator() {
+
+<span class="fc" id="L1455">        return locator;</span>
+
+    }
+
+    /**
+     * Sets the document locator associated with our parser.
+     *
+     * @param locator The new locator
+     */
+    @Override
+    public void setDocumentLocator(Locator locator) {
+
+<span class="pc bpc" id="L1467" title="1 of 2 branches missed.">        if (saxLog.isDebugEnabled()) {</span>
+<span class="nc" id="L1468">            saxLog.debug(&quot;setDocumentLocator(&quot; + locator + &quot;)&quot;);</span>
+        }
+
+<span class="fc" id="L1471">        this.locator = locator;</span>
+
+<span class="fc" id="L1473">    }</span>
+
+
+    /**
+     * Process notification of a skipped entity.
+     *
+     * @param name Name of the skipped entity
+     *
+     * @exception SAXException if a parsing error is to be reported
+     */
+    @Override
+    public void skippedEntity(String name) throws SAXException {
+
+<span class="nc bnc" id="L1486" title="All 2 branches missed.">        if (saxLog.isDebugEnabled()) {</span>
+<span class="nc" id="L1487">            saxLog.debug(&quot;skippedEntity(&quot; + name + &quot;)&quot;);</span>
+        }
+
+        // No processing required
+
+<span class="nc" id="L1492">    }</span>
+
+
+    /**
+     * Process notification of the beginning of the document being reached.
+     *
+     * @exception SAXException if a parsing error is to be reported
+     */
+    @Override
+    public void startDocument() throws SAXException {
+
+<span class="pc bpc" id="L1503" title="1 of 2 branches missed.">        if (saxLog.isDebugEnabled()) {</span>
+<span class="nc" id="L1504">            saxLog.debug(&quot;startDocument()&quot;);</span>
+        }
+
+        // ensure that the digester is properly configured, as 
+        // the digester could be used as a SAX ContentHandler
+        // rather than via the parse() methods.
+<span class="fc" id="L1510">        configure();</span>
+<span class="fc" id="L1511">    }</span>
+
+
+    /**
+     * Process notification of the start of an XML element being reached.
+     *
+     * @param namespaceURI The Namespace URI, or the empty string if the element
+     *   has no Namespace URI or if Namespace processing is not being performed.
+     * @param localName The local name (without prefix), or the empty
+     *   string if Namespace processing is not being performed.
+     * @param qName The qualified name (with prefix), or the empty
+     *   string if qualified names are not available.\
+     * @param list The attributes attached to the element. If there are
+     *   no attributes, it shall be an empty Attributes object. 
+     * @exception SAXException if a parsing error is to be reported
+     */
+    @Override
+    public void startElement(String namespaceURI, String localName,
+                             String qName, Attributes list)
+            throws SAXException {
+<span class="fc" id="L1531">        boolean debug = log.isDebugEnabled();</span>
+        
+<span class="fc bfc" id="L1533" title="All 2 branches covered.">        if (customContentHandler != null) {</span>
+            // forward calls instead of handling them here
+<span class="fc" id="L1535">            customContentHandler.startElement(namespaceURI, localName, qName, list);</span>
+<span class="fc" id="L1536">            return;</span>
+        }
+
+<span class="pc bpc" id="L1539" title="1 of 2 branches missed.">        if (saxLog.isDebugEnabled()) {</span>
+<span class="nc" id="L1540">            saxLog.debug(&quot;startElement(&quot; + namespaceURI + &quot;,&quot; + localName + &quot;,&quot; +</span>
+                    qName + &quot;)&quot;);
+        }
+        
+        // Save the body text accumulated for our surrounding element
+<span class="fc" id="L1545">        bodyTexts.push(bodyText);</span>
+<span class="pc bpc" id="L1546" title="1 of 2 branches missed.">        if (debug) {</span>
+<span class="nc" id="L1547">            log.debug(&quot;  Pushing body text '&quot; + bodyText.toString() + &quot;'&quot;);</span>
+        }
+<span class="fc" id="L1549">        bodyText = new StringBuffer();</span>
+
+        // the actual element name is either in localName or qName, depending 
+        // on whether the parser is namespace aware
+<span class="fc" id="L1553">        String name = localName;</span>
+<span class="pc bpc" id="L1554" title="1 of 4 branches missed.">        if ((name == null) || (name.length() &lt; 1)) {</span>
+<span class="fc" id="L1555">            name = qName;</span>
+        }
+
+        // Compute the current matching rule
+<span class="fc" id="L1559">        StringBuffer sb = new StringBuffer(match);</span>
+<span class="fc bfc" id="L1560" title="All 2 branches covered.">        if (match.length() &gt; 0) {</span>
+<span class="fc" id="L1561">            sb.append('/');</span>
+        }
+<span class="fc" id="L1563">        sb.append(name);</span>
+<span class="fc" id="L1564">        match = sb.toString();</span>
+<span class="pc bpc" id="L1565" title="1 of 2 branches missed.">        if (debug) {</span>
+<span class="nc" id="L1566">            log.debug(&quot;  New match='&quot; + match + &quot;'&quot;);</span>
+        }
+
+        // Fire &quot;begin&quot; events for all relevant rules
+<span class="fc" id="L1570">        List&lt;Rule&gt; rules = getRules().match(namespaceURI, match);</span>
+<span class="fc" id="L1571">        matches.push(rules);</span>
+<span class="pc bpc" id="L1572" title="1 of 4 branches missed.">        if ((rules != null) &amp;&amp; (rules.size() &gt; 0)) {</span>
+<span class="fc" id="L1573">            Substitutor substitutor = getSubstitutor();</span>
+<span class="fc bfc" id="L1574" title="All 2 branches covered.">            if (substitutor!= null) {</span>
+<span class="fc" id="L1575">                list = substitutor.substitute(list);</span>
+            }
+<span class="fc bfc" id="L1577" title="All 2 branches covered.">            for (int i = 0; i &lt; rules.size(); i++) {</span>
+                try {
+<span class="fc" id="L1579">                    Rule rule = rules.get(i);</span>
+<span class="pc bpc" id="L1580" title="1 of 2 branches missed.">                    if (debug) {</span>
+<span class="nc" id="L1581">                        log.debug(&quot;  Fire begin() for &quot; + rule);</span>
+                    }
+<span class="fc" id="L1583">                    rule.begin(namespaceURI, name, list);</span>
+<span class="fc" id="L1584">                } catch (Exception e) {</span>
+<span class="fc" id="L1585">                    log.error(&quot;Begin event threw exception&quot;, e);</span>
+<span class="fc" id="L1586">                    throw createSAXException(e);</span>
+<span class="nc" id="L1587">                } catch (Error e) {</span>
+<span class="nc" id="L1588">                    log.error(&quot;Begin event threw error&quot;, e);</span>
+<span class="nc" id="L1589">                    throw e;</span>
+<span class="fc" id="L1590">                }</span>
+            }
+<span class="fc" id="L1592">        } else {</span>
+<span class="pc bpc" id="L1593" title="1 of 2 branches missed.">            if (debug) {</span>
+<span class="nc" id="L1594">                log.debug(&quot;  No rules found matching '&quot; + match + &quot;'.&quot;);</span>
+            }
+        }
+
+<span class="fc" id="L1598">    }</span>
+
+
+    /**
+     * Process notification that a namespace prefix is coming in to scope.
+     *
+     * @param prefix Prefix that is being declared
+     * @param namespaceURI Corresponding namespace URI being mapped to
+     *
+     * @exception SAXException if a parsing error is to be reported
+     */
+    @Override
+    public void startPrefixMapping(String prefix, String namespaceURI)
+            throws SAXException {
+
+<span class="pc bpc" id="L1613" title="1 of 2 branches missed.">        if (saxLog.isDebugEnabled()) {</span>
+<span class="nc" id="L1614">            saxLog.debug(&quot;startPrefixMapping(&quot; + prefix + &quot;,&quot; + namespaceURI + &quot;)&quot;);</span>
+        }
+
+        // Register this prefix mapping
+<span class="fc" id="L1618">        Stack&lt;String&gt; stack = namespaces.get(prefix);</span>
+<span class="fc bfc" id="L1619" title="All 2 branches covered.">        if (stack == null) {</span>
+<span class="fc" id="L1620">            stack = new Stack&lt;String&gt;();</span>
+<span class="fc" id="L1621">            namespaces.put(prefix, stack);</span>
+        }
+<span class="fc" id="L1623">        stack.push(namespaceURI);</span>
+
+<span class="fc" id="L1625">    }</span>
+
+
+    // ----------------------------------------------------- DTDHandler Methods
+
+
+    /**
+     * Receive notification of a notation declaration event.
+     *
+     * @param name The notation name
+     * @param publicId The public identifier (if any)
+     * @param systemId The system identifier (if any)
+     */
+    @Override
+    public void notationDecl(String name, String publicId, String systemId) {
+
+<span class="nc bnc" id="L1641" title="All 2 branches missed.">        if (saxLog.isDebugEnabled()) {</span>
+<span class="nc" id="L1642">            saxLog.debug(&quot;notationDecl(&quot; + name + &quot;,&quot; + publicId + &quot;,&quot; +</span>
+                    systemId + &quot;)&quot;);
+        }
+
+<span class="nc" id="L1646">    }</span>
+
+
+    /**
+     * Receive notification of an unparsed entity declaration event.
+     *
+     * @param name The unparsed entity name
+     * @param publicId The public identifier (if any)
+     * @param systemId The system identifier (if any)
+     * @param notation The name of the associated notation
+     */
+    @Override
+    public void unparsedEntityDecl(String name, String publicId,
+                                   String systemId, String notation) {
+
+<span class="nc bnc" id="L1661" title="All 2 branches missed.">        if (saxLog.isDebugEnabled()) {</span>
+<span class="nc" id="L1662">            saxLog.debug(&quot;unparsedEntityDecl(&quot; + name + &quot;,&quot; + publicId + &quot;,&quot; +</span>
+                    systemId + &quot;,&quot; + notation + &quot;)&quot;);
+        }
+
+<span class="nc" id="L1666">    }</span>
+
+
+    // ----------------------------------------------- EntityResolver Methods
+
+    /**
+     * Set the &lt;code&gt;EntityResolver&lt;/code&gt; used by SAX when resolving
+     * public id and system id.
+     * This must be called before the first call to &lt;code&gt;parse()&lt;/code&gt;.
+     * @param entityResolver a class that implement the &lt;code&gt;EntityResolver&lt;/code&gt; interface.
+     */
+    public void setEntityResolver(EntityResolver entityResolver){
+<span class="nc" id="L1678">        this.entityResolver = entityResolver;</span>
+<span class="nc" id="L1679">    }</span>
+    
+    
+    /**
+     * Return the Entity Resolver used by the SAX parser.
+     * @return Return the Entity Resolver used by the SAX parser.
+     */
+    public EntityResolver getEntityResolver(){
+<span class="nc" id="L1687">        return entityResolver;</span>
+    }
+
+    /**
+     * Resolve the requested external entity.
+     *
+     * @param publicId The public identifier of the entity being referenced
+     * @param systemId The system identifier of the entity being referenced
+     *
+     * @exception SAXException if a parsing exception occurs
+     * 
+     */
+    @Override
+    public InputSource resolveEntity(String publicId, String systemId)
+            throws SAXException {     
+                
+<span class="pc bpc" id="L1703" title="1 of 2 branches missed.">        if (saxLog.isDebugEnabled()) {</span>
+<span class="nc" id="L1704">            saxLog.debug(&quot;resolveEntity('&quot; + publicId + &quot;', '&quot; + systemId + &quot;')&quot;);</span>
+        }
+        
+<span class="fc bfc" id="L1707" title="All 2 branches covered.">        if (publicId != null)</span>
+<span class="fc" id="L1708">            this.publicId = publicId;</span>
+                                       
+        // Has this system identifier been registered?
+<span class="fc" id="L1711">        URL entityURL = null;</span>
+<span class="fc bfc" id="L1712" title="All 2 branches covered.">        if (publicId != null) {</span>
+<span class="fc" id="L1713">            entityURL = entityValidator.get(publicId);</span>
+        }
+         
+        // Redirect the schema location to a local destination
+<span class="pc bpc" id="L1717" title="5 of 6 branches missed.">        if (schemaLocation != null &amp;&amp; entityURL == null &amp;&amp; systemId != null){</span>
+<span class="nc" id="L1718">            entityURL = entityValidator.get(systemId);</span>
+        } 
+
+<span class="fc bfc" id="L1721" title="All 2 branches covered.">        if (entityURL == null) { </span>
+<span class="pc bpc" id="L1722" title="1 of 2 branches missed.">            if (systemId == null) {</span>
+                // cannot resolve
+<span class="nc bnc" id="L1724" title="All 2 branches missed.">                if (log.isDebugEnabled()) {</span>
+<span class="nc" id="L1725">                    log.debug(&quot; Cannot resolve null entity, returning null InputSource&quot;);</span>
+                }
+<span class="nc" id="L1727">                return (null);</span>
+                
+            } else {
+                // try to resolve using system ID
+<span class="pc bpc" id="L1731" title="1 of 2 branches missed.">                if (log.isDebugEnabled()) {</span>
+<span class="nc" id="L1732">                    log.debug(&quot; Trying to resolve using system ID '&quot; + systemId + &quot;'&quot;);</span>
+                } 
+                try {
+<span class="fc" id="L1735">                    entityURL = new URL(systemId);</span>
+<span class="nc" id="L1736">                } catch (MalformedURLException e) {</span>
+<span class="nc" id="L1737">                    throw new IllegalArgumentException(&quot;Malformed URL '&quot; + systemId</span>
+<span class="nc" id="L1738">                        + &quot;' : &quot; + e.getMessage());</span>
+<span class="fc" id="L1739">                }</span>
+            }
+        }
+        
+        // Return an input source to our alternative URL
+<span class="pc bpc" id="L1744" title="1 of 2 branches missed.">        if (log.isDebugEnabled()) {</span>
+<span class="nc" id="L1745">            log.debug(&quot; Resolving to alternate DTD '&quot; + entityURL + &quot;'&quot;);</span>
+        }  
+        
+        try {
+<span class="fc" id="L1749">            return createInputSourceFromURL(entityURL);</span>
+<span class="nc" id="L1750">        } catch (Exception e) {</span>
+<span class="nc" id="L1751">            throw createSAXException(e);</span>
+        }
+    }
+
+
+    // ------------------------------------------------- ErrorHandler Methods
+
+
+    /**
+     * Forward notification of a parsing error to the application supplied
+     * error handler (if any).
+     *
+     * @param exception The error information
+     *
+     * @exception SAXException if a parsing exception occurs
+     */
+    @Override
+    public void error(SAXParseException exception) throws SAXException {
+
+<span class="fc" id="L1770">        log.error(&quot;Parse Error at line &quot; + exception.getLineNumber() +</span>
+<span class="fc" id="L1771">                &quot; column &quot; + exception.getColumnNumber() + &quot;: &quot; +</span>
+<span class="fc" id="L1772">                exception.getMessage(), exception);</span>
+<span class="pc bpc" id="L1773" title="1 of 2 branches missed.">        if (errorHandler != null) {</span>
+<span class="fc" id="L1774">            errorHandler.error(exception);</span>
+        }
+
+<span class="fc" id="L1777">    }</span>
+
+
+    /**
+     * Forward notification of a fatal parsing error to the application
+     * supplied error handler (if any).
+     *
+     * @param exception The fatal error information
+     *
+     * @exception SAXException if a parsing exception occurs
+     */
+    @Override
+    public void fatalError(SAXParseException exception) throws SAXException {
+
+<span class="nc" id="L1791">        log.error(&quot;Parse Fatal Error at line &quot; + exception.getLineNumber() +</span>
+<span class="nc" id="L1792">                &quot; column &quot; + exception.getColumnNumber() + &quot;: &quot; +</span>
+<span class="nc" id="L1793">                exception.getMessage(), exception);</span>
+<span class="nc bnc" id="L1794" title="All 2 branches missed.">        if (errorHandler != null) {</span>
+<span class="nc" id="L1795">            errorHandler.fatalError(exception);</span>
+        }
+
+<span class="nc" id="L1798">    }</span>
+
+
+    /**
+     * Forward notification of a parse warning to the application supplied
+     * error handler (if any).
+     *
+     * @param exception The warning information
+     *
+     * @exception SAXException if a parsing exception occurs
+     */
+    @Override
+    public void warning(SAXParseException exception) throws SAXException {
+<span class="nc bnc" id="L1811" title="All 2 branches missed.">         if (errorHandler != null) {</span>
+<span class="nc" id="L1812">            log.warn(&quot;Parse Warning Error at line &quot; + exception.getLineNumber() +</span>
+<span class="nc" id="L1813">                &quot; column &quot; + exception.getColumnNumber() + &quot;: &quot; +</span>
+<span class="nc" id="L1814">                exception.getMessage(), exception);</span>
+            
+<span class="nc" id="L1816">            errorHandler.warning(exception);</span>
+        }
+
+<span class="nc" id="L1819">    }</span>
+
+
+    // ------------------------------------------------------- Public Methods
+
+
+    /**
+     * Log a message to our associated logger.
+     *
+     * @param message The message to be logged
+     * @deprecated Call getLogger() and use it's logging methods
+     */
+    @Deprecated
+    public void log(String message) {
+
+<span class="nc" id="L1834">        log.info(message);</span>
+
+<span class="nc" id="L1836">    }</span>
+
+
+    /**
+     * Log a message and exception to our associated logger.
+     *
+     * @param message The message to be logged
+     * @deprecated Call getLogger() and use it's logging methods
+     */
+    @Deprecated
+    public void log(String message, Throwable exception) {
+
+<span class="nc" id="L1848">        log.error(message, exception);</span>
+
+<span class="nc" id="L1850">    }</span>
+
+
+    /**
+     * Parse the content of the specified file using this Digester.  Returns
+     * the root element from the object stack (if any).
+     *
+     * @param file File containing the XML data to be parsed
+     *
+     * @exception IOException if an input/output error occurs
+     * @exception SAXException if a parsing exception occurs
+     */
+    public Object parse(File file) throws IOException, SAXException {
+
+<span class="fc bfc" id="L1864" title="All 2 branches covered.">        if (file == null) {</span>
+<span class="fc" id="L1865">            throw new IllegalArgumentException(&quot;File to parse is null&quot;);</span>
+        }
+
+<span class="fc" id="L1868">        configure();</span>
+<span class="fc" id="L1869">        InputSource input = new InputSource(new FileInputStream(file));</span>
+<span class="fc" id="L1870">        input.setSystemId(file.toURI().toURL().toString());</span>
+<span class="fc" id="L1871">        getXMLReader().parse(input);</span>
+<span class="fc" id="L1872">        cleanup();</span>
+<span class="fc" id="L1873">        return (root);</span>
+
+    }   
+    /**
+     * Parse the content of the specified input source using this Digester.
+     * Returns the root element from the object stack (if any).
+     *
+     * @param input Input source containing the XML data to be parsed
+     *
+     * @exception IOException if an input/output error occurs
+     * @exception SAXException if a parsing exception occurs
+     */
+    public Object parse(InputSource input) throws IOException, SAXException {
+ 
+<span class="fc bfc" id="L1887" title="All 2 branches covered.">        if (input == null) {</span>
+<span class="fc" id="L1888">            throw new IllegalArgumentException(&quot;InputSource to parse is null&quot;);</span>
+        }
+
+<span class="fc" id="L1891">        configure();</span>
+<span class="fc" id="L1892">        getXMLReader().parse(input);</span>
+<span class="fc" id="L1893">        cleanup();</span>
+<span class="fc" id="L1894">        return (root);</span>
+
+    }
+
+
+    /**
+     * Parse the content of the specified input stream using this Digester.
+     * Returns the root element from the object stack (if any).
+     *
+     * @param input Input stream containing the XML data to be parsed
+     *
+     * @exception IOException if an input/output error occurs
+     * @exception SAXException if a parsing exception occurs
+     */
+    public Object parse(InputStream input) throws IOException, SAXException {
+
+<span class="fc bfc" id="L1910" title="All 2 branches covered.">        if (input == null) {</span>
+<span class="fc" id="L1911">            throw new IllegalArgumentException(&quot;InputStream to parse is null&quot;);</span>
+        }
+
+<span class="fc" id="L1914">        configure();</span>
+<span class="fc" id="L1915">        InputSource is = new InputSource(input);</span>
+<span class="fc" id="L1916">        getXMLReader().parse(is);</span>
+<span class="fc" id="L1917">        cleanup();</span>
+<span class="fc" id="L1918">        return (root);</span>
+
+    }
+
+
+    /**
+     * Parse the content of the specified reader using this Digester.
+     * Returns the root element from the object stack (if any).
+     *
+     * @param reader Reader containing the XML data to be parsed
+     *
+     * @exception IOException if an input/output error occurs
+     * @exception SAXException if a parsing exception occurs
+     */
+    public Object parse(Reader reader) throws IOException, SAXException {
+
+<span class="fc bfc" id="L1934" title="All 2 branches covered.">        if (reader == null) {</span>
+<span class="fc" id="L1935">            throw new IllegalArgumentException(&quot;Reader to parse is null&quot;);</span>
+        }
+
+<span class="fc" id="L1938">        configure();</span>
+<span class="fc" id="L1939">        InputSource is = new InputSource(reader);</span>
+<span class="fc" id="L1940">        getXMLReader().parse(is);</span>
+<span class="fc" id="L1941">        cleanup();</span>
+<span class="fc" id="L1942">        return (root);</span>
+
+    }
+
+
+    /**
+     * Parse the content of the specified URI using this Digester.
+     * Returns the root element from the object stack (if any).
+     *
+     * @param uri URI containing the XML data to be parsed
+     *
+     * @exception IOException if an input/output error occurs
+     * @exception SAXException if a parsing exception occurs
+     */
+    public Object parse(String uri) throws IOException, SAXException {
+
+<span class="fc bfc" id="L1958" title="All 2 branches covered.">        if (uri == null) {</span>
+<span class="fc" id="L1959">            throw new IllegalArgumentException(&quot;String URI to parse is null&quot;);</span>
+        }
+
+<span class="fc" id="L1962">        configure();</span>
+<span class="fc" id="L1963">        InputSource is = createInputSourceFromURL(uri);</span>
+<span class="fc" id="L1964">        getXMLReader().parse(is);</span>
+<span class="fc" id="L1965">        cleanup();</span>
+<span class="fc" id="L1966">        return (root);</span>
+
+    }
+
+
+    /**
+     * Parse the content of the specified URL using this Digester.
+     * Returns the root element from the object stack (if any).
+     *
+     * @param url URL containing the XML data to be parsed
+     *
+     * @exception IOException if an input/output error occurs
+     * @exception SAXException if a parsing exception occurs
+     *
+     * @since 1.8
+     */
+    public Object parse(URL url) throws IOException, SAXException {
+
+<span class="fc bfc" id="L1984" title="All 2 branches covered.">        if (url == null) {</span>
+<span class="fc" id="L1985">            throw new IllegalArgumentException(&quot;URL to parse is null&quot;);</span>
+        }
+
+<span class="fc" id="L1988">        configure();</span>
+<span class="fc" id="L1989">        InputSource is = createInputSourceFromURL(url);</span>
+<span class="fc" id="L1990">        getXMLReader().parse(is);</span>
+<span class="fc" id="L1991">        cleanup();</span>
+<span class="fc" id="L1992">        return (root);</span>
+
+    }
+
+
+    /**
+     * &lt;p&gt;Register the specified DTD URL for the specified public identifier.
+     * This must be called before the first call to &lt;code&gt;parse()&lt;/code&gt;.
+     * &lt;/p&gt;&lt;p&gt;
+     * &lt;code&gt;Digester&lt;/code&gt; contains an internal &lt;code&gt;EntityResolver&lt;/code&gt;
+     * implementation. This maps &lt;code&gt;PUBLICID&lt;/code&gt;'s to URLs 
+     * (from which the resource will be loaded). A common use case for this
+     * method is to register local URLs (possibly computed at runtime by a 
+     * classloader) for DTDs. This allows the performance advantage of using
+     * a local version without having to ensure every &lt;code&gt;SYSTEM&lt;/code&gt;
+     * URI on every processed xml document is local. This implementation provides
+     * only basic functionality. If more sophisticated features are required,
+     * using {@link #setEntityResolver} to set a custom resolver is recommended.
+     * &lt;/p&gt;&lt;p&gt;
+     * &lt;strong&gt;Note:&lt;/strong&gt; This method will have no effect when a custom 
+     * &lt;code&gt;EntityResolver&lt;/code&gt; has been set. (Setting a custom 
+     * &lt;code&gt;EntityResolver&lt;/code&gt; overrides the internal implementation.) 
+     * &lt;/p&gt;
+     * @param publicId Public identifier of the DTD to be resolved
+     * @param entityURL The URL to use for reading this DTD
+     *
+     * @since 1.8
+     */
+    public void register(String publicId, URL entityURL) {
+
+<span class="pc bpc" id="L2022" title="1 of 2 branches missed.">        if (log.isDebugEnabled()) {</span>
+<span class="nc" id="L2023">            log.debug(&quot;register('&quot; + publicId + &quot;', '&quot; + entityURL + &quot;'&quot;);</span>
+        }
+<span class="fc" id="L2025">        entityValidator.put(publicId, entityURL);</span>
+
+<span class="fc" id="L2027">    }</span>
+
+
+    /**
+     * &lt;p&gt;Convenience method that registers the string version of an entity URL
+     * instead of a URL version.&lt;/p&gt;
+     *
+     * @param publicId Public identifier of the entity to be resolved
+     * @param entityURL The URL to use for reading this entity
+     */
+    public void register(String publicId, String entityURL) {
+
+<span class="pc bpc" id="L2039" title="1 of 2 branches missed.">        if (log.isDebugEnabled()) {</span>
+<span class="nc" id="L2040">            log.debug(&quot;register('&quot; + publicId + &quot;', '&quot; + entityURL + &quot;'&quot;);</span>
+        }
+        try {
+<span class="fc" id="L2043">            entityValidator.put(publicId, new URL(entityURL));</span>
+<span class="nc" id="L2044">        } catch (MalformedURLException e) {</span>
+<span class="nc" id="L2045">            throw new IllegalArgumentException(&quot;Malformed URL '&quot; + entityURL</span>
+<span class="nc" id="L2046">                + &quot;' : &quot; + e.getMessage());</span>
+<span class="fc" id="L2047">        }</span>
+
+<span class="fc" id="L2049">    }</span>
+
+
+    /**
+     * &lt;p&gt;&lt;code&gt;List&lt;/code&gt; of &lt;code&gt;InputSource&lt;/code&gt; instances
+     * created by a &lt;code&gt;createInputSourceFromURL()&lt;/code&gt; method
+     * call.  These represent open input streams that need to be
+     * closed to avoid resource leaks, as well as potentially locked
+     * JAR files on Windows.&lt;/p&gt;
+     */
+<span class="pc" id="L2059">    protected List&lt;InputSource&gt; inputSources = new ArrayList&lt;InputSource&gt;(5);</span>
+
+
+    /**
+     * Given a URL, return an InputSource that reads from that URL.
+     * &lt;p&gt;
+     * Ideally this function would not be needed and code could just use
+     * &lt;code&gt;new InputSource(entityURL)&lt;/code&gt;. Unfortunately it appears
+     * that when the entityURL points to a file within a jar archive a
+     * caching mechanism inside the InputSource implementation causes a
+     * file-handle to the jar file to remain open. On Windows systems
+     * this then causes the jar archive file to be locked on disk
+     * (&quot;in use&quot;) which makes it impossible to delete the jar file -
+     * and that really stuffs up &quot;undeploy&quot; in webapps in particular.
+     * &lt;p&gt;
+     * In JDK1.4 and later, Apache XercesJ is used as the xml parser.
+     * The InputSource object provided is converted into an XMLInputSource,
+     * and eventually passed to an instance of XMLDocumentScannerImpl to
+     * specify the source data to be converted into tokens for the rest
+     * of the XMLReader code to handle. XMLDocumentScannerImpl calls
+     * fEntityManager.startDocumentEntity(source), where fEntityManager
+     * is declared in ancestor class XMLScanner to be an XMLEntityManager. In
+     * that class, if the input source stream is null, then:
+     * &lt;pre&gt;
+     *  URL location = new URL(expandedSystemId);
+     *  URLConnection connect = location.openConnection();
+     *  if (connect instanceof HttpURLConnection) {
+     *    setHttpProperties(connect,xmlInputSource);
+     *  }
+     *  stream = connect.getInputStream();
+     * &lt;/pre&gt;
+     * This method pretty much duplicates the standard behaviour, except
+     * that it calls URLConnection.setUseCaches(false) before opening
+     * the connection.
+     *
+     * @since 1.8
+     */
+    public InputSource createInputSourceFromURL(URL url)
+      throws MalformedURLException, IOException {
+
+<span class="fc" id="L2099">        URLConnection connection = url.openConnection();</span>
+<span class="fc" id="L2100">        connection.setUseCaches(false);</span>
+<span class="fc" id="L2101">        InputStream stream = connection.getInputStream();</span>
+<span class="fc" id="L2102">        InputSource source = new InputSource(stream);</span>
+<span class="fc" id="L2103">        source.setSystemId(url.toExternalForm());</span>
+<span class="fc" id="L2104">        inputSources.add(source);</span>
+<span class="fc" id="L2105">        return source;</span>
+
+    }
+
+
+    /**
+     * &lt;p&gt;Convenience method that creates an &lt;code&gt;InputSource&lt;/code&gt;
+     * from the string version of a URL.&lt;/p&gt;
+     *
+     * @param url URL for which to create an &lt;code&gt;InputSource&lt;/code&gt;
+     *
+     * @since 1.8
+     */
+    public InputSource createInputSourceFromURL(String url)
+      throws MalformedURLException, IOException {
+
+<span class="fc" id="L2121">        return createInputSourceFromURL(new URL(url));</span>
+
+    }
+
+
+    // --------------------------------------------------------- Rule Methods
+
+
+    /**
+     * &lt;p&gt;Register a new Rule matching the specified pattern.
+     * This method sets the &lt;code&gt;Digester&lt;/code&gt; property on the rule.&lt;/p&gt;
+     *
+     * @param pattern Element matching pattern
+     * @param rule Rule to be registered
+     */
+    public void addRule(String pattern, Rule rule) {
+
+<span class="fc" id="L2138">        rule.setDigester(this);</span>
+<span class="fc" id="L2139">        getRules().add(pattern, rule);</span>
+
+<span class="fc" id="L2141">    }</span>
+
+
+    /**
+     * Register a set of Rule instances defined in a RuleSet.
+     *
+     * @param ruleSet The RuleSet instance to configure from
+     */
+    public void addRuleSet(RuleSet ruleSet) {
+
+<span class="fc" id="L2151">        String oldNamespaceURI = getRuleNamespaceURI();</span>
+<span class="fc" id="L2152">        String newNamespaceURI = ruleSet.getNamespaceURI();</span>
+<span class="pc bpc" id="L2153" title="1 of 2 branches missed.">        if (log.isDebugEnabled()) {</span>
+<span class="nc bnc" id="L2154" title="All 2 branches missed.">            if (newNamespaceURI == null) {</span>
+<span class="nc" id="L2155">                log.debug(&quot;addRuleSet() with no namespace URI&quot;);</span>
+            } else {
+<span class="nc" id="L2157">                log.debug(&quot;addRuleSet() with namespace URI &quot; + newNamespaceURI);</span>
+            }
+        }
+<span class="fc" id="L2160">        setRuleNamespaceURI(newNamespaceURI);</span>
+<span class="fc" id="L2161">        ruleSet.addRuleInstances(this);</span>
+<span class="fc" id="L2162">        setRuleNamespaceURI(oldNamespaceURI);</span>
+
+<span class="fc" id="L2164">    }</span>
+
+
+    /**
+     * Add a &quot;bean property setter&quot; rule for the specified parameters.
+     *
+     * @param pattern Element matching pattern
+     * @see BeanPropertySetterRule
+     */
+    public void addBeanPropertySetter(String pattern) {
+
+<span class="nc" id="L2175">        addRule(pattern,</span>
+                new BeanPropertySetterRule());
+
+<span class="nc" id="L2178">    }</span>
+
+
+    /**
+     * Add a &quot;bean property setter&quot; rule for the specified parameters.
+     *
+     * @param pattern Element matching pattern
+     * @param propertyName Name of property to set
+     * @see BeanPropertySetterRule
+     */
+    public void addBeanPropertySetter(String pattern,
+                                      String propertyName) {
+
+<span class="nc" id="L2191">        addRule(pattern,</span>
+                new BeanPropertySetterRule(propertyName));
+
+<span class="nc" id="L2194">    }</span>
+
+    /**
+     * Add an &quot;call method&quot; rule for a method which accepts no arguments.
+     *
+     * @param pattern Element matching pattern
+     * @param methodName Method name to be called
+     * @see CallMethodRule
+     */
+    public void addCallMethod(String pattern, String methodName) {
+
+<span class="fc" id="L2205">        addRule(</span>
+                pattern,
+                new CallMethodRule(methodName));
+
+<span class="fc" id="L2209">    }</span>
+
+    /**
+     * Add an &quot;call method&quot; rule for the specified parameters.
+     *
+     * @param pattern Element matching pattern
+     * @param methodName Method name to be called
+     * @param paramCount Number of expected parameters (or zero
+     *  for a single parameter from the body of this element)
+     * @see CallMethodRule
+     */
+    public void addCallMethod(String pattern, String methodName,
+                              int paramCount) {
+
+<span class="fc" id="L2223">        addRule(pattern,</span>
+                new CallMethodRule(methodName, paramCount));
+
+<span class="fc" id="L2226">    }</span>
+
+
+    /**
+     * Add an &quot;call method&quot; rule for the specified parameters.
+     * If &lt;code&gt;paramCount&lt;/code&gt; is set to zero the rule will use
+     * the body of the matched element as the single argument of the
+     * method, unless &lt;code&gt;paramTypes&lt;/code&gt; is null or empty, in this
+     * case the rule will call the specified method with no arguments.
+     *
+     * @param pattern Element matching pattern
+     * @param methodName Method name to be called
+     * @param paramCount Number of expected parameters (or zero
+     *  for a single parameter from the body of this element)
+     * @param paramTypes Set of Java class names for the types
+     *  of the expected parameters
+     *  (if you wish to use a primitive type, specify the corresonding
+     *  Java wrapper class instead, such as &lt;code&gt;java.lang.Boolean&lt;/code&gt;
+     *  for a &lt;code&gt;boolean&lt;/code&gt; parameter)
+     * @see CallMethodRule
+     */
+    public void addCallMethod(String pattern, String methodName,
+                              int paramCount, String paramTypes[]) {
+
+<span class="fc" id="L2250">        addRule(pattern,</span>
+                new CallMethodRule(
+                                    methodName,
+                                    paramCount, 
+                                    paramTypes));
+
+<span class="fc" id="L2256">    }</span>
+
+
+    /**
+     * Add an &quot;call method&quot; rule for the specified parameters.
+     * If &lt;code&gt;paramCount&lt;/code&gt; is set to zero the rule will use
+     * the body of the matched element as the single argument of the
+     * method, unless &lt;code&gt;paramTypes&lt;/code&gt; is null or empty, in this
+     * case the rule will call the specified method with no arguments.
+     *
+     * @param pattern Element matching pattern
+     * @param methodName Method name to be called
+     * @param paramCount Number of expected parameters (or zero
+     *  for a single parameter from the body of this element)
+     * @param paramTypes The Java class names of the arguments
+     *  (if you wish to use a primitive type, specify the corresonding
+     *  Java wrapper class instead, such as &lt;code&gt;java.lang.Boolean&lt;/code&gt;
+     *  for a &lt;code&gt;boolean&lt;/code&gt; parameter)
+     * @see CallMethodRule
+     */
+    public void addCallMethod(String pattern, String methodName,
+                              int paramCount, Class&lt;?&gt; paramTypes[]) {
+
+<span class="fc" id="L2279">        addRule(pattern,</span>
+                new CallMethodRule(
+                                    methodName,
+                                    paramCount, 
+                                    paramTypes));
+
+<span class="fc" id="L2285">    }</span>
+
+
+    /**
+     * Add a &quot;call parameter&quot; rule for the specified parameters.
+     *
+     * @param pattern Element matching pattern
+     * @param paramIndex Zero-relative parameter index to set
+     *  (from the body of this element)
+     * @see CallParamRule
+     */
+    public void addCallParam(String pattern, int paramIndex) {
+
+<span class="fc" id="L2298">        addRule(pattern,</span>
+                new CallParamRule(paramIndex));
+
+<span class="fc" id="L2301">    }</span>
+
+
+    /**
+     * Add a &quot;call parameter&quot; rule for the specified parameters.
+     *
+     * @param pattern Element matching pattern
+     * @param paramIndex Zero-relative parameter index to set
+     *  (from the specified attribute)
+     * @param attributeName Attribute whose value is used as the
+     *  parameter value
+     * @see CallParamRule
+     */
+    public void addCallParam(String pattern, int paramIndex,
+                             String attributeName) {
+
+<span class="fc" id="L2317">        addRule(pattern,</span>
+                new CallParamRule(paramIndex, attributeName));
+
+<span class="fc" id="L2320">    }</span>
+
+
+    /**
+     * Add a &quot;call parameter&quot; rule.
+     * This will either take a parameter from the stack 
+     * or from the current element body text. 
+     *
+     * @param paramIndex The zero-relative parameter number
+     * @param fromStack Should the call parameter be taken from the top of the stack?
+     * @see CallParamRule
+     */    
+    public void addCallParam(String pattern, int paramIndex, boolean fromStack) {
+    
+<span class="fc" id="L2334">        addRule(pattern,</span>
+                new CallParamRule(paramIndex, fromStack));
+      
+<span class="fc" id="L2337">    }</span>
+
+    /**
+     * Add a &quot;call parameter&quot; rule that sets a parameter from the stack.
+     * This takes a parameter from the given position on the stack.
+     *
+     * @param paramIndex The zero-relative parameter number
+     * @param stackIndex set the call parameter to the stackIndex'th object down the stack,
+     * where 0 is the top of the stack, 1 the next element down and so on
+     * @see CallMethodRule
+     */    
+    public void addCallParam(String pattern, int paramIndex, int stackIndex) {
+    
+<span class="fc" id="L2350">        addRule(pattern,</span>
+                new CallParamRule(paramIndex, stackIndex));
+      
+<span class="fc" id="L2353">    }</span>
+    
+    /**
+     * Add a &quot;call parameter&quot; rule that sets a parameter from the current 
+     * &lt;code&gt;Digester&lt;/code&gt; matching path.
+     * This is sometimes useful when using rules that support wildcards.
+     *
+     * @param pattern the pattern that this rule should match
+     * @param paramIndex The zero-relative parameter number
+     * @see CallMethodRule
+     */
+    public void addCallParamPath(String pattern,int paramIndex) {
+<span class="fc" id="L2365">        addRule(pattern, new PathCallParamRule(paramIndex));</span>
+<span class="fc" id="L2366">    }</span>
+    
+    /**
+     * Add a &quot;call parameter&quot; rule that sets a parameter from a 
+     * caller-provided object. This can be used to pass constants such as
+     * strings to methods; it can also be used to pass mutable objects,
+     * providing ways for objects to do things like &quot;register&quot; themselves
+     * with some shared object.
+     * &lt;p&gt;
+     * Note that when attempting to locate a matching method to invoke,
+     * the true type of the paramObj is used, so that despite the paramObj
+     * being passed in here as type Object, the target method can declare
+     * its parameters as being the true type of the object (or some ancestor
+     * type, according to the usual type-conversion rules).
+     *
+     * @param paramIndex The zero-relative parameter number
+     * @param paramObj Any arbitrary object to be passed to the target
+     * method.
+     * @see CallMethodRule
+     *
+     * @since 1.6
+     */    
+    public void addObjectParam(String pattern, int paramIndex, 
+                               Object paramObj) {
+    
+<span class="nc" id="L2391">        addRule(pattern,</span>
+                new ObjectParamRule(paramIndex, paramObj));
+      
+<span class="nc" id="L2394">    }</span>
+    
+    /**
+     * Add a &quot;factory create&quot; rule for the specified parameters.
+     * Exceptions thrown during the object creation process will be propagated.
+     *
+     * @param pattern Element matching pattern
+     * @param className Java class name of the object creation factory class
+     * @see FactoryCreateRule
+     */
+    public void addFactoryCreate(String pattern, String className) {
+
+<span class="nc" id="L2406">        addFactoryCreate(pattern, className, false);</span>
+
+<span class="nc" id="L2408">    }</span>
+
+
+    /**
+     * Add a &quot;factory create&quot; rule for the specified parameters.
+     * Exceptions thrown during the object creation process will be propagated.
+     *
+     * @param pattern Element matching pattern
+     * @param clazz Java class of the object creation factory class
+     * @see FactoryCreateRule
+     */
+    public void addFactoryCreate(String pattern, Class&lt;?&gt; clazz) {
+
+<span class="nc" id="L2421">        addFactoryCreate(pattern, clazz, false);</span>
+
+<span class="nc" id="L2423">    }</span>
+
+
+    /**
+     * Add a &quot;factory create&quot; rule for the specified parameters.
+     * Exceptions thrown during the object creation process will be propagated.
+     *
+     * @param pattern Element matching pattern
+     * @param className Java class name of the object creation factory class
+     * @param attributeName Attribute name which, if present, overrides the
+     *  value specified by &lt;code&gt;className&lt;/code&gt;
+     * @see FactoryCreateRule
+     */
+    public void addFactoryCreate(String pattern, String className,
+                                 String attributeName) {
+
+<span class="nc" id="L2439">        addFactoryCreate(pattern, className, attributeName, false);</span>
+
+<span class="nc" id="L2441">    }</span>
+
+
+    /**
+     * Add a &quot;factory create&quot; rule for the specified parameters.
+     * Exceptions thrown during the object creation process will be propagated.
+     *
+     * @param pattern Element matching pattern
+     * @param clazz Java class of the object creation factory class
+     * @param attributeName Attribute name which, if present, overrides the
+     *  value specified by &lt;code&gt;className&lt;/code&gt;
+     * @see FactoryCreateRule
+     */
+    public void addFactoryCreate(String pattern, Class&lt;?&gt; clazz,
+                                 String attributeName) {
+
+<span class="nc" id="L2457">        addFactoryCreate(pattern, clazz, attributeName, false);</span>
+
+<span class="nc" id="L2459">    }</span>
+
+
+    /**
+     * Add a &quot;factory create&quot; rule for the specified parameters.
+     * Exceptions thrown during the object creation process will be propagated.
+     *
+     * @param pattern Element matching pattern
+     * @param creationFactory Previously instantiated ObjectCreationFactory
+     *  to be utilized
+     * @see FactoryCreateRule
+     */
+    public void addFactoryCreate(String pattern,
+                                 ObjectCreationFactory creationFactory) {
+
+<span class="fc" id="L2474">        addFactoryCreate(pattern, creationFactory, false);</span>
+
+<span class="fc" id="L2476">    }</span>
+
+    /**
+     * Add a &quot;factory create&quot; rule for the specified parameters.
+     *
+     * @param pattern Element matching pattern
+     * @param className Java class name of the object creation factory class
+     * @param ignoreCreateExceptions when &lt;code&gt;true&lt;/code&gt; any exceptions thrown during
+     * object creation will be ignored.
+     * @see FactoryCreateRule
+     */
+    public void addFactoryCreate(
+                                    String pattern, 
+                                    String className,
+                                    boolean ignoreCreateExceptions) {
+
+<span class="fc" id="L2492">        addRule(</span>
+                pattern,
+                new FactoryCreateRule(className, ignoreCreateExceptions));
+
+<span class="fc" id="L2496">    }</span>
+
+
+    /**
+     * Add a &quot;factory create&quot; rule for the specified parameters.
+     *
+     * @param pattern Element matching pattern
+     * @param clazz Java class of the object creation factory class
+     * @param ignoreCreateExceptions when &lt;code&gt;true&lt;/code&gt; any exceptions thrown during
+     * object creation will be ignored.
+     * @see FactoryCreateRule
+     */
+    public void addFactoryCreate(
+                                    String pattern, 
+                                    Class&lt;?&gt; clazz,
+                                    boolean ignoreCreateExceptions) {
+
+<span class="nc" id="L2513">        addRule(</span>
+                pattern,
+                new FactoryCreateRule(clazz, ignoreCreateExceptions));
+
+<span class="nc" id="L2517">    }</span>
+
+
+    /**
+     * Add a &quot;factory create&quot; rule for the specified parameters.
+     *
+     * @param pattern Element matching pattern
+     * @param className Java class name of the object creation factory class
+     * @param attributeName Attribute name which, if present, overrides the
+     *  value specified by &lt;code&gt;className&lt;/code&gt;
+     * @param ignoreCreateExceptions when &lt;code&gt;true&lt;/code&gt; any exceptions thrown during
+     * object creation will be ignored.
+     * @see FactoryCreateRule
+     */
+    public void addFactoryCreate(
+                                String pattern, 
+                                String className,
+                                String attributeName,
+                                boolean ignoreCreateExceptions) {
+
+<span class="fc" id="L2537">        addRule(</span>
+                pattern,
+                new FactoryCreateRule(className, attributeName, ignoreCreateExceptions));
+
+<span class="fc" id="L2541">    }</span>
+
+
+    /**
+     * Add a &quot;factory create&quot; rule for the specified parameters.
+     *
+     * @param pattern Element matching pattern
+     * @param clazz Java class of the object creation factory class
+     * @param attributeName Attribute name which, if present, overrides the
+     *  value specified by &lt;code&gt;className&lt;/code&gt;
+     * @param ignoreCreateExceptions when &lt;code&gt;true&lt;/code&gt; any exceptions thrown during
+     * object creation will be ignored.
+     * @see FactoryCreateRule
+     */
+    public void addFactoryCreate(
+                                    String pattern, 
+                                    Class&lt;?&gt; clazz,
+                                    String attributeName,
+                                    boolean ignoreCreateExceptions) {
+
+<span class="fc" id="L2561">        addRule(</span>
+                pattern,
+                new FactoryCreateRule(clazz, attributeName, ignoreCreateExceptions));
+
+<span class="fc" id="L2565">    }</span>
+
+
+    /**
+     * Add a &quot;factory create&quot; rule for the specified parameters.
+     *
+     * @param pattern Element matching pattern
+     * @param creationFactory Previously instantiated ObjectCreationFactory
+     *  to be utilized
+     * @param ignoreCreateExceptions when &lt;code&gt;true&lt;/code&gt; any exceptions thrown during
+     * object creation will be ignored.
+     * @see FactoryCreateRule
+     */
+    public void addFactoryCreate(String pattern,
+                                 ObjectCreationFactory creationFactory,
+                                 boolean ignoreCreateExceptions) {
+
+<span class="fc" id="L2582">        creationFactory.setDigester(this);</span>
+<span class="fc" id="L2583">        addRule(pattern,</span>
+                new FactoryCreateRule(creationFactory, ignoreCreateExceptions));
+
+<span class="fc" id="L2586">    }</span>
+
+    /**
+     * Add an &quot;object create&quot; rule for the specified parameters.
+     *
+     * @param pattern Element matching pattern
+     * @param className Java class name to be created
+     * @see ObjectCreateRule
+     */
+    public void addObjectCreate(String pattern, String className) {
+
+<span class="fc" id="L2597">        addRule(pattern,</span>
+                new ObjectCreateRule(className));
+
+<span class="fc" id="L2600">    }</span>
+
+
+    /**
+     * Add an &quot;object create&quot; rule for the specified parameters.
+     *
+     * @param pattern Element matching pattern
+     * @param clazz Java class to be created
+     * @see ObjectCreateRule
+     */
+    public void addObjectCreate(String pattern, Class&lt;?&gt; clazz) {
+
+<span class="fc" id="L2612">        addRule(pattern,</span>
+                new ObjectCreateRule(clazz));
+
+<span class="fc" id="L2615">    }</span>
+
+
+    /**
+     * Add an &quot;object create&quot; rule for the specified parameters.
+     *
+     * @param pattern Element matching pattern
+     * @param className Default Java class name to be created
+     * @param attributeName Attribute name that optionally overrides
+     *  the default Java class name to be created
+     * @see ObjectCreateRule
+     */
+    public void addObjectCreate(String pattern, String className,
+                                String attributeName) {
+
+<span class="nc" id="L2630">        addRule(pattern,</span>
+                new ObjectCreateRule(className, attributeName));
+
+<span class="nc" id="L2633">    }</span>
+
+
+    /**
+     * Add an &quot;object create&quot; rule for the specified parameters.
+     *
+     * @param pattern Element matching pattern
+     * @param attributeName Attribute name that optionally overrides
+     * @param clazz Default Java class to be created
+     *  the default Java class name to be created
+     * @see ObjectCreateRule
+     */
+    public void addObjectCreate(String pattern,
+                                String attributeName,
+                                Class&lt;?&gt; clazz) {
+
+<span class="nc" id="L2649">        addRule(pattern,</span>
+                new ObjectCreateRule(attributeName, clazz));
+
+<span class="nc" id="L2652">    }</span>
+
+    /**
+     * Adds an {@link SetNestedPropertiesRule}.
+     *
+     * @param pattern register the rule with this pattern
+     *
+     * @since 1.6
+     */
+    public void addSetNestedProperties(String pattern) {
+    
+<span class="fc" id="L2663">        addRule(pattern, new SetNestedPropertiesRule());</span>
+<span class="fc" id="L2664">    }</span>
+
+    /**
+     * Adds an {@link SetNestedPropertiesRule}.
+     *
+     * @param pattern register the rule with this pattern
+     * @param elementName elment name that a property maps to
+     * @param propertyName property name of the element mapped from
+     *
+     * @since 1.6
+     */
+    public void addSetNestedProperties(String pattern, String elementName, String propertyName) {
+    
+<span class="nc" id="L2677">        addRule(pattern, new SetNestedPropertiesRule(elementName, propertyName));</span>
+<span class="nc" id="L2678">    }</span>
+
+    /**
+     * Adds an {@link SetNestedPropertiesRule}.
+     *
+     * @param pattern register the rule with this pattern
+     * @param elementNames elment names that (in order) map to properties
+     * @param propertyNames property names that (in order) elements are mapped to
+     *
+     * @since 1.6
+     */    
+    public void addSetNestedProperties(String pattern, String[] elementNames, String[] propertyNames) {
+    
+<span class="nc" id="L2691">        addRule(pattern, new SetNestedPropertiesRule(elementNames, propertyNames));</span>
+<span class="nc" id="L2692">    }</span>
+
+
+    /**
+     * Add a &quot;set next&quot; rule for the specified parameters.
+     *
+     * @param pattern Element matching pattern
+     * @param methodName Method name to call on the parent element
+     * @see SetNextRule
+     */
+    public void addSetNext(String pattern, String methodName) {
+
+<span class="fc" id="L2704">        addRule(pattern,</span>
+                new SetNextRule(methodName));
+
+<span class="fc" id="L2707">    }</span>
+
+
+    /**
+     * Add a &quot;set next&quot; rule for the specified parameters.
+     *
+     * @param pattern Element matching pattern
+     * @param methodName Method name to call on the parent element
+     * @param paramType Java class name of the expected parameter type
+     *  (if you wish to use a primitive type, specify the corresonding
+     *  Java wrapper class instead, such as &lt;code&gt;java.lang.Boolean&lt;/code&gt;
+     *  for a &lt;code&gt;boolean&lt;/code&gt; parameter)
+     * @see SetNextRule
+     */
+    public void addSetNext(String pattern, String methodName,
+                           String paramType) {
+
+<span class="fc" id="L2724">        addRule(pattern,</span>
+                new SetNextRule(methodName, paramType));
+
+<span class="fc" id="L2727">    }</span>
+
+
+    /**
+     * Add {@link SetRootRule} with the specified parameters.
+     *
+     * @param pattern Element matching pattern
+     * @param methodName Method name to call on the root object
+     * @see SetRootRule
+     */
+    public void addSetRoot(String pattern, String methodName) {
+
+<span class="fc" id="L2739">        addRule(pattern,</span>
+                new SetRootRule(methodName));
+
+<span class="fc" id="L2742">    }</span>
+
+
+    /**
+     * Add {@link SetRootRule} with the specified parameters.
+     *
+     * @param pattern Element matching pattern
+     * @param methodName Method name to call on the root object
+     * @param paramType Java class name of the expected parameter type
+     * @see SetRootRule
+     */
+    public void addSetRoot(String pattern, String methodName,
+                           String paramType) {
+
+<span class="nc" id="L2756">        addRule(pattern,</span>
+                new SetRootRule(methodName, paramType));
+
+<span class="nc" id="L2759">    }</span>
+
+    /**
+     * Add a &quot;set properties&quot; rule for the specified parameters.
+     *
+     * @param pattern Element matching pattern
+     * @see SetPropertiesRule
+     */
+    public void addSetProperties(String pattern) {
+
+<span class="fc" id="L2769">        addRule(pattern,</span>
+                new SetPropertiesRule());
+
+<span class="fc" id="L2772">    }</span>
+
+    /**
+     * Add a &quot;set properties&quot; rule with a single overridden parameter.
+     * See {@link SetPropertiesRule#SetPropertiesRule(String attributeName, String propertyName)}
+     *
+     * @param pattern Element matching pattern
+     * @param attributeName map this attribute
+     * @param propertyName to this property
+     * @see SetPropertiesRule
+     */
+    public void addSetProperties(
+                                String pattern, 
+                                String attributeName,
+                                String propertyName) {
+
+<span class="fc" id="L2788">        addRule(pattern,</span>
+                new SetPropertiesRule(attributeName, propertyName));
+
+<span class="fc" id="L2791">    }</span>
+
+    /**
+     * Add a &quot;set properties&quot; rule with overridden parameters.
+     * See {@link SetPropertiesRule#SetPropertiesRule(String [] attributeNames, String [] propertyNames)}
+     *
+     * @param pattern Element matching pattern
+     * @param attributeNames names of attributes with custom mappings
+     * @param propertyNames property names these attributes map to
+     * @see SetPropertiesRule
+     */
+    public void addSetProperties(
+                                String pattern, 
+                                String [] attributeNames,
+                                String [] propertyNames) {
+
+<span class="fc" id="L2807">        addRule(pattern,</span>
+                new SetPropertiesRule(attributeNames, propertyNames));
+
+<span class="fc" id="L2810">    }</span>
+
+
+    /**
+     * Add a &quot;set property&quot; rule for the specified parameters.
+     *
+     * @param pattern Element matching pattern
+     * @param name Attribute name containing the property name to be set
+     * @param value Attribute name containing the property value to set
+     * @see SetPropertyRule
+     */
+    public void addSetProperty(String pattern, String name, String value) {
+
+<span class="fc" id="L2823">        addRule(pattern,</span>
+                new SetPropertyRule(name, value));
+
+<span class="fc" id="L2826">    }</span>
+
+
+    /**
+     * Add a &quot;set top&quot; rule for the specified parameters.
+     *
+     * @param pattern Element matching pattern
+     * @param methodName Method name to call on the parent element
+     * @see SetTopRule
+     */
+    public void addSetTop(String pattern, String methodName) {
+
+<span class="fc" id="L2838">        addRule(pattern,</span>
+                new SetTopRule(methodName));
+
+<span class="fc" id="L2841">    }</span>
+
+
+    /**
+     * Add a &quot;set top&quot; rule for the specified parameters.
+     *
+     * @param pattern Element matching pattern
+     * @param methodName Method name to call on the parent element
+     * @param paramType Java class name of the expected parameter type
+     *  (if you wish to use a primitive type, specify the corresonding
+     *  Java wrapper class instead, such as &lt;code&gt;java.lang.Boolean&lt;/code&gt;
+     *  for a &lt;code&gt;boolean&lt;/code&gt; parameter)
+     * @see SetTopRule
+     */
+    public void addSetTop(String pattern, String methodName,
+                          String paramType) {
+
+<span class="fc" id="L2858">        addRule(pattern,</span>
+                new SetTopRule(methodName, paramType));
+
+<span class="fc" id="L2861">    }</span>
+
+
+    // --------------------------------------------------- Object Stack Methods
+
+
+    /**
+     * Clear the current contents of the default object stack, the param stack,
+     * all named stacks, and other internal variables. 
+     * &lt;p&gt;
+     * Calling this method &lt;i&gt;might&lt;/i&gt; allow another document of the same type
+     * to be correctly parsed. However this method was not intended for this 
+     * purpose (just to tidy up memory usage). In general, a separate Digester
+     * object should be created for each document to be parsed.
+     * &lt;p&gt;
+     * Note that this method is called automatically after a document has been
+     * successfully parsed by a Digester instance. However it is not invoked
+     * automatically when a parse fails, so when reusing a Digester instance
+     * (which is not recommended) this method &lt;i&gt;must&lt;/i&gt; be called manually
+     * after a parse failure.
+     */
+    public void clear() {
+
+<span class="fc" id="L2884">        match = &quot;&quot;;</span>
+<span class="fc" id="L2885">        bodyTexts.clear();</span>
+<span class="fc" id="L2886">        params.clear();</span>
+<span class="fc" id="L2887">        publicId = null;</span>
+<span class="fc" id="L2888">        stack.clear();</span>
+<span class="fc" id="L2889">        stacksByName.clear();</span>
+<span class="fc" id="L2890">        customContentHandler = null;</span>
+<span class="fc" id="L2891">    }</span>
+
+
+    /**
+     * Return the top object on the stack without removing it.  If there are
+     * no objects on the stack, return &lt;code&gt;null&lt;/code&gt;.
+     */
+    public Object peek() {
+
+        try {
+<span class="fc" id="L2901">            return (stack.peek());</span>
+<span class="fc" id="L2902">        } catch (EmptyStackException e) {</span>
+<span class="fc" id="L2903">            log.warn(&quot;Empty stack (returning null)&quot;);</span>
+<span class="fc" id="L2904">            return (null);</span>
+        }
+
+    }
+
+
+    /**
+     * Return the n'th object down the stack, where 0 is the top element
+     * and [getCount()-1] is the bottom element.  If the specified index
+     * is out of range, return &lt;code&gt;null&lt;/code&gt;.
+     *
+     * @param n Index of the desired element, where 0 is the top of the stack,
+     *  1 is the next element down, and so on.
+     */
+    public Object peek(int n) {
+
+<span class="fc" id="L2920">        int index = (stack.size() - 1) - n;</span>
+<span class="fc bfc" id="L2921" title="All 2 branches covered.">        if (index &lt; 0) {</span>
+<span class="fc" id="L2922">            log.warn(&quot;Empty stack (returning null)&quot;);</span>
+<span class="fc" id="L2923">            return (null);</span>
+        }
+        try {
+<span class="fc" id="L2926">            return (stack.get(index));</span>
+<span class="nc" id="L2927">        } catch (EmptyStackException e) {</span>
+<span class="nc" id="L2928">            log.warn(&quot;Empty stack (returning null)&quot;);</span>
+<span class="nc" id="L2929">            return (null);</span>
+        }
+
+    }
+
+
+    /**
+     * Pop the top object off of the stack, and return it.  If there are
+     * no objects on the stack, return &lt;code&gt;null&lt;/code&gt;.
+     */
+    public Object pop() {
+
+        try {
+<span class="fc" id="L2942">            Object popped = stack.pop();</span>
+<span class="fc bfc" id="L2943" title="All 2 branches covered.">            if (stackAction != null) {</span>
+<span class="fc" id="L2944">                popped = stackAction.onPop(this, null, popped);</span>
+            }
+<span class="fc" id="L2946">            return popped;</span>
+<span class="fc" id="L2947">        } catch (EmptyStackException e) {</span>
+<span class="fc" id="L2948">            log.warn(&quot;Empty stack (returning null)&quot;);</span>
+<span class="fc" id="L2949">            return (null);</span>
+        }
+
+    }
+
+
+    /**
+     * Push a new object onto the top of the object stack.
+     *
+     * @param object The new object
+     */
+    public void push(Object object) {
+
+<span class="fc bfc" id="L2962" title="All 2 branches covered.">        if (stackAction != null) {</span>
+<span class="fc" id="L2963">            object = stackAction.onPush(this, null, object);</span>
+        }
+
+<span class="fc bfc" id="L2966" title="All 2 branches covered.">        if (stack.size() == 0) {</span>
+<span class="fc" id="L2967">            root = object;</span>
+        }
+<span class="fc" id="L2969">        stack.push(object);</span>
+<span class="fc" id="L2970">    }</span>
+
+    /**
+     * Pushes the given object onto the stack with the given name.
+     * If no stack already exists with the given name then one will be created.
+     * 
+     * @param stackName the name of the stack onto which the object should be pushed
+     * @param value the Object to be pushed onto the named stack.
+     *
+     * @since 1.6
+     */
+    public void push(String stackName, Object value) {
+<span class="fc bfc" id="L2982" title="All 2 branches covered.">        if (stackAction != null) {</span>
+<span class="fc" id="L2983">            value = stackAction.onPush(this, stackName, value);</span>
+        }
+
+<span class="fc" id="L2986">        Stack&lt;Object&gt; namedStack = stacksByName.get(stackName);</span>
+<span class="fc bfc" id="L2987" title="All 2 branches covered.">        if (namedStack == null) {</span>
+<span class="fc" id="L2988">            namedStack = new Stack&lt;Object&gt;();</span>
+<span class="fc" id="L2989">            stacksByName.put(stackName, namedStack);</span>
+        }
+<span class="fc" id="L2991">        namedStack.push(value);</span>
+<span class="fc" id="L2992">    }</span>
+
+    /**
+     * &lt;p&gt;Pops (gets and removes) the top object from the stack with the given name.&lt;/p&gt;
+     *
+     * &lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; a stack is considered empty
+     * if no objects have been pushed onto it yet.&lt;/p&gt;
+     * 
+     * @param stackName the name of the stack from which the top value is to be popped.
+     * @return the top &lt;code&gt;Object&lt;/code&gt; on the stack or or null if the stack is either 
+     * empty or has not been created yet
+     * @throws EmptyStackException if the named stack is empty
+     *
+     * @since 1.6
+     */
+    public Object pop(String stackName) {
+<span class="fc" id="L3008">        Object result = null;</span>
+<span class="fc" id="L3009">        Stack&lt;Object&gt; namedStack = stacksByName.get(stackName);</span>
+<span class="fc bfc" id="L3010" title="All 2 branches covered.">        if (namedStack == null) {</span>
+<span class="pc bpc" id="L3011" title="1 of 2 branches missed.">            if (log.isDebugEnabled()) {</span>
+<span class="nc" id="L3012">                log.debug(&quot;Stack '&quot; + stackName + &quot;' is empty&quot;);</span>
+            }
+<span class="fc" id="L3014">            throw new EmptyStackException();</span>
+        }
+        
+<span class="fc" id="L3017">        result = namedStack.pop();</span>
+        
+<span class="fc bfc" id="L3019" title="All 2 branches covered.">        if (stackAction != null) {</span>
+<span class="fc" id="L3020">            result = stackAction.onPop(this, stackName, result);</span>
+        }
+
+<span class="fc" id="L3023">        return result;</span>
+    }
+    
+    /**
+     * &lt;p&gt;Gets the top object from the stack with the given name.
+     * This method does not remove the object from the stack.
+     * &lt;/p&gt;
+     * &lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; a stack is considered empty
+     * if no objects have been pushed onto it yet.&lt;/p&gt;
+     *
+     * @param stackName the name of the stack to be peeked
+     * @return the top &lt;code&gt;Object&lt;/code&gt; on the stack or null if the stack is either 
+     * empty or has not been created yet
+     * @throws EmptyStackException if the named stack is empty 
+     *
+     * @since 1.6
+     */
+    public Object peek(String stackName) {
+<span class="fc" id="L3041">        return peek(stackName, 0);</span>
+    }
+
+    /**
+     * &lt;p&gt;Gets the top object from the stack with the given name.
+     * This method does not remove the object from the stack.
+     * &lt;/p&gt;
+     * &lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; a stack is considered empty
+     * if no objects have been pushed onto it yet.&lt;/p&gt;
+     *
+     * @param stackName the name of the stack to be peeked
+     * @param n Index of the desired element, where 0 is the top of the stack,
+     *  1 is the next element down, and so on.
+     * @return the specified &lt;code&gt;Object&lt;/code&gt; on the stack.
+     * @throws EmptyStackException if the named stack is empty 
+     *
+     * @since 1.6
+     */
+    public Object peek(String stackName, int n) {
+<span class="fc" id="L3060">        Object result = null;</span>
+<span class="fc" id="L3061">        Stack&lt;Object&gt; namedStack = stacksByName.get(stackName);</span>
+<span class="fc bfc" id="L3062" title="All 2 branches covered.">        if (namedStack == null ) {</span>
+<span class="pc bpc" id="L3063" title="1 of 2 branches missed.">            if (log.isDebugEnabled()) {</span>
+<span class="nc" id="L3064">                log.debug(&quot;Stack '&quot; + stackName + &quot;' is empty&quot;);</span>
+            }        
+<span class="fc" id="L3066">            throw new EmptyStackException();</span>
+        
+        } else {
+<span class="fc" id="L3069">            int index = (namedStack.size() - 1) - n;</span>
+<span class="fc bfc" id="L3070" title="All 2 branches covered.">            if (index &lt; 0) {</span>
+<span class="fc" id="L3071">                throw new EmptyStackException();</span>
+            }
+<span class="fc" id="L3073">            result = namedStack.get(index);</span>
+        }
+<span class="fc" id="L3075">        return result;</span>
+    }
+
+    /**
+     * &lt;p&gt;Is the stack with the given name empty?&lt;/p&gt;
+     * &lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; a stack is considered empty
+     * if no objects have been pushed onto it yet.&lt;/p&gt;
+     * @param stackName the name of the stack whose emptiness 
+     * should be evaluated
+     * @return true if the given stack if empty 
+     *
+     * @since 1.6
+     */
+    public boolean isEmpty(String stackName) {
+<span class="fc" id="L3089">        boolean result = true;</span>
+<span class="fc" id="L3090">        Stack&lt;Object&gt; namedStack = stacksByName.get(stackName);</span>
+<span class="fc bfc" id="L3091" title="All 2 branches covered.">        if (namedStack != null ) {</span>
+<span class="fc" id="L3092">            result = namedStack.isEmpty();</span>
+        }
+<span class="fc" id="L3094">        return result;</span>
+    }
+    
+    /**
+     * Returns the root element of the tree of objects created as a result
+     * of applying the rule objects to the input XML.
+     * &lt;p&gt;
+     * If the digester stack was &quot;primed&quot; by explicitly pushing a root
+     * object onto the stack before parsing started, then that root object
+     * is returned here.
+     * &lt;p&gt;
+     * Alternatively, if a Rule which creates an object (eg ObjectCreateRule)
+     * matched the root element of the xml, then the object created will be
+     * returned here.
+     * &lt;p&gt;
+     * In other cases, the object most recently pushed onto an empty digester
+     * stack is returned. This would be a most unusual use of digester, however;
+     * one of the previous configurations is much more likely.
+     * &lt;p&gt;
+     * Note that when using one of the Digester.parse methods, the return
+     * value from the parse method is exactly the same as the return value
+     * from this method. However when the Digester is being used as a 
+     * SAXContentHandler, no such return value is available; in this case, this
+     * method allows you to access the root object that has been created 
+     * after parsing has completed.
+     * 
+     * @return the root object that has been created after parsing
+     *  or null if the digester has not parsed any XML yet.
+     */
+    public Object getRoot() {
+<span class="fc" id="L3124">        return root;</span>
+    }
+    
+    /**
+     * This method allows the &quot;root&quot; variable to be reset to null.
+     * &lt;p&gt;
+     * It is not considered safe for a digester instance to be reused
+     * to parse multiple xml documents. However if you are determined to
+     * do so, then you should call both clear() and resetRoot() before
+     * each parse.
+     *
+     * @since 1.7
+     */
+    public void resetRoot() {
+<span class="nc" id="L3138">        root = null;</span>
+<span class="nc" id="L3139">    }</span>
+
+    // ------------------------------------------------ Parameter Stack Methods
+
+
+    // ------------------------------------------------------ Protected Methods
+
+
+    /**
+     * &lt;p&gt;Clean up allocated resources after parsing is complete.  The
+     * default method closes input streams that have been created by
+     * Digester itself.  If you override this method in a subclass, be
+     * sure to call &lt;code&gt;super.cleanup()&lt;/code&gt; to invoke this logic.&lt;/p&gt;
+     *
+     * @since 1.8
+     */
+    protected void cleanup() {
+
+        // If we created any InputSource objects in this instance,
+        // they each have an input stream that should be closed
+<span class="fc bfc" id="L3159" title="All 2 branches covered.">        for (InputSource source : inputSources) {</span>
+            try {
+<span class="fc" id="L3161">                source.getByteStream().close();</span>
+<span class="nc" id="L3162">            } catch (IOException e) {</span>
+                // Fall through so we get them all
+<span class="fc" id="L3164">            }</span>
+<span class="fc" id="L3165">        }</span>
+<span class="fc" id="L3166">        inputSources.clear();</span>
+
+<span class="fc" id="L3168">    }</span>
+
+
+    /**
+     * &lt;p&gt;
+     * Provide a hook for lazy configuration of this &lt;code&gt;Digester&lt;/code&gt;
+     * instance.  The default implementation does nothing, but subclasses
+     * can override as needed.
+     * &lt;/p&gt;
+     *
+     * &lt;p&gt;
+     * &lt;strong&gt;Note&lt;/strong&gt; This method may be called more than once.
+     * Once only initialization code should be placed in {@link #initialize}
+     * or the code should take responsibility by checking and setting the 
+     * {@link #configured} flag.
+     * &lt;/p&gt;
+     */
+    protected void configure() {
+
+        // Do not configure more than once
+<span class="fc bfc" id="L3188" title="All 2 branches covered.">        if (configured) {</span>
+<span class="fc" id="L3189">            return;</span>
+        }
+
+        // Perform lazy configuration as needed
+<span class="fc" id="L3193">        initialize(); // call hook method for subclasses that want to be initialized once only</span>
+        // Nothing else required by default
+
+        // Set the configuration flag to avoid repeating
+<span class="fc" id="L3197">        configured = true;</span>
+
+<span class="fc" id="L3199">    }</span>
+    
+    /**
+     * &lt;p&gt;
+     * Provides a hook for lazy initialization of this &lt;code&gt;Digester&lt;/code&gt;
+     * instance.  
+     * The default implementation does nothing, but subclasses
+     * can override as needed.
+     * Digester (by default) only calls this method once.
+     * &lt;/p&gt;
+     *
+     * &lt;p&gt;
+     * &lt;strong&gt;Note&lt;/strong&gt; This method will be called by {@link #configure} 
+     * only when the {@link #configured} flag is false. 
+     * Subclasses that override &lt;code&gt;configure&lt;/code&gt; or who set &lt;code&gt;configured&lt;/code&gt;
+     * may find that this method may be called more than once.
+     * &lt;/p&gt;
+     *
+     * @since 1.6
+     */
+    protected void initialize() {
+
+        // Perform lazy initialization as needed
+        // Nothing required by default
+
+<span class="fc" id="L3224">    }    </span>
+
+    // -------------------------------------------------------- Package Methods
+
+
+    /**
+     * Return the set of DTD URL registrations, keyed by public identifier.
+     */
+    Map&lt;String, URL&gt; getRegistrations() {
+
+<span class="fc" id="L3234">        return (entityValidator);</span>
+
+    }
+
+
+    /**
+     * Return the set of rules that apply to the specified match position.
+     * The selected rules are those that match exactly, or those rules
+     * that specify a suffix match and the tail of the rule matches the
+     * current match position.  Exact matches have precedence over
+     * suffix matches, then (among suffix matches) the longest match
+     * is preferred.
+     *
+     * @param match The current match position
+     *
+     * @deprecated Call &lt;code&gt;match()&lt;/code&gt; on the &lt;code&gt;Rules&lt;/code&gt;
+     *  implementation returned by &lt;code&gt;getRules()&lt;/code&gt;
+     */
+    @Deprecated
+    List&lt;Rule&gt; getRules(String match) {
+
+<span class="nc" id="L3255">        return (getRules().match(match));</span>
+
+    }
+
+
+    /**
+     * &lt;p&gt;Return the top object on the parameters stack without removing it.  If there are
+     * no objects on the stack, return &lt;code&gt;null&lt;/code&gt;.&lt;/p&gt;
+     *
+     * &lt;p&gt;The parameters stack is used to store &lt;code&gt;CallMethodRule&lt;/code&gt; parameters. 
+     * See {@link #params}.&lt;/p&gt;
+     */
+    public Object peekParams() {
+
+        try {
+<span class="fc" id="L3270">            return (params.peek());</span>
+<span class="nc" id="L3271">        } catch (EmptyStackException e) {</span>
+<span class="nc" id="L3272">            log.warn(&quot;Empty stack (returning null)&quot;);</span>
+<span class="nc" id="L3273">            return (null);</span>
+        }
+
+    }
+
+
+    /**
+     * &lt;p&gt;Return the n'th object down the parameters stack, where 0 is the top element
+     * and [getCount()-1] is the bottom element.  If the specified index
+     * is out of range, return &lt;code&gt;null&lt;/code&gt;.&lt;/p&gt;
+     *
+     * &lt;p&gt;The parameters stack is used to store &lt;code&gt;CallMethodRule&lt;/code&gt; parameters. 
+     * See {@link #params}.&lt;/p&gt;
+     *
+     * @param n Index of the desired element, where 0 is the top of the stack,
+     *  1 is the next element down, and so on.
+     */
+    public Object peekParams(int n) {
+
+<span class="nc" id="L3292">        int index = (params.size() - 1) - n;</span>
+<span class="nc bnc" id="L3293" title="All 2 branches missed.">        if (index &lt; 0) {</span>
+<span class="nc" id="L3294">            log.warn(&quot;Empty stack (returning null)&quot;);</span>
+<span class="nc" id="L3295">            return (null);</span>
+        }
+        try {
+<span class="nc" id="L3298">            return (params.get(index));</span>
+<span class="nc" id="L3299">        } catch (EmptyStackException e) {</span>
+<span class="nc" id="L3300">            log.warn(&quot;Empty stack (returning null)&quot;);</span>
+<span class="nc" id="L3301">            return (null);</span>
+        }
+
+    }
+
+
+    /**
+     * &lt;p&gt;Pop the top object off of the parameters stack, and return it.  If there are
+     * no objects on the stack, return &lt;code&gt;null&lt;/code&gt;.&lt;/p&gt;
+     *
+     * &lt;p&gt;The parameters stack is used to store &lt;code&gt;CallMethodRule&lt;/code&gt; parameters. 
+     * See {@link #params}.&lt;/p&gt;
+     */
+    public Object popParams() {
+
+        try {
+<span class="pc bpc" id="L3317" title="1 of 2 branches missed.">            if (log.isTraceEnabled()) {</span>
+<span class="nc" id="L3318">                log.trace(&quot;Popping params&quot;);</span>
+            }
+<span class="fc" id="L3320">            return (params.pop());</span>
+<span class="nc" id="L3321">        } catch (EmptyStackException e) {</span>
+<span class="nc" id="L3322">            log.warn(&quot;Empty stack (returning null)&quot;);</span>
+<span class="nc" id="L3323">            return (null);</span>
+        }
+
+    }
+
+
+    /**
+     * &lt;p&gt;Push a new object onto the top of the parameters stack.&lt;/p&gt;
+     *
+     * &lt;p&gt;The parameters stack is used to store &lt;code&gt;CallMethodRule&lt;/code&gt; parameters. 
+     * See {@link #params}.&lt;/p&gt;
+     *
+     * @param object The new object
+     */
+    public void pushParams(Object object) {
+<span class="pc bpc" id="L3338" title="1 of 2 branches missed.">        if (log.isTraceEnabled()) {</span>
+<span class="nc" id="L3339">            log.trace(&quot;Pushing params&quot;);</span>
+        }
+<span class="fc" id="L3341">        params.push(object);</span>
+
+<span class="fc" id="L3343">    }</span>
+
+    /**
+     * Create a SAX exception which also understands about the location in
+     * the digester file where the exception occurs
+     *
+     * @return the new exception
+     */
+    public SAXException createSAXException(String message, Exception e) {
+<span class="pc bpc" id="L3352" title="2 of 4 branches missed.">        if ((e != null) &amp;&amp;</span>
+            (e instanceof InvocationTargetException)) {
+<span class="nc" id="L3354">            Throwable t = ((InvocationTargetException) e).getTargetException();</span>
+<span class="nc bnc" id="L3355" title="All 4 branches missed.">            if ((t != null) &amp;&amp; (t instanceof Exception)) {</span>
+<span class="nc" id="L3356">                e = (Exception) t;</span>
+            }
+        }
+<span class="pc bpc" id="L3359" title="1 of 2 branches missed.">        if (locator != null) {</span>
+<span class="fc" id="L3360">            String error = &quot;Error at line &quot; + locator.getLineNumber() + &quot; char &quot; +</span>
+<span class="fc" id="L3361">                    locator.getColumnNumber() + &quot;: &quot; + message;</span>
+<span class="pc bpc" id="L3362" title="1 of 2 branches missed.">            if (e != null) {</span>
+<span class="fc" id="L3363">                return new SAXParseException(error, locator, e);</span>
+            } else {
+<span class="nc" id="L3365">                return new SAXParseException(error, locator);</span>
+            }
+        }
+<span class="nc" id="L3368">        log.error(&quot;No Locator!&quot;);</span>
+<span class="nc bnc" id="L3369" title="All 2 branches missed.">        if (e != null) {</span>
+<span class="nc" id="L3370">            return new SAXException(message, e);</span>
+        } else {
+<span class="nc" id="L3372">            return new SAXException(message);</span>
+        }
+    }
+
+    /**
+     * Create a SAX exception which also understands about the location in
+     * the digester file where the exception occurs
+     *
+     * @return the new exception
+     */
+    public SAXException createSAXException(Exception e) {
+<span class="pc bpc" id="L3383" title="1 of 2 branches missed.">        if (e instanceof InvocationTargetException) {</span>
+<span class="nc" id="L3384">            Throwable t = ((InvocationTargetException) e).getTargetException();</span>
+<span class="nc bnc" id="L3385" title="All 4 branches missed.">            if ((t != null) &amp;&amp; (t instanceof Exception)) {</span>
+<span class="nc" id="L3386">                e = (Exception) t;</span>
+            }
+        }
+<span class="fc" id="L3389">        return createSAXException(e.getMessage(), e);</span>
+    }
+
+    /**
+     * Create a SAX exception which also understands about the location in
+     * the digester file where the exception occurs
+     *
+     * @return the new exception
+     */
+    public SAXException createSAXException(String message) {
+<span class="nc" id="L3399">        return createSAXException(message, null);</span>
+    }
+    
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

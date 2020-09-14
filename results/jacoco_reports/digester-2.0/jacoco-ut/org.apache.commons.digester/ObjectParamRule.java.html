@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>ObjectParamRule.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester</a> &gt; <span class="el_source">ObjectParamRule.java</span></div><h1>ObjectParamRule.java</h1><pre class="source lang-java linenums">/* $Id$
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */ 
+
+
+package org.apache.commons.digester;
+
+import org.xml.sax.Attributes;
+
+/**
+ * &lt;p&gt;Rule implementation that saves a parameter for use by a surrounding
+ * &lt;code&gt;CallMethodRule&lt;code&gt;.&lt;/p&gt;
+ *
+ * &lt;p&gt;This parameter may be:
+ * &lt;ul&gt;
+ * &lt;li&gt;an arbitrary Object defined programatically, assigned when the element 
+ *  pattern associated with the Rule is matched. See 
+ * {@link #ObjectParamRule(int paramIndex, Object param)}.
+ * &lt;li&gt;an arbitrary Object defined programatically, assigned if the element 
+ * pattern AND specified attribute name are matched. See 
+ * {@link #ObjectParamRule(int paramIndex, String attributeName, Object param)}.
+ * &lt;/ul&gt;
+ * &lt;/p&gt;
+ *
+ * @since 1.4
+ */
+
+public class ObjectParamRule extends Rule {
+    // ----------------------------------------------------------- Constructors
+    /**
+     * Construct a &quot;call parameter&quot; rule that will save the given Object as
+     * the parameter value.
+     *
+     * @param paramIndex The zero-relative parameter number
+     * @param param the parameter to pass along
+     */
+    public ObjectParamRule(int paramIndex, Object param) {
+<span class="fc" id="L52">        this(paramIndex, null, param);</span>
+<span class="fc" id="L53">    }</span>
+
+
+    /**
+     * Construct a &quot;call parameter&quot; rule that will save the given Object as
+     * the parameter value, provided that the specified attribute exists.
+     *
+     * @param paramIndex The zero-relative parameter number
+     * @param attributeName The name of the attribute to match
+     * @param param the parameter to pass along
+     */
+<span class="fc" id="L64">    public ObjectParamRule(int paramIndex, String attributeName, Object param) {</span>
+<span class="fc" id="L65">        this.paramIndex = paramIndex;</span>
+<span class="fc" id="L66">        this.attributeName = attributeName;</span>
+<span class="fc" id="L67">        this.param = param;</span>
+<span class="fc" id="L68">    }</span>
+
+
+    // ----------------------------------------------------- Instance Variables
+
+    /**
+     * The attribute which we are attempting to match
+     */
+<span class="fc" id="L76">    protected String attributeName = null;</span>
+
+    /**
+     * The zero-relative index of the parameter we are saving.
+     */
+<span class="fc" id="L81">    protected int paramIndex = 0;</span>
+
+    /**
+     * The parameter we wish to pass to the method call
+     */
+<span class="fc" id="L86">    protected Object param = null;</span>
+
+
+    // --------------------------------------------------------- Public Methods
+
+    /**
+     * Process the start of this element.
+     *
+     * @param attributes The attribute list for this element
+     */
+    public void begin(String namespace, String name,
+                      Attributes attributes) throws Exception {
+<span class="fc" id="L98">        Object anAttribute = null;</span>
+<span class="fc" id="L99">        Object parameters[] = (Object[]) digester.peekParams();</span>
+
+<span class="fc bfc" id="L101" title="All 2 branches covered.">        if (attributeName != null) {</span>
+<span class="fc" id="L102">            anAttribute = attributes.getValue(attributeName);</span>
+<span class="fc bfc" id="L103" title="All 2 branches covered.">            if(anAttribute != null) {</span>
+<span class="fc" id="L104">                parameters[paramIndex] = param;</span>
+            }
+            // note -- if attributeName != null and anAttribute == null, this rule
+            // will pass null as its parameter!
+        }else{
+<span class="fc" id="L109">            parameters[paramIndex] = param;</span>
+        }
+<span class="fc" id="L111">    }</span>
+
+    /**
+     * Render a printable version of this Rule.
+     */
+    public String toString() {
+<span class="nc" id="L117">        StringBuffer sb = new StringBuffer(&quot;ObjectParamRule[&quot;);</span>
+<span class="nc" id="L118">        sb.append(&quot;paramIndex=&quot;);</span>
+<span class="nc" id="L119">        sb.append(paramIndex);</span>
+<span class="nc" id="L120">        sb.append(&quot;, attributeName=&quot;);</span>
+<span class="nc" id="L121">        sb.append(attributeName);</span>
+<span class="nc" id="L122">        sb.append(&quot;, param=&quot;);</span>
+<span class="nc" id="L123">        sb.append(param);</span>
+<span class="nc" id="L124">        sb.append(&quot;]&quot;);</span>
+<span class="nc" id="L125">        return (sb.toString());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

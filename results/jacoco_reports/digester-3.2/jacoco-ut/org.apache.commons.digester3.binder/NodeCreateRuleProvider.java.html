@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NodeCreateRuleProvider.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester3.binder</a> &gt; <span class="el_source">NodeCreateRuleProvider.java</span></div><h1>NodeCreateRuleProvider.java</h1><pre class="source lang-java linenums">package org.apache.commons.digester3.binder;
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import static org.w3c.dom.Node.ATTRIBUTE_NODE;
+import static org.w3c.dom.Node.CDATA_SECTION_NODE;
+import static org.w3c.dom.Node.COMMENT_NODE;
+import static org.w3c.dom.Node.DOCUMENT_FRAGMENT_NODE;
+import static org.w3c.dom.Node.DOCUMENT_NODE;
+import static org.w3c.dom.Node.DOCUMENT_TYPE_NODE;
+import static org.w3c.dom.Node.ELEMENT_NODE;
+import static org.w3c.dom.Node.ENTITY_NODE;
+import static org.w3c.dom.Node.ENTITY_REFERENCE_NODE;
+import static org.w3c.dom.Node.NOTATION_NODE;
+import static org.w3c.dom.Node.PROCESSING_INSTRUCTION_NODE;
+import static org.w3c.dom.Node.TEXT_NODE;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.apache.commons.digester3.NodeCreateRule;
+
+/**
+ * Builder chained when invoking {@link LinkedRuleBuilder#createNode()}.
+ *
+ * @since 3.0
+ */
+public final class NodeCreateRuleProvider
+    extends AbstractBackToLinkedRuleBuilder&lt;NodeCreateRule&gt;
+{
+
+<span class="fc" id="L49">    private NodeType nodeType = NodeType.ELEMENT;</span>
+
+    private DocumentBuilder documentBuilder;
+
+    NodeCreateRuleProvider( String keyPattern, String namespaceURI, RulesBinder mainBinder,
+                            LinkedRuleBuilder mainBuilder )
+    {
+<span class="fc" id="L56">        super( keyPattern, namespaceURI, mainBinder, mainBuilder );</span>
+<span class="fc" id="L57">    }</span>
+
+    /**
+     * {@link NodeCreateRule} instance will be created either a DOM {@link org.w3c.dom.Element Element}
+     * or a DOM {@link org.w3c.dom.DocumentFragment DocumentFragment}, depending on the value of the
+     * &lt;code&gt;nodeType&lt;/code&gt; parameter.
+     *
+     * @param nodeType the type of node to create, which can be either
+     *                 {@link org.w3c.dom.Node#ELEMENT_NODE Node.ELEMENT_NODE} or
+     *                 {@link org.w3c.dom.Node#DOCUMENT_FRAGMENT_NODE Node.DOCUMENT_FRAGMENT_NODE}
+     * @return this builder instance
+     */
+    public NodeCreateRuleProvider ofType( NodeType nodeType )
+    {
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">        if ( nodeType == null )</span>
+        {
+<span class="nc" id="L73">            reportError( &quot;createNode().ofType( NodeType )&quot;, &quot;Null NodeType not allowed&quot; );</span>
+        }
+
+<span class="fc" id="L76">        this.nodeType = nodeType;</span>
+<span class="fc" id="L77">        return this;</span>
+    }
+
+    /**
+     * {@link NodeCreateRule} instance will be created a DOM {@link org.w3c.dom.Element Element}, but
+     * lets users specify the JAXP &lt;code&gt;DocumentBuilder&lt;/code&gt; that should be used when constructing the node tree.
+     *
+     * @param documentBuilder the JAXP &lt;code&gt;DocumentBuilder&lt;/code&gt; to use
+     * @return this builder instance
+     */
+    public NodeCreateRuleProvider usingDocumentBuilder( DocumentBuilder documentBuilder )
+    {
+<span class="nc" id="L89">        this.documentBuilder = documentBuilder;</span>
+<span class="nc" id="L90">        return this;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected NodeCreateRule createRule()
+    {
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">        if ( documentBuilder == null )</span>
+        {
+            try
+            {
+<span class="fc" id="L103">                return new NodeCreateRule( nodeType.getDocumentType() );</span>
+            }
+<span class="nc" id="L105">            catch ( ParserConfigurationException e )</span>
+            {
+<span class="nc" id="L107">                throw new RuntimeException( e );</span>
+            }
+        }
+
+<span class="nc" id="L111">        return new NodeCreateRule( nodeType.getDocumentType(), documentBuilder );</span>
+    }
+
+    /**
+     * Enumeration that wraps admitted {@link org.w3c.dom.Node} node constants.
+     */
+<span class="pc" id="L117">    public enum NodeType</span>
+    {
+
+        /**
+         * @see org.w3c.dom.Node#ATTRIBUTE_NODE
+         */
+<span class="fc" id="L123">        ATTRIBUTE( ATTRIBUTE_NODE ),</span>
+        /**
+         * @see org.w3c.dom.Node#CDATA_SECTION_NODE
+         */
+<span class="fc" id="L127">        CDATA( CDATA_SECTION_NODE ),</span>
+        /**
+         * @see org.w3c.dom.Node#COMMENT_NODE
+         */
+<span class="fc" id="L131">        COMMENT( COMMENT_NODE ),</span>
+        /**
+         * @see org.w3c.dom.Node#DOCUMENT_FRAGMENT_NODE
+         */
+<span class="fc" id="L135">        DOCUMENT_FRAGMENT( DOCUMENT_FRAGMENT_NODE ),</span>
+        /**
+         * @see org.w3c.dom.Node#DOCUMENT_NODE
+         */
+<span class="fc" id="L139">        DOCUMENT( DOCUMENT_NODE ),</span>
+        /**
+         * @see org.w3c.dom.Node#DOCUMENT_TYPE_NODE
+         */
+<span class="fc" id="L143">        DOCUMENT_TYPE( DOCUMENT_TYPE_NODE ),</span>
+        /**
+         * @see org.w3c.dom.Node#ELEMENT_NODE
+         */
+<span class="fc" id="L147">        ELEMENT( ELEMENT_NODE ),</span>
+        /**
+         * @see org.w3c.dom.Node#ENTITY_NODE
+         */
+<span class="fc" id="L151">        ENTITY( ENTITY_NODE ),</span>
+        /**
+         * @see org.w3c.dom.Node#ENTITY_REFERENCE_NODE
+         */
+<span class="fc" id="L155">        ENTITY_REFERENCE( ENTITY_REFERENCE_NODE ),</span>
+        /**
+         * @see org.w3c.dom.Node#NOTATION_NODE
+         */
+<span class="fc" id="L159">        NOTATION( NOTATION_NODE ),</span>
+        /**
+         * @see org.w3c.dom.Node#PROCESSING_INSTRUCTION_NODE
+         */
+<span class="fc" id="L163">        PROCESSING_INSTRUCTION( PROCESSING_INSTRUCTION_NODE ),</span>
+        /**
+         * @see org.w3c.dom.Node#TEXT_NODE
+         */
+<span class="fc" id="L167">        TEXT( TEXT_NODE );</span>
+
+        private final int documentType;
+
+        private NodeType( final int documentType )
+<span class="fc" id="L172">        {</span>
+<span class="fc" id="L173">            this.documentType = documentType;</span>
+<span class="fc" id="L174">        }</span>
+
+        private int getDocumentType()
+        {
+<span class="fc" id="L178">            return documentType;</span>
+        }
+
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

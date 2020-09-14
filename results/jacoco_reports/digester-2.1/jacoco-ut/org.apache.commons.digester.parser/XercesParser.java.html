@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>XercesParser.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester.parser</a> &gt; <span class="el_source">XercesParser.java</span></div><h1>XercesParser.java</h1><pre class="source lang-java linenums">/* $Id$
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+package org.apache.commons.digester.parser;
+
+import java.lang.reflect.Method;
+import java.util.Properties;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
+
+/**
+ * Create a &lt;code&gt;SAXParser&lt;/code&gt; based on the underlying Xerces version.
+ * Currently, Xerces 2.3 and up doesn't implement schema validation the same way
+ * 2.1 was. In other to support schema validation in a portable way between 
+ * parser, some features/properties need to be set.
+ *
+ * @since 1.6
+ * @deprecated Create an XMLParser instance yourself, configure validation
+ *             appropriately, and pass it as a parameter to the
+ *             {@link org.apache.commons.digester.Digester} constructor, or use
+ *             {@link org.apache.commons.digester.Digester#setXMLSchema(javax.xml.validation.Schema)} for validation.
+ */
+
+@Deprecated
+<span class="nc" id="L49">public class XercesParser{</span>
+
+    /**
+     * The Log to which all SAX event related logging calls will be made.
+     */
+<span class="nc" id="L54">    protected static Log log =</span>
+<span class="nc" id="L55">        LogFactory.getLog(&quot;org.apache.commons.digester.Digester.sax&quot;);</span>
+
+
+    /**
+     * The JAXP 1.2 property required to set up the schema location.
+     */
+    private static final String JAXP_SCHEMA_SOURCE =
+        &quot;http://java.sun.com/xml/jaxp/properties/schemaSource&quot;;
+
+
+    /**
+     * The JAXP 1.2 property to set up the schemaLanguage used.
+     */
+<span class="nc" id="L68">    protected static String JAXP_SCHEMA_LANGUAGE =</span>
+        &quot;http://java.sun.com/xml/jaxp/properties/schemaLanguage&quot;;
+
+
+    /**
+     * Xerces dynamic validation property
+     */
+<span class="nc" id="L75">    protected static String XERCES_DYNAMIC = </span>
+        &quot;http://apache.org/xml/features/validation/dynamic&quot;;
+
+
+    /**
+     * Xerces schema validation property
+     */
+<span class="nc" id="L82">    protected static String XERCES_SCHEMA =</span>
+        &quot;http://apache.org/xml/features/validation/schema&quot;;
+
+
+    /**
+     * A &lt;code&gt;float&lt;/code&gt; representing the underlying Xerces version
+     */
+    protected static float version;
+
+
+    /**
+     * The current Xerces version.
+     */
+<span class="nc" id="L95">    protected static String versionNumber = null;</span>
+
+
+    /**
+     * Return the current Xerces version.
+     * @return the current Xerces version.
+     */
+    private static String getXercesVersion() {
+        // If for some reason we can't get the version, set it to 1.0.
+<span class="nc" id="L104">        String versionNumber = &quot;1.0&quot;;</span>
+        try{
+            // Use reflection to avoid a build dependency with Xerces.
+<span class="nc" id="L107">            Class&lt;?&gt; versionClass = </span>
+<span class="nc" id="L108">                            Class.forName(&quot;org.apache.xerces.impl.Version&quot;);</span>
+            // Will return Xerces-J 2.x.0
+<span class="nc" id="L110">            Method method = </span>
+<span class="nc" id="L111">                versionClass.getMethod(&quot;getVersion&quot;, (Class[])null); </span>
+<span class="nc" id="L112">            String version = (String)method.invoke(null, (Object[])null);</span>
+<span class="nc" id="L113">            versionNumber = version.substring( &quot;Xerces-J&quot;.length() , </span>
+<span class="nc" id="L114">                                               version.lastIndexOf(&quot;.&quot;) ); </span>
+<span class="nc" id="L115">        } catch (Exception ex){</span>
+            // Do nothing.
+<span class="nc" id="L117">        }</span>
+<span class="nc" id="L118">        return versionNumber;</span>
+    }
+
+
+    /**
+     * Create a &lt;code&gt;SAXParser&lt;/code&gt; based on the underlying
+     * &lt;code&gt;Xerces&lt;/code&gt; version.
+     * @param properties parser specific properties/features
+     * @return an XML Schema/DTD enabled &lt;code&gt;SAXParser&lt;/code&gt;
+     */
+    public static SAXParser newSAXParser(Properties properties) 
+            throws ParserConfigurationException, 
+                   SAXException,
+                   SAXNotSupportedException {
+
+<span class="nc" id="L133">        SAXParserFactory factory =  </span>
+<span class="nc" id="L134">                        (SAXParserFactory)properties.get(&quot;SAXParserFactory&quot;);</span>
+
+<span class="nc bnc" id="L136" title="All 2 branches missed.">        if (versionNumber == null){</span>
+<span class="nc" id="L137">            versionNumber = getXercesVersion();</span>
+<span class="nc" id="L138">            version = new Float( versionNumber ).floatValue();</span>
+        }
+
+        // Note: 2.2 is completely broken (with XML Schema). 
+<span class="nc bnc" id="L142" title="All 2 branches missed.">        if (version &gt; 2.1) {</span>
+
+<span class="nc" id="L144">            configureXerces(factory);</span>
+<span class="nc" id="L145">            return factory.newSAXParser();</span>
+        } else {
+<span class="nc" id="L147">            SAXParser parser = factory.newSAXParser();</span>
+<span class="nc" id="L148">            configureOldXerces(parser,properties);</span>
+<span class="nc" id="L149">            return parser;</span>
+        }
+    }
+
+
+    /**
+     * Configure schema validation as recommended by the JAXP 1.2 spec.
+     * The &lt;code&gt;properties&lt;/code&gt; object may contains information about
+     * the schema local and language. 
+     * @param properties parser optional info
+     */
+    private static void configureOldXerces(SAXParser parser, 
+                                           Properties properties) 
+            throws ParserConfigurationException, 
+                   SAXNotSupportedException {
+
+<span class="nc" id="L165">        String schemaLocation = (String)properties.get(&quot;schemaLocation&quot;);</span>
+<span class="nc" id="L166">        String schemaLanguage = (String)properties.get(&quot;schemaLanguage&quot;);</span>
+
+        try{
+<span class="nc bnc" id="L169" title="All 2 branches missed.">            if (schemaLocation != null) {</span>
+<span class="nc" id="L170">                parser.setProperty(JAXP_SCHEMA_LANGUAGE, schemaLanguage);</span>
+<span class="nc" id="L171">                parser.setProperty(JAXP_SCHEMA_SOURCE, schemaLocation);</span>
+            }
+<span class="nc" id="L173">        } catch (SAXNotRecognizedException e){</span>
+<span class="nc" id="L174">            log.info(parser.getClass().getName() + &quot;: &quot; </span>
+<span class="nc" id="L175">                                        + e.getMessage() + &quot; not supported.&quot;); </span>
+<span class="nc" id="L176">        }</span>
+
+<span class="nc" id="L178">    }</span>
+
+
+    /**
+     * Configure schema validation as recommended by the Xerces spec. 
+     * Both DTD and Schema validation will be enabled simultaneously.
+     * &lt;p&gt;
+     * NOTE: This method is broken. It is supposed to set up validation
+     * against the schema specified in property &quot;schemaLocation&quot;, but
+     * it doesn't.
+     *
+     * @param factory SAXParserFactory to be configured
+     */
+    private static void configureXerces(SAXParserFactory factory)
+            throws ParserConfigurationException, 
+                   SAXNotRecognizedException, 
+                   SAXNotSupportedException {
+
+<span class="nc" id="L196">        factory.setFeature(XERCES_DYNAMIC, true);</span>
+<span class="nc" id="L197">        factory.setFeature(XERCES_SCHEMA, true);</span>
+
+<span class="nc" id="L199">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

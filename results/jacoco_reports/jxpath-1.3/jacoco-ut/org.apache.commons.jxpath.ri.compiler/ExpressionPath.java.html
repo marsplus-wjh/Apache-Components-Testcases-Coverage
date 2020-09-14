@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ExpressionPath.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri.compiler</a> &gt; <span class="el_source">ExpressionPath.java</span></div><h1>ExpressionPath.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri.compiler;
+
+import org.apache.commons.jxpath.ri.EvalContext;
+import org.apache.commons.jxpath.ri.axes.InitialContext;
+import org.apache.commons.jxpath.ri.axes.NodeSetContext;
+import org.apache.commons.jxpath.ri.axes.PredicateContext;
+import org.apache.commons.jxpath.ri.axes.SimplePathInterpreter;
+import org.apache.commons.jxpath.ri.axes.UnionContext;
+import org.apache.commons.jxpath.ri.model.NodePointer;
+
+/**
+ * An  element of the parse tree that represents an expression path, which is a
+ * path that starts with an expression like a function call: &lt;code&gt;getFoo(.)
+ * /bar&lt;/code&gt;.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision: 652845 $ $Date: 2008-05-02 12:46:46 -0500 (Fri, 02 May 2008) $
+ */
+public class ExpressionPath extends Path {
+
+    private Expression expression;
+    private Expression[] predicates;
+
+<span class="fc" id="L40">    private boolean basicKnown = false;</span>
+    private boolean basic;
+
+    /**
+     * Create a new ExpressionPath.
+     * @param expression Expression
+     * @param predicates to execute
+     * @param steps navigation
+     */
+    public ExpressionPath(Expression expression, Expression[] predicates,
+            Step[] steps) {
+<span class="fc" id="L51">        super(steps);</span>
+<span class="fc" id="L52">        this.expression = expression;</span>
+<span class="fc" id="L53">        this.predicates = predicates;</span>
+<span class="fc" id="L54">    }</span>
+
+    /**
+     * Get the expression.
+     * @return Expression
+     */
+    public Expression getExpression() {
+<span class="nc" id="L61">        return expression;</span>
+    }
+
+    /**
+     * Predicates are the expressions in brackets that may follow
+     * the root expression of the path.
+     * @return Expression[]
+     */
+    public Expression[] getPredicates() {
+<span class="fc" id="L70">        return predicates;</span>
+    }
+
+    /**
+     * Returns true if the root expression or any of the
+     * predicates or the path steps are context dependent.
+     * @return boolean
+     */
+    public boolean computeContextDependent() {
+<span class="nc bnc" id="L79" title="All 2 branches missed.">        if (expression.isContextDependent()) {</span>
+<span class="nc" id="L80">            return true;</span>
+        }
+<span class="nc bnc" id="L82" title="All 2 branches missed.">        if (predicates != null) {</span>
+<span class="nc bnc" id="L83" title="All 2 branches missed.">            for (int i = 0; i &lt; predicates.length; i++) {</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">                if (predicates[i].isContextDependent()) {</span>
+<span class="nc" id="L85">                    return true;</span>
+                }
+            }
+        }
+<span class="nc" id="L89">        return super.computeContextDependent();</span>
+    }
+
+    /**
+     * Recognized paths formatted as &lt;code&gt;$x[3]/foo[2]&lt;/code&gt;.  The
+     * evaluation of such &quot;simple&quot; paths is optimized and streamlined.
+     * @return boolean
+     */
+    public synchronized boolean isSimpleExpressionPath() {
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        if (!basicKnown) {</span>
+<span class="fc" id="L99">            basicKnown = true;</span>
+<span class="pc bpc" id="L100" title="1 of 4 branches missed.">            basic = isSimplePath() &amp;&amp; areBasicPredicates(getPredicates());</span>
+        }
+<span class="fc" id="L102">        return basic;</span>
+    }
+
+    public String toString() {
+<span class="fc" id="L106">        StringBuffer buffer = new StringBuffer();</span>
+<span class="pc bpc" id="L107" title="2 of 6 branches missed.">        if (expression instanceof CoreOperation</span>
+            || expression instanceof ExpressionPath
+            || expression instanceof LocationPath) {
+<span class="fc" id="L110">            buffer.append('(');</span>
+<span class="fc" id="L111">            buffer.append(expression);</span>
+<span class="fc" id="L112">            buffer.append(')');</span>
+        }
+        else {
+<span class="fc" id="L115">            buffer.append(expression);</span>
+        }
+<span class="pc bpc" id="L117" title="1 of 2 branches missed.">        if (predicates != null) {</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">            for (int i = 0; i &lt; predicates.length; i++) {</span>
+<span class="fc" id="L119">                buffer.append('[');</span>
+<span class="fc" id="L120">                buffer.append(predicates[i]);</span>
+<span class="fc" id="L121">                buffer.append(']');</span>
+            }
+        }
+
+<span class="fc" id="L125">        Step[] steps = getSteps();</span>
+<span class="pc bpc" id="L126" title="1 of 2 branches missed.">        if (steps != null) {</span>
+<span class="fc bfc" id="L127" title="All 2 branches covered.">            for (int i = 0; i &lt; steps.length; i++) {</span>
+<span class="fc" id="L128">                buffer.append(&quot;/&quot;);</span>
+<span class="fc" id="L129">                buffer.append(steps[i]);</span>
+            }
+        }
+<span class="fc" id="L132">        return buffer.toString();</span>
+    }
+
+    public Object compute(EvalContext context) {
+<span class="fc" id="L136">        return expressionPath(context, false);</span>
+    }
+
+    public Object computeValue(EvalContext context) {
+<span class="fc" id="L140">        return expressionPath(context, true);</span>
+    }
+
+    /**
+     * Walks an expression path (a path that starts with an expression)
+     * @param evalContext base context
+     * @param firstMatch whether to return the first match found
+     * @return Object found
+     */
+    protected Object expressionPath(EvalContext evalContext, boolean firstMatch) {
+<span class="fc" id="L150">        Object value = expression.compute(evalContext);</span>
+        EvalContext context;
+<span class="fc bfc" id="L152" title="All 2 branches covered.">        if (value instanceof InitialContext) {</span>
+            // This is an optimization. We can avoid iterating through a
+            // collection if the context bean is in fact one.
+<span class="fc" id="L155">            context = (InitialContext) value;</span>
+        }
+<span class="fc bfc" id="L157" title="All 2 branches covered.">        else if (value instanceof EvalContext) {</span>
+            // UnionContext will collect all values from the &quot;value&quot; context
+            // and treat the whole thing as a big collection.
+<span class="fc" id="L160">            context =</span>
+                new UnionContext(
+                    evalContext,
+                    new EvalContext[] {(EvalContext) value });
+        }
+        else {
+<span class="fc" id="L166">            context = evalContext.getRootContext().getConstantContext(value);</span>
+        }
+
+<span class="fc bfc" id="L169" title="All 2 branches covered.">        if (firstMatch</span>
+<span class="fc bfc" id="L170" title="All 4 branches covered.">            &amp;&amp; isSimpleExpressionPath()</span>
+            &amp;&amp; !(context instanceof NodeSetContext)) {
+<span class="fc" id="L172">            EvalContext ctx = context;</span>
+<span class="fc" id="L173">            NodePointer ptr = (NodePointer) ctx.getSingleNodePointer();</span>
+<span class="pc bpc" id="L174" title="1 of 2 branches missed.">            if (ptr != null</span>
+<span class="pc bpc" id="L175" title="5 of 6 branches missed.">                &amp;&amp; (ptr.getIndex() == NodePointer.WHOLE_COLLECTION</span>
+                    || predicates == null
+                    || predicates.length == 0)) {
+<span class="fc" id="L178">                return SimplePathInterpreter.interpretSimpleExpressionPath(</span>
+                    evalContext,
+                    ptr,
+                    predicates,
+<span class="fc" id="L182">                    getSteps());</span>
+            }
+        }
+<span class="pc bpc" id="L185" title="1 of 2 branches missed.">        if (predicates != null) {</span>
+<span class="fc bfc" id="L186" title="All 2 branches covered.">            for (int j = 0; j &lt; predicates.length; j++) {</span>
+<span class="pc bpc" id="L187" title="1 of 2 branches missed.">                if (j != 0) {</span>
+<span class="nc" id="L188">                    context = new UnionContext(context, new EvalContext[]{context});</span>
+                }
+<span class="fc" id="L190">                context = new PredicateContext(context, predicates[j]);</span>
+            }
+        }
+<span class="fc bfc" id="L193" title="All 2 branches covered.">        return firstMatch ? (Object) getSingleNodePointerForSteps(context)</span>
+<span class="fc" id="L194">                : evalSteps(context);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

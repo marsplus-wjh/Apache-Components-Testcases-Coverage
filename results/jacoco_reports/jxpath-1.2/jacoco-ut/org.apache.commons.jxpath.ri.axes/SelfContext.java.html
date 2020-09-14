@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>SelfContext.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri.axes</a> &gt; <span class="el_source">SelfContext.java</span></div><h1>SelfContext.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri.axes;
+
+import org.apache.commons.jxpath.Pointer;
+import org.apache.commons.jxpath.ri.EvalContext;
+import org.apache.commons.jxpath.ri.compiler.NodeTest;
+import org.apache.commons.jxpath.ri.model.NodePointer;
+
+/**
+ * EvalContext that returns the current node from the parent context if the
+ * test succeeds.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision$ $Date$
+ */
+public class SelfContext extends EvalContext {
+    private NodeTest nodeTest;
+<span class="fc" id="L33">    private boolean startedSet = false;</span>
+    private NodePointer nodePointer;
+
+    /**
+     * Create a new SelfContext.
+     * @param parentContext EvalContext
+     * @param nodeTest guard
+     */
+    public SelfContext(EvalContext parentContext, NodeTest nodeTest) {
+<span class="fc" id="L42">        super(parentContext);</span>
+<span class="fc" id="L43">        this.nodeTest = nodeTest;</span>
+<span class="fc" id="L44">    }</span>
+
+    public Pointer getSingleNodePointer() {
+<span class="fc" id="L47">        return parentContext.getSingleNodePointer();</span>
+    }
+
+    public NodePointer getCurrentNodePointer() {
+<span class="pc bpc" id="L51" title="3 of 4 branches missed.">        if (position == 0 &amp;&amp; !setPosition(1)) {</span>
+<span class="nc" id="L52">            return null;</span>
+        }
+<span class="fc" id="L54">        return nodePointer;</span>
+    }
+
+    public boolean nextNode() {
+<span class="fc" id="L58">        return setPosition(getCurrentPosition() + 1);</span>
+    }
+
+    public void reset() {
+<span class="fc" id="L62">        super.reset();</span>
+<span class="fc" id="L63">        startedSet = false;</span>
+<span class="fc" id="L64">    }</span>
+
+    public boolean setPosition(int position) {
+<span class="fc bfc" id="L67" title="All 2 branches covered.">        if (position != 1) {</span>
+<span class="fc" id="L68">            return false;</span>
+        }
+<span class="fc" id="L70">        super.setPosition(position);</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        if (!startedSet) {</span>
+<span class="fc" id="L72">            startedSet = true;</span>
+<span class="fc" id="L73">            nodePointer = (NodePointer) parentContext.getCurrentNodePointer();</span>
+        }
+
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">        if (nodePointer == null) {</span>
+<span class="nc" id="L77">            return false;</span>
+        }
+
+<span class="pc bpc" id="L80" title="1 of 4 branches missed.">        return nodeTest == null || nodePointer.testNode(nodeTest);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

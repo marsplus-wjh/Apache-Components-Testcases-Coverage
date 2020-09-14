@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>BeanPropertyPointer.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri.model.beans</a> &gt; <span class="el_source">BeanPropertyPointer.java</span></div><h1>BeanPropertyPointer.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri.model.beans;
+
+import java.beans.IndexedPropertyDescriptor;
+import java.beans.PropertyDescriptor;
+
+import org.apache.commons.jxpath.JXPathBeanInfo;
+import org.apache.commons.jxpath.JXPathContext;
+import org.apache.commons.jxpath.JXPathInvalidAccessException;
+import org.apache.commons.jxpath.ri.model.NodePointer;
+import org.apache.commons.jxpath.util.ValueUtils;
+
+/**
+ * Pointer pointing to a property of a JavaBean.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision$ $Date$
+ */
+public class BeanPropertyPointer extends PropertyPointer {
+    private static final long serialVersionUID = -6008991447676468786L;
+
+<span class="fc" id="L37">    private static final Object UNINITIALIZED = new Object();</span>
+
+    private String propertyName;
+    private JXPathBeanInfo beanInfo;
+<span class="fc" id="L41">    private Object baseValue = UNINITIALIZED;</span>
+<span class="fc" id="L42">    private Object value = UNINITIALIZED;</span>
+    private transient String[] names;
+    private transient PropertyDescriptor[] propertyDescriptors;
+    private transient PropertyDescriptor propertyDescriptor;
+
+    /**
+     * Create a new BeanPropertyPointer.
+     * @param parent parent pointer
+     * @param beanInfo describes the target property/ies.
+     */
+    public BeanPropertyPointer(NodePointer parent, JXPathBeanInfo beanInfo) {
+<span class="fc" id="L53">        super(parent);</span>
+<span class="fc" id="L54">        this.beanInfo = beanInfo;</span>
+<span class="fc" id="L55">    }</span>
+
+    /**
+     * This type of node is auxiliary.
+     * @return true
+     */
+    public boolean isContainer() {
+<span class="fc" id="L62">        return true;</span>
+    }
+
+    public int getPropertyCount() {
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">        if (beanInfo.isAtomic()) {</span>
+<span class="nc" id="L67">            return 0;</span>
+        }
+<span class="fc" id="L69">        return getPropertyDescriptors().length;</span>
+    }
+
+    /**
+     * Get the names of all properties, sorted alphabetically
+     * @return String[]
+     */
+    public String[] getPropertyNames() {
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">        if (names == null) {</span>
+<span class="fc" id="L78">            PropertyDescriptor[] pds = getPropertyDescriptors();</span>
+<span class="fc" id="L79">            names = new String[pds.length];</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">            for (int i = 0; i &lt; names.length; i++) {</span>
+<span class="fc" id="L81">                names[i] = pds[i].getName();</span>
+            }
+        }
+<span class="fc" id="L84">        return names;</span>
+    }
+
+    /**
+     * Select a property by name.
+     * @param propertyName String name
+     */
+    public void setPropertyName(String propertyName) {
+<span class="fc" id="L92">        setPropertyIndex(UNSPECIFIED_PROPERTY);</span>
+<span class="fc" id="L93">        this.propertyName = propertyName;</span>
+<span class="fc" id="L94">    }</span>
+
+    /**
+     * Selects a property by its offset in the alphabetically sorted list.
+     * @param index property index
+     */
+    public void setPropertyIndex(int index) {
+<span class="fc bfc" id="L101" title="All 2 branches covered.">        if (propertyIndex != index) {</span>
+<span class="fc" id="L102">            super.setPropertyIndex(index);</span>
+<span class="fc" id="L103">            propertyName = null;</span>
+<span class="fc" id="L104">            propertyDescriptor = null;</span>
+<span class="fc" id="L105">            baseValue = UNINITIALIZED;</span>
+<span class="fc" id="L106">            value = UNINITIALIZED;</span>
+        }
+<span class="fc" id="L108">    }</span>
+
+    /**
+     * Get the value of the currently selected property.
+     * @return Object value
+     */
+    public Object getBaseValue() {
+<span class="fc bfc" id="L115" title="All 2 branches covered.">        if (baseValue == UNINITIALIZED) {</span>
+<span class="fc" id="L116">            PropertyDescriptor pd = getPropertyDescriptor();</span>
+<span class="pc bpc" id="L117" title="1 of 2 branches missed.">            if (pd == null) {</span>
+<span class="nc" id="L118">                return null;</span>
+            }
+<span class="fc" id="L120">            baseValue = ValueUtils.getValue(getBean(), pd);</span>
+        }
+<span class="fc" id="L122">        return baseValue;</span>
+    }
+
+    public void setIndex(int index) {
+<span class="fc bfc" id="L126" title="All 2 branches covered.">        if (this.index == index) {</span>
+<span class="fc" id="L127">            return;</span>
+        }
+        // When dealing with a scalar, index == 0 is equivalent to
+        // WHOLE_COLLECTION, so do not change it.
+<span class="fc bfc" id="L131" title="All 4 branches covered.">        if (this.index != WHOLE_COLLECTION</span>
+                || index != 0
+<span class="fc bfc" id="L133" title="All 2 branches covered.">                || isCollection()) {</span>
+<span class="fc" id="L134">            super.setIndex(index);</span>
+<span class="fc" id="L135">            value = UNINITIALIZED;</span>
+        }
+<span class="fc" id="L137">    }</span>
+
+    /**
+     * If index == WHOLE_COLLECTION, the value of the property, otherwise
+     * the value of the index'th element of the collection represented by the
+     * property. If the property is not a collection, index should be zero
+     * and the value will be the property itself.
+     * @return Object
+     */
+    public Object getImmediateNode() {
+<span class="fc bfc" id="L147" title="All 2 branches covered.">        if (value == UNINITIALIZED) {</span>
+<span class="fc bfc" id="L148" title="All 2 branches covered.">            if (index == WHOLE_COLLECTION) {</span>
+<span class="fc" id="L149">                value = ValueUtils.getValue(getBaseValue());</span>
+            }
+            else {
+<span class="fc" id="L152">                PropertyDescriptor pd = getPropertyDescriptor();</span>
+<span class="pc bpc" id="L153" title="1 of 2 branches missed.">                if (pd == null) {</span>
+<span class="nc" id="L154">                    value = null;</span>
+                }
+                else {
+<span class="fc" id="L157">                    value = ValueUtils.getValue(getBean(), pd, index);</span>
+                }
+            }
+        }
+<span class="fc" id="L161">        return value;</span>
+    }
+
+    protected boolean isActualProperty() {
+<span class="fc bfc" id="L165" title="All 2 branches covered.">        return getPropertyDescriptor() != null;</span>
+    }
+
+    public boolean isCollection() {
+<span class="fc" id="L169">        PropertyDescriptor pd = getPropertyDescriptor();</span>
+<span class="pc bpc" id="L170" title="1 of 2 branches missed.">        if (pd == null) {</span>
+<span class="nc" id="L171">            return false;</span>
+        }
+
+<span class="fc bfc" id="L174" title="All 2 branches covered.">        if (pd instanceof IndexedPropertyDescriptor) {</span>
+<span class="fc" id="L175">            return true;</span>
+        }
+
+<span class="fc" id="L178">        int hint = ValueUtils.getCollectionHint(pd.getPropertyType());</span>
+<span class="fc bfc" id="L179" title="All 2 branches covered.">        if (hint == -1) {</span>
+<span class="fc" id="L180">            return false;</span>
+        }
+<span class="fc bfc" id="L182" title="All 2 branches covered.">        if (hint == 1) {</span>
+<span class="fc" id="L183">            return true;</span>
+        }
+
+<span class="fc" id="L186">        Object value = getBaseValue();</span>
+<span class="fc bfc" id="L187" title="All 4 branches covered.">        return value != null &amp;&amp; ValueUtils.isCollection(value);</span>
+    }
+
+    /**
+     * If the property contains a collection, then the length of that
+     * collection, otherwise - 1.
+     * @return int length
+     */
+    public int getLength() {
+<span class="fc" id="L196">        PropertyDescriptor pd = getPropertyDescriptor();</span>
+<span class="pc bpc" id="L197" title="1 of 2 branches missed.">        if (pd == null) {</span>
+<span class="nc" id="L198">            return 1;</span>
+        }
+
+<span class="fc bfc" id="L201" title="All 2 branches covered.">        if (pd instanceof IndexedPropertyDescriptor) {</span>
+<span class="fc" id="L202">            return ValueUtils.getIndexedPropertyLength(</span>
+<span class="fc" id="L203">                getBean(),</span>
+                (IndexedPropertyDescriptor) pd);
+        }
+
+<span class="fc" id="L207">        int hint = ValueUtils.getCollectionHint(pd.getPropertyType());</span>
+<span class="fc bfc" id="L208" title="All 2 branches covered.">        if (hint == -1) {</span>
+<span class="fc" id="L209">            return 1;</span>
+        }
+<span class="fc" id="L211">        return ValueUtils.getLength(getBaseValue());</span>
+    }
+
+    /**
+     * If index == WHOLE_COLLECTION, change the value of the property, otherwise
+     * change the value of the index'th element of the collection
+     * represented by the property.
+     * @param value value to set
+     */
+    public void setValue(Object value) {
+<span class="fc" id="L221">        PropertyDescriptor pd = getPropertyDescriptor();</span>
+<span class="pc bpc" id="L222" title="1 of 2 branches missed.">        if (pd == null) {</span>
+<span class="nc" id="L223">            throw new JXPathInvalidAccessException(</span>
+<span class="nc" id="L224">                &quot;Cannot set property: &quot; + asPath() + &quot; - no such property&quot;);</span>
+        }
+
+<span class="fc bfc" id="L227" title="All 2 branches covered.">        if (index == WHOLE_COLLECTION) {</span>
+<span class="fc" id="L228">            ValueUtils.setValue(getBean(), pd, value);</span>
+        }
+        else {
+<span class="fc" id="L231">            ValueUtils.setValue(getBean(), pd, index, value);</span>
+        }
+<span class="fc" id="L233">        this.value = value;</span>
+<span class="fc" id="L234">    }</span>
+
+    public NodePointer createPath(JXPathContext context) {
+<span class="fc bfc" id="L237" title="All 2 branches covered.">        if (getImmediateNode() == null) {</span>
+<span class="fc" id="L238">            super.createPath(context);</span>
+<span class="fc" id="L239">            baseValue = UNINITIALIZED;</span>
+<span class="fc" id="L240">            value = UNINITIALIZED;</span>
+        }
+<span class="fc" id="L242">        return this;</span>
+    }
+
+    public void remove() {
+<span class="fc bfc" id="L246" title="All 2 branches covered.">        if (index == WHOLE_COLLECTION) {</span>
+<span class="fc" id="L247">            setValue(null);</span>
+        }
+<span class="pc bpc" id="L249" title="1 of 2 branches missed.">        else if (isCollection()) {</span>
+<span class="fc" id="L250">            Object o = getBaseValue();</span>
+<span class="fc" id="L251">            Object collection = ValueUtils.remove(getBaseValue(), index);</span>
+<span class="fc bfc" id="L252" title="All 2 branches covered.">            if (collection != o) {</span>
+<span class="fc" id="L253">                ValueUtils.setValue(getBean(), getPropertyDescriptor(), collection);</span>
+            }
+<span class="fc" id="L255">        }</span>
+<span class="nc bnc" id="L256" title="All 2 branches missed.">        else if (index == 0) {</span>
+<span class="nc" id="L257">            index = WHOLE_COLLECTION;</span>
+<span class="nc" id="L258">            setValue(null);</span>
+        }
+<span class="fc" id="L260">    }</span>
+
+    /**
+     * Get the name of the currently selected property.
+     * @return String property name
+     */
+    public String getPropertyName() {
+<span class="fc bfc" id="L267" title="All 2 branches covered.">        if (propertyName == null) {</span>
+<span class="fc" id="L268">            PropertyDescriptor pd = getPropertyDescriptor();</span>
+<span class="pc bpc" id="L269" title="1 of 2 branches missed.">            if (pd != null) {</span>
+<span class="fc" id="L270">                propertyName = pd.getName();</span>
+            }
+        }
+<span class="pc bpc" id="L273" title="1 of 2 branches missed.">        return propertyName != null ? propertyName : &quot;*&quot;;</span>
+    }
+
+    /**
+     * Finds the property descriptor corresponding to the current property
+     * index.
+     * @return PropertyDescriptor
+     */
+    private PropertyDescriptor getPropertyDescriptor() {
+<span class="fc bfc" id="L282" title="All 2 branches covered.">        if (propertyDescriptor == null) {</span>
+<span class="fc" id="L283">            int inx = getPropertyIndex();</span>
+<span class="fc bfc" id="L284" title="All 2 branches covered.">            if (inx == UNSPECIFIED_PROPERTY) {</span>
+<span class="fc" id="L285">                propertyDescriptor =</span>
+<span class="fc" id="L286">                    beanInfo.getPropertyDescriptor(propertyName);</span>
+            }
+            else {
+<span class="fc" id="L289">                PropertyDescriptor[] propertyDescriptors =</span>
+<span class="fc" id="L290">                    getPropertyDescriptors();</span>
+<span class="pc bpc" id="L291" title="2 of 4 branches missed.">                if (inx &gt;= 0 &amp;&amp; inx &lt; propertyDescriptors.length) {</span>
+<span class="fc" id="L292">                    propertyDescriptor = propertyDescriptors[inx];</span>
+                }
+                else {
+<span class="nc" id="L295">                    propertyDescriptor = null;</span>
+                }
+            }
+        }
+<span class="fc" id="L299">        return propertyDescriptor;</span>
+    }
+
+    /**
+     * Get all PropertyDescriptors.
+     * @return PropertyDescriptor[]
+     */
+    protected synchronized PropertyDescriptor[] getPropertyDescriptors() {
+<span class="fc bfc" id="L307" title="All 2 branches covered.">        if (propertyDescriptors == null) {</span>
+<span class="fc" id="L308">            propertyDescriptors = beanInfo.getPropertyDescriptors();</span>
+        }
+<span class="fc" id="L310">        return propertyDescriptors;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

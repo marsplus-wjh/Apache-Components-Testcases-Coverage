@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DefaultRulesBinder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester3.binder</a> &gt; <span class="el_source">DefaultRulesBinder.java</span></div><h1>DefaultRulesBinder.java</h1><pre class="source lang-java linenums">package org.apache.commons.digester3.binder;
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import static java.lang.String.format;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.commons.digester3.RuleSet;
+
+/**
+ * The default Digester EDSL implementation.
+ *
+ * @since 3.0
+ */
+<span class="fc" id="L34">final class DefaultRulesBinder</span>
+    implements RulesBinder
+{
+
+    /**
+     * Errors that can occur during binding time or rules creation.
+     */
+<span class="fc" id="L41">    private final List&lt;ErrorMessage&gt; errors = new ArrayList&lt;ErrorMessage&gt;();</span>
+
+    /**
+     *
+     */
+<span class="fc" id="L46">    private final FromBinderRuleSet fromBinderRuleSet = new FromBinderRuleSet();</span>
+
+    /**
+     *
+     */
+    private ClassLoader classLoader;
+
+    /**
+     *
+     *
+     * @param classLoader
+     */
+    void initialize( ClassLoader classLoader )
+    {
+<span class="fc" id="L60">        this.classLoader = classLoader;</span>
+<span class="fc" id="L61">        fromBinderRuleSet.clear();</span>
+<span class="fc" id="L62">        errors.clear();</span>
+<span class="fc" id="L63">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    public ClassLoader getContextClassLoader()
+    {
+<span class="fc" id="L70">        return this.classLoader;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void addError( String messagePattern, Object... arguments )
+    {
+<span class="fc" id="L78">        StackTraceElement[] stackTrace = new Exception().getStackTrace();</span>
+<span class="fc" id="L79">        StackTraceElement element = null;</span>
+
+<span class="fc" id="L81">        int stackIndex = stackTrace.length - 1;</span>
+<span class="pc bpc" id="L82" title="1 of 4 branches missed.">        while ( element == null &amp;&amp; stackIndex &gt; 0 ) // O(n) there's no better way</span>
+        {
+            Class&lt;?&gt; moduleClass;
+            try
+            {
+                // check if the set ClassLoader resolves the Class in the StackTrace
+<span class="fc" id="L88">                moduleClass = Class.forName( stackTrace[stackIndex].getClassName(), false, this.classLoader );</span>
+            }
+<span class="fc" id="L90">            catch ( ClassNotFoundException e )</span>
+            {
+                try
+                {
+                    // try otherwise with current ClassLoader
+<span class="fc" id="L95">                    moduleClass =</span>
+<span class="nc" id="L96">                        Class.forName( stackTrace[stackIndex].getClassName(), false, this.getClass().getClassLoader() );</span>
+                }
+<span class="fc" id="L98">                catch ( ClassNotFoundException e1 )</span>
+                {
+                    // Class in the StackTrace can't be found, don't write the file name:line number detail in the
+                    // message
+<span class="fc" id="L102">                    moduleClass = null;</span>
+<span class="nc" id="L103">                }</span>
+<span class="fc" id="L104">            }</span>
+
+<span class="fc bfc" id="L106" title="All 4 branches covered.">            if ( moduleClass != null &amp;&amp; RulesModule.class.isAssignableFrom( moduleClass ) )</span>
+            {
+<span class="fc" id="L108">                element = stackTrace[stackIndex];</span>
+            }
+
+<span class="fc" id="L111">            stackIndex--;</span>
+<span class="fc" id="L112">        }</span>
+
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">        if ( element != null )</span>
+        {
+<span class="fc" id="L116">            messagePattern = format( &quot;%s (%s:%s)&quot;, messagePattern, element.getFileName(), element.getLineNumber() );</span>
+        }
+<span class="fc" id="L118">        addError( new ErrorMessage( messagePattern, arguments ) );</span>
+<span class="fc" id="L119">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    public void addError( Throwable t )
+    {
+<span class="fc" id="L126">        String message = &quot;An exception was caught and reported. Message: &quot; + t.getMessage();</span>
+<span class="fc" id="L127">        addError( new ErrorMessage( message, t ) );</span>
+<span class="fc" id="L128">    }</span>
+
+    /**
+     * Records an error, the full details of which will be logged, and the message of which will be presented to the
+     * user at a later time.
+     *
+     * @param errorMessage The error to record.
+     */
+    private void addError( ErrorMessage errorMessage )
+    {
+<span class="fc" id="L138">        this.errors.add( errorMessage );</span>
+<span class="fc" id="L139">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    public void install( RulesModule rulesModule )
+    {
+<span class="fc" id="L146">        rulesModule.configure( this );</span>
+<span class="fc" id="L147">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    public LinkedRuleBuilder forPattern( String pattern )
+    {
+        final String keyPattern;
+
+<span class="pc bpc" id="L156" title="2 of 4 branches missed.">        if ( pattern == null || pattern.length() == 0 )</span>
+        {
+<span class="nc" id="L158">            addError( &quot;Null or empty pattern is not valid&quot; );</span>
+<span class="nc" id="L159">            keyPattern = null;</span>
+        }
+        else
+        {
+<span class="pc bpc" id="L163" title="1 of 2 branches missed.">            if ( pattern.endsWith( &quot;/&quot; ) )</span>
+            {
+                // to help users who accidently add '/' to the end of their patterns
+<span class="nc" id="L166">                keyPattern = pattern.substring( 0, pattern.length() - 1 );</span>
+            }
+            else
+            {
+<span class="fc" id="L170">                keyPattern = pattern;</span>
+            }
+        }
+
+<span class="fc" id="L174">        return new LinkedRuleBuilder( this, fromBinderRuleSet, classLoader, keyPattern );</span>
+    }
+
+    /**
+     *
+     *
+     * @return
+     */
+    boolean hasError()
+    {
+<span class="fc bfc" id="L184" title="All 2 branches covered.">        return !errors.isEmpty();</span>
+    }
+
+    /**
+     *
+     *
+     * @return
+     */
+    int errorsSize()
+    {
+<span class="fc" id="L194">        return errors.size();</span>
+    }
+
+    /**
+     *
+     *
+     * @return
+     */
+    Iterable&lt;ErrorMessage&gt; getErrors()
+    {
+<span class="fc" id="L204">        return errors;</span>
+    }
+
+    /**
+     *
+     *
+     * @return
+     */
+    RuleSet getFromBinderRuleSet()
+    {
+<span class="fc" id="L214">        return fromBinderRuleSet;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

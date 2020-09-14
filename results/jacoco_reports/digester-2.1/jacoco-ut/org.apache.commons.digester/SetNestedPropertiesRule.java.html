@@ -1,0 +1,473 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>SetNestedPropertiesRule.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester</a> &gt; <span class="el_source">SetNestedPropertiesRule.java</span></div><h1>SetNestedPropertiesRule.java</h1><pre class="source lang-java linenums">/* $Id$
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+package org.apache.commons.digester;
+
+
+import java.util.List;
+import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.beans.PropertyDescriptor;
+
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.beanutils.DynaBean;
+import org.apache.commons.beanutils.DynaProperty;
+import org.apache.commons.beanutils.PropertyUtils;
+
+import org.xml.sax.Attributes;
+
+import org.apache.commons.logging.Log;
+
+
+/**
+ * &lt;p&gt;Rule implementation that sets properties on the object at the top of the
+ * stack, based on child elements with names matching properties on that 
+ * object.&lt;/p&gt;
+ *
+ * &lt;p&gt;Example input that can be processed by this rule:&lt;/p&gt;
+ * &lt;pre&gt;
+ *   [widget]
+ *    [height]7[/height]
+ *    [width]8[/width]
+ *    [label]Hello, world[/label]
+ *   [/widget]
+ * &lt;/pre&gt;
+ *
+ * &lt;p&gt;For each child element of [widget], a corresponding setter method is 
+ * located on the object on the top of the digester stack, the body text of
+ * the child element is converted to the type specified for the (sole) 
+ * parameter to the setter method, then the setter method is invoked.&lt;/p&gt;
+ *
+ * &lt;p&gt;This rule supports custom mapping of xml element names to property names.
+ * The default mapping for particular elements can be overridden by using 
+ * {@link #SetNestedPropertiesRule(String[] elementNames,
+ *                                 String[] propertyNames)}.
+ * This allows child elements to be mapped to properties with different names.
+ * Certain elements can also be marked to be ignored.&lt;/p&gt;
+ *
+ * &lt;p&gt;A very similar effect can be achieved using a combination of the 
+ * &lt;code&gt;BeanPropertySetterRule&lt;/code&gt; and the &lt;code&gt;ExtendedBaseRules&lt;/code&gt; 
+ * rules manager; this &lt;code&gt;Rule&lt;/code&gt;, however, works fine with the default 
+ * &lt;code&gt;RulesBase&lt;/code&gt; rules manager.&lt;/p&gt;
+ *
+ * &lt;p&gt;Note that this rule is designed to be used to set only &quot;primitive&quot;
+ * bean properties, eg String, int, boolean. If some of the child xml elements
+ * match ObjectCreateRule rules (ie cause objects to be created) then you must
+ * use one of the more complex constructors to this rule to explicitly skip
+ * processing of that xml element, and define a SetNextRule (or equivalent) to
+ * handle assigning the child object to the appropriate property instead.&lt;/p&gt;
+ *
+ * &lt;p&gt;&lt;b&gt;Implementation Notes&lt;/b&gt;&lt;/p&gt;
+ *
+ * &lt;p&gt;This class works by creating its own simple Rules implementation. When
+ * begin is invoked on this rule, the digester's current rules object is
+ * replaced by a custom one. When end is invoked for this rule, the original
+ * rules object is restored. The digester rules objects therefore behave in
+ * a stack-like manner.&lt;/p&gt;
+ *
+ * &lt;p&gt;For each child element encountered, the custom Rules implementation
+ * ensures that a special AnyChildRule instance is included in the matches 
+ * returned to the digester, and it is this rule instance that is responsible 
+ * for setting the appropriate property on the target object (if such a property 
+ * exists). The effect is therefore like a &quot;trailing wildcard pattern&quot;. The 
+ * custom Rules implementation also returns the matches provided by the 
+ * underlying Rules implementation for the same pattern, so other rules
+ * are not &quot;disabled&quot; during processing of a SetNestedPropertiesRule.&lt;/p&gt; 
+ *
+ * &lt;p&gt;TODO: Optimise this class. Currently, each time begin is called,
+ * new AnyChildRules and AnyChildRule objects are created. It should be
+ * possible to cache these in normal use (though watch out for when a rule
+ * instance is invoked re-entrantly!).&lt;/p&gt;
+ *
+ * @since 1.6
+ */
+
+public class SetNestedPropertiesRule extends Rule {
+
+<span class="fc" id="L104">    private Log log = null;</span>
+    
+<span class="fc" id="L106">    private boolean trimData = true;</span>
+<span class="fc" id="L107">    private boolean allowUnknownChildElements = false;</span>
+    
+<span class="fc" id="L109">    private HashMap&lt;String, String&gt; elementNames = new HashMap&lt;String, String&gt;();</span>
+
+    // ----------------------------------------------------------- Constructors
+
+    /**
+     * Base constructor, which maps every child element into a bean property
+     * with the same name as the xml element.
+     *
+     * &lt;p&gt;It is an error if a child xml element exists but the target java 
+     * bean has no such property (unless setAllowUnknownChildElements has been
+     * set to true).&lt;/p&gt;
+     */
+<span class="fc" id="L121">    public SetNestedPropertiesRule() {</span>
+        // nothing to set up 
+<span class="fc" id="L123">    }</span>
+    
+    /** 
+     * &lt;p&gt;Convenience constructor which overrides the default mappings for 
+     * just one property.&lt;/p&gt;
+     *
+     * &lt;p&gt;For details about how this works, see
+     * {@link #SetNestedPropertiesRule(String[] elementNames, 
+     * String[] propertyNames)}.&lt;/p&gt;
+     *
+     * @param elementName is the child xml element to match 
+     * @param propertyName is the java bean property to be assigned the value 
+     * of the specified xml element. This may be null, in which case the 
+     * specified xml element will be ignored.
+     */
+<span class="fc" id="L138">    public SetNestedPropertiesRule(String elementName, String propertyName) {</span>
+<span class="fc" id="L139">        elementNames.put(elementName, propertyName);</span>
+<span class="fc" id="L140">    }</span>
+    
+    /** 
+     * &lt;p&gt;Constructor which allows element-&gt;property mapping to be overridden.
+     * &lt;/p&gt;
+     *
+     * &lt;p&gt;Two arrays are passed in. One contains xml element names and the 
+     * other java bean property names. The element name / property name pairs
+     * are matched by position; in order words, the first string in the element
+     * name array corresponds to the first string in the property name array 
+     * and so on.&lt;/p&gt;
+     *
+     * &lt;p&gt;If a property name is null or the xml element name has no matching
+     * property name due to the arrays being of different lengths then this
+     * indicates that the xml element should be ignored.&lt;/p&gt;
+     * 
+     * &lt;h5&gt;Example One&lt;/h5&gt;
+     * &lt;p&gt; The following constructs a rule that maps the &lt;code&gt;alt-city&lt;/code&gt;
+     * element to the &lt;code&gt;city&lt;/code&gt; property and the &lt;code&gt;alt-state&lt;/code&gt;
+     * to the &lt;code&gt;state&lt;/code&gt; property. All other child elements are mapped
+     * as usual using exact name matching.
+     * &lt;code&gt;&lt;pre&gt;
+     *      SetNestedPropertiesRule(
+     *                new String[] {&quot;alt-city&quot;, &quot;alt-state&quot;}, 
+     *                new String[] {&quot;city&quot;, &quot;state&quot;});
+     * &lt;/pre&gt;&lt;/code&gt;
+     * &lt;/p&gt;
+     *
+     * &lt;h5&gt;Example Two&lt;/h5&gt;
+     * &lt;p&gt; The following constructs a rule that maps the &lt;code&gt;class&lt;/code&gt;
+     * xml element to the &lt;code&gt;className&lt;/code&gt; property. The xml element 
+     * &lt;code&gt;ignore-me&lt;/code&gt; is not mapped, ie is ignored. All other elements 
+     * are mapped as usual using exact name matching.
+     * &lt;code&gt;&lt;pre&gt;
+     *      SetPropertiesRule(
+     *                new String[] {&quot;class&quot;, &quot;ignore-me&quot;}, 
+     *                new String[] {&quot;className&quot;});
+     * &lt;/pre&gt;&lt;/code&gt;
+     * &lt;/p&gt;
+     *
+     * @param elementNames names of elements to map
+     * @param propertyNames names of properties mapped to
+     */
+<span class="fc" id="L183">    public SetNestedPropertiesRule(String[] elementNames, String[] propertyNames) {</span>
+<span class="fc bfc" id="L184" title="All 2 branches covered.">        for (int i=0, size=elementNames.length; i&lt;size; i++) {</span>
+<span class="fc" id="L185">            String propName = null;</span>
+<span class="fc bfc" id="L186" title="All 2 branches covered.">            if (i &lt; propertyNames.length) {</span>
+<span class="fc" id="L187">                propName = propertyNames[i];</span>
+            }
+            
+<span class="fc" id="L190">            this.elementNames.put(elementNames[i], propName);</span>
+        }
+<span class="fc" id="L192">    }</span>
+        
+    // --------------------------------------------------------- Public Methods
+
+    /** Invoked when rule is added to digester. */
+    @Override
+    public void setDigester(Digester digester) {
+<span class="fc" id="L199">        super.setDigester(digester);</span>
+<span class="fc" id="L200">        log = digester.getLogger();</span>
+<span class="fc" id="L201">    }</span>
+    
+    /**
+     * When set to true, any text within child elements will have leading
+     * and trailing whitespace removed before assignment to the target
+     * object. The default value for this attribute is true.
+     */
+    public void setTrimData(boolean trimData) {
+<span class="nc" id="L209">        this.trimData = trimData;</span>
+<span class="nc" id="L210">    }</span>
+    
+    /** See {@link #setTrimData}. */
+     public boolean getTrimData() {
+<span class="nc" id="L214">        return trimData;</span>
+    }
+    
+    /**
+     * Determines whether an error is reported when a nested element is
+     * encountered for which there is no corresponding property-setter
+     * method.
+     * &lt;p&gt;
+     * When set to false, any child element for which there is no
+     * corresponding object property will cause an error to be reported.
+     * &lt;p&gt;
+     * When set to true, any child element for which there is no
+     * corresponding object property will simply be ignored.
+     * &lt;p&gt;
+     * The default value of this attribute is false (unknown child elements
+     * are not allowed).
+     */
+    public void setAllowUnknownChildElements(boolean allowUnknownChildElements) {
+<span class="fc" id="L232">        this.allowUnknownChildElements = allowUnknownChildElements;</span>
+<span class="fc" id="L233">    }</span>
+    
+    /** See {@link #setAllowUnknownChildElements}. */
+     public boolean getAllowUnknownChildElements() {
+<span class="nc" id="L237">        return allowUnknownChildElements;</span>
+    }
+    
+    /**
+     * Process the beginning of this element.
+     *
+     * @param namespace is the namespace this attribute is in, or null
+     * @param name is the name of the current xml element
+     * @param attributes is the attribute list of this element
+     */
+    @Override
+    public void begin(String namespace, String name, Attributes attributes) 
+                      throws Exception {
+<span class="fc" id="L250">        Rules oldRules = digester.getRules();</span>
+<span class="fc" id="L251">        AnyChildRule anyChildRule = new AnyChildRule();</span>
+<span class="fc" id="L252">        anyChildRule.setDigester(digester);</span>
+<span class="fc" id="L253">        AnyChildRules newRules = new AnyChildRules(anyChildRule);</span>
+<span class="fc" id="L254">        newRules.init(digester.getMatch()+&quot;/&quot;, oldRules);</span>
+<span class="fc" id="L255">        digester.setRules(newRules);</span>
+<span class="fc" id="L256">    }</span>
+    
+    /**
+     * This is only invoked after all child elements have been processed,
+     * so we can remove the custom Rules object that does the 
+     * child-element-matching.
+     */
+    @Override
+    public void body(String bodyText) throws Exception {
+<span class="fc" id="L265">        AnyChildRules newRules = (AnyChildRules) digester.getRules();</span>
+<span class="fc" id="L266">        digester.setRules(newRules.getOldRules());</span>
+<span class="fc" id="L267">    }</span>
+
+    /**
+     * Add an additional custom xml-element -&gt; property mapping.
+     * &lt;p&gt;
+     * This is primarily intended to be used from the xml rules module
+     * (as it is not possible there to pass the necessary parameters to the
+     * constructor for this class). However it is valid to use this method
+     * directly if desired.
+     */
+    public void addAlias(String elementName, String propertyName) {
+<span class="nc" id="L278">        elementNames.put(elementName, propertyName);</span>
+<span class="nc" id="L279">    }</span>
+  
+    /**
+     * Render a printable version of this Rule.
+     */
+    @Override
+    public String toString() {
+<span class="nc" id="L286">        StringBuffer sb = new StringBuffer(&quot;SetNestedPropertiesRule[&quot;);</span>
+<span class="nc" id="L287">        sb.append(&quot;allowUnknownChildElements=&quot;);</span>
+<span class="nc" id="L288">        sb.append(allowUnknownChildElements);</span>
+<span class="nc" id="L289">        sb.append(&quot;, trimData=&quot;);</span>
+<span class="nc" id="L290">        sb.append(trimData);</span>
+<span class="nc" id="L291">        sb.append(&quot;, elementNames=&quot;);</span>
+<span class="nc" id="L292">        sb.append(elementNames);</span>
+<span class="nc" id="L293">        sb.append(&quot;]&quot;);</span>
+<span class="nc" id="L294">        return sb.toString();    </span>
+    }
+
+    //----------------------------------------- local classes 
+
+    /** Private Rules implementation */
+    private class AnyChildRules implements Rules {
+<span class="fc" id="L301">        private String matchPrefix = null;</span>
+<span class="fc" id="L302">        private Rules decoratedRules = null;</span>
+        
+<span class="fc" id="L304">        private ArrayList&lt;Rule&gt; rules = new ArrayList&lt;Rule&gt;(1);</span>
+        private AnyChildRule rule;
+        
+<span class="fc" id="L307">        public AnyChildRules(AnyChildRule rule) {</span>
+<span class="fc" id="L308">            this.rule = rule;</span>
+<span class="fc" id="L309">            rules.add(rule); </span>
+<span class="fc" id="L310">        }</span>
+        
+<span class="nc" id="L312">        public Digester getDigester() { return null; }</span>
+<span class="fc" id="L313">        public void setDigester(Digester digester) {}</span>
+<span class="nc" id="L314">        public String getNamespaceURI() {return null;}</span>
+<span class="nc" id="L315">        public void setNamespaceURI(String namespaceURI) {}</span>
+<span class="nc" id="L316">        public void add(String pattern, Rule rule) {}</span>
+<span class="nc" id="L317">        public void clear() {}</span>
+        
+        public List&lt;Rule&gt; match(String matchPath) { 
+<span class="nc" id="L320">            return match(null,matchPath); </span>
+        }
+        
+        public List&lt;Rule&gt; match(String namespaceURI, String matchPath) {
+<span class="fc" id="L324">            List&lt;Rule&gt; match = decoratedRules.match(namespaceURI, matchPath);</span>
+            
+<span class="pc bpc" id="L326" title="1 of 2 branches missed.">            if ((matchPath.startsWith(matchPrefix)) &amp;&amp;</span>
+<span class="fc bfc" id="L327" title="All 2 branches covered.">                (matchPath.indexOf('/', matchPrefix.length()) == -1)) {</span>
+                    
+                // The current element is a direct child of the element
+                // specified in the init method, so we want to ensure that
+                // the rule passed to this object's constructor is included
+                // in the returned list of matching rules.
+                
+<span class="pc bpc" id="L334" title="1 of 4 branches missed.">                if ((match == null || match.size()==0)) {</span>
+                    // The &quot;real&quot; rules class doesn't have any matches for
+                    // the specified path, so we return a list containing
+                    // just one rule: the one passed to this object's
+                    // constructor.
+<span class="fc" id="L339">                    return rules;</span>
+                }
+                else {
+                    // The &quot;real&quot; rules class has rules that match the current
+                    // node, so we return this list *plus* the rule passed to
+                    // this object's constructor.
+                    //
+                    // It might not be safe to modify the returned list,
+                    // so clone it first.
+<span class="fc" id="L348">                    LinkedList&lt;Rule&gt; newMatch = new LinkedList&lt;Rule&gt;(match);</span>
+<span class="fc" id="L349">                    newMatch.addLast(rule);</span>
+<span class="fc" id="L350">                    return newMatch;</span>
+                }
+            }            
+            else {
+<span class="fc" id="L354">                return match;</span>
+            }
+        }
+        
+        public List&lt;Rule&gt; rules() {
+            // This is not actually expected to be called during normal
+            // processing.
+            //
+            // There is only one known case where this is called; when a rule
+            // returned from AnyChildRules.match is invoked and throws a
+            // SAXException then method Digester.endDocument will be called
+            // without having &quot;uninstalled&quot; the AnyChildRules ionstance. That
+            // method attempts to invoke the &quot;finish&quot; method for every Rule
+            // instance - and thus needs to call rules() on its Rules object,
+            // which is this one. Actually, java 1.5 and 1.6beta2 have a
+            // bug in their xml implementation such that endDocument is not 
+            // called after a SAXException, but other parsers (eg Aelfred)
+            // do call endDocument. Here, we therefore need to return the
+            // rules registered with the underlying Rules object.
+<span class="nc" id="L373">            log.debug(&quot;AnyChildRules.rules invoked.&quot;);</span>
+<span class="nc" id="L374">            return decoratedRules.rules();</span>
+        }
+        
+        public void init(String prefix, Rules rules) {
+<span class="fc" id="L378">            matchPrefix = prefix;</span>
+<span class="fc" id="L379">            decoratedRules = rules;</span>
+<span class="fc" id="L380">        }</span>
+        
+        public Rules getOldRules() {
+<span class="fc" id="L383">            return decoratedRules;</span>
+        }
+    }
+    
+<span class="fc" id="L387">    private class AnyChildRule extends Rule {</span>
+<span class="fc" id="L388">        private String currChildNamespaceURI = null;</span>
+<span class="fc" id="L389">        private String currChildElementName = null;</span>
+        
+        @Override
+        public void begin(String namespaceURI, String name, 
+                              Attributes attributes) throws Exception {
+    
+<span class="fc" id="L395">            currChildNamespaceURI = namespaceURI;</span>
+<span class="fc" id="L396">            currChildElementName = name;</span>
+<span class="fc" id="L397">        }</span>
+        
+        @Override
+        public void body(String value) throws Exception {
+<span class="fc" id="L401">            String propName = currChildElementName;</span>
+<span class="fc bfc" id="L402" title="All 2 branches covered.">            if (elementNames.containsKey(currChildElementName)) {</span>
+                // overide propName
+<span class="fc" id="L404">                propName = elementNames.get(currChildElementName);</span>
+<span class="fc bfc" id="L405" title="All 2 branches covered.">                if (propName == null) {</span>
+                    // user wants us to ignore this element
+<span class="fc" id="L407">                    return;</span>
+                }
+            }
+    
+<span class="fc" id="L411">            boolean debug = log.isDebugEnabled();</span>
+
+<span class="pc bpc" id="L413" title="1 of 2 branches missed.">            if (debug) {</span>
+<span class="nc" id="L414">                log.debug(&quot;[SetNestedPropertiesRule]{&quot; + digester.match +</span>
+                        &quot;} Setting property '&quot; + propName + &quot;' to '&quot; +
+                        value + &quot;'&quot;);
+            }
+    
+            // Populate the corresponding properties of the top object
+<span class="fc" id="L420">            Object top = digester.peek();</span>
+<span class="pc bpc" id="L421" title="1 of 2 branches missed.">            if (debug) {</span>
+<span class="nc bnc" id="L422" title="All 2 branches missed.">                if (top != null) {</span>
+<span class="nc" id="L423">                    log.debug(&quot;[SetNestedPropertiesRule]{&quot; + digester.match +</span>
+<span class="nc" id="L424">                                       &quot;} Set &quot; + top.getClass().getName() +</span>
+                                       &quot; properties&quot;);
+                } else {
+<span class="nc" id="L427">                    log.debug(&quot;[SetPropertiesRule]{&quot; + digester.match +</span>
+                                       &quot;} Set NULL properties&quot;);
+                }
+            }
+ 
+<span class="pc bpc" id="L432" title="1 of 2 branches missed.">            if (trimData) {</span>
+<span class="fc" id="L433">                value = value.trim();</span>
+            }
+
+<span class="fc bfc" id="L436" title="All 2 branches covered.">            if (!allowUnknownChildElements) {</span>
+                // Force an exception if the property does not exist
+                // (BeanUtils.setProperty() silently returns in this case)
+<span class="pc bpc" id="L439" title="1 of 2 branches missed.">                if (top instanceof DynaBean) {</span>
+<span class="nc" id="L440">                    DynaProperty desc =</span>
+<span class="nc" id="L441">                        ((DynaBean) top).getDynaClass().getDynaProperty(propName);</span>
+<span class="nc bnc" id="L442" title="All 2 branches missed.">                    if (desc == null) {</span>
+<span class="nc" id="L443">                        throw new NoSuchMethodException</span>
+                            (&quot;Bean has no property named &quot; + propName);
+                    }
+<span class="nc" id="L446">                } else /* this is a standard JavaBean */ {</span>
+<span class="fc" id="L447">                    PropertyDescriptor desc =</span>
+<span class="fc" id="L448">                        PropertyUtils.getPropertyDescriptor(top, propName);</span>
+<span class="fc bfc" id="L449" title="All 2 branches covered.">                    if (desc == null) {</span>
+<span class="fc" id="L450">                        throw new NoSuchMethodException</span>
+                            (&quot;Bean has no property named &quot; + propName);
+                    }
+                }
+            }
+            
+            try
+            {
+<span class="fc" id="L458">            BeanUtils.setProperty(top, propName, value);</span>
+            }
+<span class="nc" id="L460">            catch(NullPointerException e) {</span>
+<span class="nc" id="L461">                log.error(&quot;NullPointerException: &quot;</span>
+                 + &quot;top=&quot; + top + &quot;,propName=&quot; + propName + &quot;,value=&quot; + value + &quot;!&quot;);
+<span class="nc" id="L463">                 throw e;</span>
+<span class="fc" id="L464">            }</span>
+<span class="fc" id="L465">        }</span>
+    
+        @Override
+        public void end(String namespace, String name) throws Exception {
+<span class="fc" id="L469">            currChildElementName = null;</span>
+<span class="fc" id="L470">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

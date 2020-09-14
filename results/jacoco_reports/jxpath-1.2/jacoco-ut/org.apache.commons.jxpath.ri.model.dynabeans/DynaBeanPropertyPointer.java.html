@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>DynaBeanPropertyPointer.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri.model.dynabeans</a> &gt; <span class="el_source">DynaBeanPropertyPointer.java</span></div><h1>DynaBeanPropertyPointer.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri.model.dynabeans;
+
+import java.util.Arrays;
+
+import org.apache.commons.beanutils.DynaBean;
+import org.apache.commons.beanutils.DynaClass;
+import org.apache.commons.beanutils.DynaProperty;
+import org.apache.commons.jxpath.JXPathTypeConversionException;
+import org.apache.commons.jxpath.ri.model.NodePointer;
+import org.apache.commons.jxpath.ri.model.beans.PropertyPointer;
+import org.apache.commons.jxpath.util.TypeUtils;
+import org.apache.commons.jxpath.util.ValueUtils;
+
+/**
+ * Pointer pointing to a property of a {@link DynaBean}. If the target DynaBean is
+ * Serializable, so should this instance be.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision$ $Date$
+ */
+public class DynaBeanPropertyPointer extends PropertyPointer {
+    private DynaBean dynaBean;
+    private String name;
+    private String[] names;
+
+    private static final long serialVersionUID = 2094421509141267239L;
+
+    /**
+     * Create a new DynaBeanPropertyPointer.
+     * @param parent pointer
+     * @param dynaBean pointed
+     */
+    public DynaBeanPropertyPointer(NodePointer parent, DynaBean dynaBean) {
+<span class="fc" id="L50">        super(parent);</span>
+<span class="fc" id="L51">        this.dynaBean = dynaBean;</span>
+<span class="fc" id="L52">    }</span>
+
+    public Object getBaseValue() {
+<span class="fc" id="L55">        return dynaBean.get(getPropertyName());</span>
+    }
+
+    /**
+     * This type of node is auxiliary.
+     * @return true
+     */
+    public boolean isContainer() {
+<span class="fc" id="L63">        return true;</span>
+    }
+
+    public int getPropertyCount() {
+<span class="fc" id="L67">        return getPropertyNames().length;</span>
+    }
+
+    public String[] getPropertyNames() {
+        /* @todo do something about the sorting - LIKE WHAT? - MJB */
+<span class="fc bfc" id="L72" title="All 2 branches covered.">        if (names == null) {</span>
+<span class="fc" id="L73">            DynaClass dynaClass = dynaBean.getDynaClass();</span>
+<span class="fc" id="L74">            DynaProperty[] properties = dynaClass.getDynaProperties();</span>
+<span class="fc" id="L75">            int count = properties.length;</span>
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">            boolean hasClass = dynaClass.getDynaProperty(&quot;class&quot;) != null;</span>
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">            if (hasClass) {</span>
+<span class="fc" id="L78">                count--;       // Exclude &quot;class&quot; from properties</span>
+            }
+<span class="fc" id="L80">            names = new String[count];</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">            for (int i = 0, j = 0; i &lt; properties.length; i++) {</span>
+<span class="fc" id="L82">                String name = properties[i].getName();</span>
+<span class="pc bpc" id="L83" title="1 of 4 branches missed.">                if (!hasClass || !name.equals(&quot;class&quot;)) {</span>
+<span class="fc" id="L84">                    names[j++] = name;</span>
+                }
+            }
+<span class="fc" id="L87">            Arrays.sort(names);</span>
+        }
+<span class="fc" id="L89">        return names;</span>
+    }
+
+    /**
+     * Returns the name of the currently selected property or &quot;*&quot;
+     * if none has been selected.
+     * @return String
+     */
+    public String getPropertyName() {
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        if (name == null) {</span>
+<span class="fc" id="L99">            String[] names = getPropertyNames();</span>
+<span class="pc bpc" id="L100" title="2 of 4 branches missed.">            name = propertyIndex &gt;= 0 &amp;&amp; propertyIndex &lt; names.length ? names[propertyIndex] : &quot;*&quot;;</span>
+        }
+<span class="fc" id="L102">        return name;</span>
+    }
+
+    /**
+     * Select a property by name.
+     * @param propertyName to select
+     */
+    public void setPropertyName(String propertyName) {
+<span class="fc" id="L110">        setPropertyIndex(UNSPECIFIED_PROPERTY);</span>
+<span class="fc" id="L111">        this.name = propertyName;</span>
+<span class="fc" id="L112">    }</span>
+
+    /**
+     * Index of the currently selected property in the list of all
+     * properties sorted alphabetically.
+     * @return int
+     */
+    public int getPropertyIndex() {
+<span class="fc bfc" id="L120" title="All 2 branches covered.">        if (propertyIndex == UNSPECIFIED_PROPERTY) {</span>
+<span class="fc" id="L121">            String[] names = getPropertyNames();</span>
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">            for (int i = 0; i &lt; names.length; i++) {</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">                if (names[i].equals(name)) {</span>
+<span class="fc" id="L124">                    propertyIndex = i;</span>
+<span class="fc" id="L125">                    name = null;</span>
+<span class="fc" id="L126">                    break;</span>
+                }
+            }
+        }
+<span class="fc" id="L130">        return super.getPropertyIndex();</span>
+    }
+
+    /**
+     * Index a property by its index in the list of all
+     * properties sorted alphabetically.
+     * @param index to set
+     */
+    public void setPropertyIndex(int index) {
+<span class="fc bfc" id="L139" title="All 2 branches covered.">        if (propertyIndex != index) {</span>
+<span class="fc" id="L140">            super.setPropertyIndex(index);</span>
+<span class="fc" id="L141">            name = null;</span>
+        }
+<span class="fc" id="L143">    }</span>
+
+    /**
+     * If index == WHOLE_COLLECTION, the value of the property, otherwise
+     * the value of the index'th element of the collection represented by the
+     * property. If the property is not a collection, index should be zero
+     * and the value will be the property itself.
+     * @return Object
+     */
+    public Object getImmediateNode() {
+<span class="fc" id="L153">        String name = getPropertyName();</span>
+<span class="pc bpc" id="L154" title="1 of 2 branches missed.">        if (name.equals(&quot;*&quot;)) {</span>
+<span class="nc" id="L155">            return null;</span>
+        }
+
+        Object value;
+<span class="fc bfc" id="L159" title="All 2 branches covered.">        if (index == WHOLE_COLLECTION) {</span>
+<span class="fc" id="L160">            value = ValueUtils.getValue(dynaBean.get(name));</span>
+        }
+<span class="fc bfc" id="L162" title="All 2 branches covered.">        else if (isIndexedProperty()) {</span>
+            // DynaClass at this point is not based on whether
+            // the property is indeed indexed, but rather on
+            // whether it is an array or List. Therefore
+            // the indexed set may fail.
+            try {
+<span class="fc" id="L168">                value = ValueUtils.getValue(dynaBean.get(name, index));</span>
+            }
+<span class="fc" id="L170">            catch (ArrayIndexOutOfBoundsException ex) {</span>
+<span class="fc" id="L171">                value = null;</span>
+            }
+<span class="fc" id="L173">            catch (IllegalArgumentException ex) {</span>
+<span class="fc" id="L174">                value = dynaBean.get(name);</span>
+<span class="fc" id="L175">                value = ValueUtils.getValue(value, index);</span>
+<span class="fc" id="L176">            }</span>
+        }
+        else {
+<span class="fc" id="L179">            value = dynaBean.get(name);</span>
+<span class="fc bfc" id="L180" title="All 2 branches covered.">            if (ValueUtils.isCollection(value)) {</span>
+<span class="fc" id="L181">                value = ValueUtils.getValue(value, index);</span>
+            }
+<span class="pc bpc" id="L183" title="1 of 2 branches missed.">            else if (index != 0) {</span>
+<span class="nc" id="L184">                value = null;</span>
+            }
+        }
+<span class="fc" id="L187">        return value;</span>
+    }
+
+    /**
+     * Returns true if the bean has the currently selected property.
+     * @return boolean
+     */
+    protected boolean isActualProperty() {
+<span class="fc" id="L195">        DynaClass dynaClass = dynaBean.getDynaClass();</span>
+<span class="fc bfc" id="L196" title="All 2 branches covered.">        return dynaClass.getDynaProperty(getPropertyName()) != null;</span>
+    }
+
+    /**
+     * Learn whether the property referenced is an indexed property.
+     * @return boolean
+     */
+    protected boolean isIndexedProperty() {
+<span class="fc" id="L204">        DynaClass dynaClass = dynaBean.getDynaClass();</span>
+<span class="fc" id="L205">        DynaProperty property = dynaClass.getDynaProperty(name);</span>
+<span class="fc" id="L206">        return property.isIndexed();</span>
+    }
+
+    /**
+     * If index == WHOLE_COLLECTION, change the value of the property, otherwise
+     * change the value of the index'th element of the collection
+     * represented by the property.
+     * @param value to set
+     */
+    public void setValue(Object value) {
+<span class="fc" id="L216">        setValue(index, value);</span>
+<span class="fc" id="L217">    }</span>
+
+    public void remove() {
+<span class="fc bfc" id="L220" title="All 2 branches covered.">        if (index == WHOLE_COLLECTION) {</span>
+<span class="fc" id="L221">            dynaBean.set(getPropertyName(), null);</span>
+        }
+<span class="pc bpc" id="L223" title="1 of 2 branches missed.">        else if (isIndexedProperty()) {</span>
+<span class="fc" id="L224">            dynaBean.set(getPropertyName(), index, null);</span>
+        }
+<span class="nc bnc" id="L226" title="All 2 branches missed.">        else if (isCollection()) {</span>
+<span class="nc" id="L227">            Object collection = ValueUtils.remove(getBaseValue(), index);</span>
+<span class="nc" id="L228">            dynaBean.set(getPropertyName(), collection);</span>
+<span class="nc" id="L229">        }</span>
+<span class="nc bnc" id="L230" title="All 2 branches missed.">        else if (index == 0) {</span>
+<span class="nc" id="L231">            dynaBean.set(getPropertyName(), null);</span>
+        }
+<span class="fc" id="L233">    }</span>
+
+    /**
+     * Set an indexed value.
+     * @param index to change
+     * @param value to set
+     */
+    private void setValue(int index, Object value) {
+<span class="fc bfc" id="L241" title="All 2 branches covered.">        if (index == WHOLE_COLLECTION) {</span>
+<span class="fc" id="L242">            dynaBean.set(getPropertyName(), convert(value, false));</span>
+        }
+<span class="pc bpc" id="L244" title="1 of 2 branches missed.">        else if (isIndexedProperty()) {</span>
+<span class="fc" id="L245">            dynaBean.set(getPropertyName(), index, convert(value, true));</span>
+        }
+        else {
+<span class="nc" id="L248">            Object baseValue = dynaBean.get(getPropertyName());</span>
+<span class="nc" id="L249">            ValueUtils.setValue(baseValue, index, value);</span>
+        }
+<span class="fc" id="L251">    }</span>
+
+
+    /**
+     * Convert a value to the appropriate property type.
+     * @param value to convert
+     * @param element whether this should be a collection element.
+     * @return conversion result
+     */
+    private Object convert(Object value, boolean element) {
+<span class="fc" id="L261">        DynaClass dynaClass = (DynaClass) dynaBean.getDynaClass();</span>
+<span class="fc" id="L262">        DynaProperty property = dynaClass.getDynaProperty(getPropertyName());</span>
+<span class="fc" id="L263">        Class type = property.getType();</span>
+<span class="fc bfc" id="L264" title="All 2 branches covered.">        if (element) {</span>
+<span class="pc bpc" id="L265" title="1 of 2 branches missed.">            if (type.isArray()) {</span>
+<span class="fc" id="L266">                type = type.getComponentType();</span>
+            }
+            else {
+<span class="nc" id="L269">                return value; // No need to convert</span>
+            }
+        }
+
+        try {
+<span class="fc" id="L274">            return TypeUtils.convert(value, type);</span>
+        }
+<span class="nc" id="L276">        catch (Exception ex) {</span>
+<span class="nc bnc" id="L277" title="All 2 branches missed.">            String string = value == null ? &quot;null&quot; : value.getClass().getName();</span>
+<span class="nc" id="L278">            throw new JXPathTypeConversionException(</span>
+                    &quot;Cannot convert value of class &quot; + string + &quot; to type &quot;
+                            + type, ex);
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

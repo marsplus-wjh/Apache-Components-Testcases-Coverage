@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractMethodRule.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester3</a> &gt; <span class="el_source">AbstractMethodRule.java</span></div><h1>AbstractMethodRule.java</h1><pre class="source lang-java linenums">package org.apache.commons.digester3;
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import static java.lang.String.format;
+import static org.apache.commons.beanutils.MethodUtils.invokeExactMethod;
+import static org.apache.commons.beanutils.MethodUtils.invokeMethod;
+
+import org.xml.sax.Attributes;
+
+/**
+ * Abstract implementation for {@link org.apache.commons.digester3.SetNextRule},
+ * {@link org.apache.commons.digester3.SetRootRule} and {@link org.apache.commons.digester3.SetTopRule} rules.
+ *
+ * @since 3.0
+ */
+public abstract class AbstractMethodRule
+    extends Rule
+{
+
+    /**
+     * The method name to call on the parent object.
+     */
+<span class="fc" id="L41">    protected String methodName = null;</span>
+
+    /**
+     * The Java class name of the parameter type expected by the method.
+     */
+<span class="fc" id="L46">    protected String paramTypeName = null;</span>
+
+    /**
+     * The Java class name of the parameter type expected by the method.
+     */
+    protected Class&lt;?&gt; paramType;
+
+    /**
+     * Should we use exact matching. Default is no.
+     */
+<span class="fc" id="L56">    protected boolean useExactMatch = false;</span>
+
+    /**
+     * Should this rule be invoked when {@link #begin(String, String, Attributes)} (true)
+     * or {@link #end(String, String)} (false) methods are invoked, false by default.
+     */
+<span class="fc" id="L62">    protected boolean fireOnBegin = false;</span>
+
+    /**
+     * Construct a &quot;set next&quot; rule with the specified method name. The method's argument type is assumed to be the class
+     * of the child object.
+     * 
+     * @param methodName Method name of the parent method to call
+     */
+    public AbstractMethodRule( String methodName )
+    {
+<span class="fc" id="L72">        this( methodName, (String) null );</span>
+<span class="fc" id="L73">    }</span>
+
+    /**
+     * Construct a &quot;set next&quot; rule with the specified method name.
+     * 
+     * @param methodName Method name of the parent method to call
+     * @param paramType Java class of the parent method's argument (if you wish to use a primitive type, specify the
+     *            corresonding Java wrapper class instead, such as &lt;code&gt;java.lang.Boolean&lt;/code&gt; for a
+     *            &lt;code&gt;boolean&lt;/code&gt; parameter)
+     */
+    public AbstractMethodRule( String methodName, Class&lt;?&gt; paramType )
+    {
+<span class="fc" id="L85">        this( methodName, paramType.getName() );</span>
+<span class="fc" id="L86">        this.paramType = paramType;</span>
+<span class="fc" id="L87">    }</span>
+
+    /**
+     * Construct a &quot;set next&quot; rule with the specified method name.
+     * 
+     * @param methodName Method name of the parent method to call
+     * @param paramTypeName Java class of the parent method's argument (if you wish to use a primitive type, specify the
+     *            corresonding Java wrapper class instead, such as &lt;code&gt;java.lang.Boolean&lt;/code&gt; for a
+     *            &lt;code&gt;boolean&lt;/code&gt; parameter)
+     */
+    public AbstractMethodRule( String methodName, String paramTypeName )
+<span class="fc" id="L98">    {</span>
+<span class="fc" id="L99">        this.methodName = methodName;</span>
+<span class="fc" id="L100">        this.paramTypeName = paramTypeName;</span>
+<span class="fc" id="L101">    }</span>
+
+    /**
+     * &lt;p&gt;
+     * Is exact matching being used.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * This rule uses &lt;code&gt;org.apache.commons.beanutils.MethodUtils&lt;/code&gt; to introspect the relevent objects so that
+     * the right method can be called. Originally, &lt;code&gt;MethodUtils.invokeExactMethod&lt;/code&gt; was used. This matches
+     * methods very strictly and so may not find a matching method when one exists. This is still the behaviour when
+     * exact matching is enabled.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * When exact matching is disabled, &lt;code&gt;MethodUtils.invokeMethod&lt;/code&gt; is used. This method finds more methods
+     * but is less precise when there are several methods with correct signatures. So, if you want to choose an exact
+     * signature you might need to enable this property.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * The default setting is to disable exact matches.
+     * &lt;/p&gt;
+     * 
+     * @return true if exact matching is enabled
+     * @since Digester Release 1.1.1
+     */
+    public boolean isExactMatch()
+    {
+<span class="nc" id="L127">        return useExactMatch;</span>
+    }
+
+    /**
+     * Sets this rule be invoked when {@link #begin(String, String, Attributes)} (true)
+     * or {@link #end(String, String)} (false) methods are invoked, false by default.
+     *
+     * @param fireOnBegin flag to mark this rule be invoked when {@link #begin(String, String, Attributes)} (true)
+     *                    or {@link #end(String, String)} (false) methods are invoked, false by default.
+     */
+    public void setFireOnBegin( boolean fireOnBegin )
+    {
+<span class="fc" id="L139">        this.fireOnBegin = fireOnBegin;</span>
+<span class="fc" id="L140">    }</span>
+
+    /**
+     * Returns the flag this rule be invoked when {@link #begin(String, String, Attributes)} (true)
+     * or {@link #end(String, String)} (false) methods are invoked, false by default.
+     *
+     * @return the flag this rule be invoked when {@link #begin(String, String, Attributes)} (true)
+     * or {@link #end(String, String)} (false) methods are invoked, false by default.
+     */
+    public boolean isFireOnBegin()
+    {
+<span class="nc" id="L151">        return fireOnBegin;</span>
+    }
+
+    /**
+     * &lt;p&gt;
+     * Set whether exact matching is enabled.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * See {@link #isExactMatch()}.
+     * &lt;/p&gt;
+     * 
+     * @param useExactMatch should this rule use exact method matching
+     * @since Digester Release 1.1.1
+     */
+    public void setExactMatch( boolean useExactMatch )
+    {
+<span class="fc" id="L167">        this.useExactMatch = useExactMatch;</span>
+<span class="fc" id="L168">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void begin( String namespace, String name, Attributes attributes )
+        throws Exception
+    {
+<span class="fc bfc" id="L177" title="All 2 branches covered.">        if ( fireOnBegin )</span>
+        {
+<span class="fc" id="L179">            invoke();</span>
+        }
+<span class="fc" id="L181">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void end( String namespace, String name )
+        throws Exception
+    {
+<span class="fc bfc" id="L190" title="All 2 branches covered.">        if ( !fireOnBegin )</span>
+        {
+<span class="fc" id="L192">            invoke();</span>
+        }
+<span class="fc" id="L194">    }</span>
+
+    /**
+     * Just performs the method execution.
+     *
+     * @throws Exception if any error occurs.
+     */
+    private void invoke()
+        throws Exception
+    {
+        // Identify the objects to be used
+<span class="fc" id="L205">        Object child = getChild();</span>
+<span class="fc" id="L206">        Object parent = getParent();</span>
+<span class="pc bpc" id="L207" title="1 of 2 branches missed.">        if ( getDigester().getLogger().isDebugEnabled() )</span>
+        {
+<span class="nc bnc" id="L209" title="All 2 branches missed.">            if ( parent == null )</span>
+            {
+<span class="nc" id="L211">                getDigester().getLogger().debug( format( &quot;[%s]{%s} Call [NULL PARENT].%s(%s)&quot;,</span>
+<span class="nc" id="L212">                                                         getClass().getSimpleName(),</span>
+<span class="nc" id="L213">                                                         getDigester().getMatch(),</span>
+                                                         methodName,
+                                                         child ) );
+            }
+            else
+            {
+<span class="nc" id="L219">                getDigester().getLogger().debug( format( &quot;[%s]{%s} Call %s.%s(%s)&quot;,</span>
+<span class="nc" id="L220">                                                         getClass().getSimpleName(),</span>
+<span class="nc" id="L221">                                                         getDigester().getMatch(),</span>
+<span class="nc" id="L222">                                                         parent.getClass().getName(),</span>
+                                                         methodName,
+                                                         child ) );
+            }
+        }
+
+        // Call the specified method
+<span class="fc" id="L229">        Class&lt;?&gt; paramTypes[] = new Class&lt;?&gt;[1];</span>
+<span class="fc bfc" id="L230" title="All 2 branches covered.">        if ( paramType != null )</span>
+        {
+<span class="fc" id="L232">            paramTypes[0] = getDigester().getClassLoader().loadClass( paramTypeName );</span>
+        }
+        else
+        {
+<span class="fc" id="L236">            paramTypes[0] = child.getClass();</span>
+        }
+
+<span class="pc bpc" id="L239" title="1 of 2 branches missed.">        if ( useExactMatch )</span>
+        {
+<span class="nc" id="L241">            invokeExactMethod( parent, methodName, new Object[] { child }, paramTypes );</span>
+        }
+        else
+        {
+<span class="fc" id="L245">            invokeMethod( parent, methodName, new Object[] { child }, paramTypes );</span>
+        }
+<span class="fc" id="L247">    }</span>
+
+    /**
+     * Returns the argument object of method has to be invoked.
+     *
+     * @return the argument object of method has to be invoked.
+     */
+    protected abstract Object getChild();
+
+    /**
+     * Returns the target object of method has to be invoked.
+     *
+     * @return the target object of method has to be invoked.
+     */
+    protected abstract Object getParent();
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final String toString()
+    {
+<span class="nc" id="L269">        return format( &quot;%s[methodName=%s, paramType=%s, paramTypeName=%s, useExactMatch=%s, fireOnBegin=%s]&quot;,</span>
+<span class="nc" id="L270">                       getClass().getSimpleName(), methodName, paramType, paramTypeName, useExactMatch, fireOnBegin );</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

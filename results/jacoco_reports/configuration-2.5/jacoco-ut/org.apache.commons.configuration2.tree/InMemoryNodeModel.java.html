@@ -1,0 +1,1416 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>InMemoryNodeModel.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Configuration</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.configuration2.tree</a> &gt; <span class="el_source">InMemoryNodeModel.java</span></div><h1>InMemoryNodeModel.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.configuration2.tree;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.apache.commons.configuration2.ex.ConfigurationRuntimeException;
+import org.apache.commons.lang3.mutable.Mutable;
+import org.apache.commons.lang3.mutable.MutableObject;
+
+/**
+ * &lt;p&gt;
+ * A specialized node model implementation which operates on
+ * {@link ImmutableNode} structures.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * This {@code NodeModel} implementation keeps all its data as a tree of
+ * {@link ImmutableNode} objects in memory. The managed structure can be
+ * manipulated in a thread-safe, non-blocking way. This is achieved by using
+ * atomic variables: The root of the tree is stored in an atomic reference
+ * variable. Each update operation causes a new structure to be constructed
+ * (which reuses as much from the original structure as possible). The old root
+ * node is then replaced by the new one using an atomic compare-and-set
+ * operation. If this fails, the manipulation has to be done anew on the updated
+ * structure.
+ * &lt;/p&gt;
+ *
+ * @since 2.0
+ */
+public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
+{
+    /**
+     * A dummy node handler instance used in operations which require only a
+     * limited functionality.
+     */
+<span class="fc" id="L58">    private static final NodeHandler&lt;ImmutableNode&gt; DUMMY_HANDLER =</span>
+            new TreeData(null,
+<span class="fc" id="L60">                    Collections.&lt;ImmutableNode, ImmutableNode&gt; emptyMap(),</span>
+<span class="fc" id="L61">                    Collections.&lt;ImmutableNode, ImmutableNode&gt; emptyMap(), null, new ReferenceTracker());</span>
+
+    /** Stores information about the current nodes structure. */
+    private final AtomicReference&lt;TreeData&gt; structure;
+
+    /**
+     * Creates a new instance of {@code InMemoryNodeModel} which is initialized
+     * with an empty root node.
+     */
+    public InMemoryNodeModel()
+    {
+<span class="fc" id="L72">        this(null);</span>
+<span class="fc" id="L73">    }</span>
+
+    /**
+     * Creates a new instance of {@code InMemoryNodeModel} and initializes it
+     * from the given root node. If the passed in node is &lt;b&gt;null&lt;/b&gt;, a new,
+     * empty root node is created.
+     *
+     * @param root the new root node for this model
+     */
+    public InMemoryNodeModel(final ImmutableNode root)
+<span class="fc" id="L83">    {</span>
+<span class="fc" id="L84">        structure =</span>
+                new AtomicReference&lt;&gt;(
+<span class="fc" id="L86">                        createTreeData(initialRootNode(root), null));</span>
+<span class="fc" id="L87">    }</span>
+
+    /**
+     * Returns the root node of this mode. Note: This method should be used with
+     * care. The model may be updated concurrently which causes the root node to
+     * be replaced. If the root node is to be processed further (e.g. by
+     * executing queries on it), the model should be asked for its
+     * {@code NodeHandler}, and the root node should be obtained from there. The
+     * connection between a node handler and its root node remain constant
+     * because an update of the model causes the whole node handler to be
+     * replaced.
+     *
+     * @return the current root node
+     */
+    public ImmutableNode getRootNode()
+    {
+<span class="fc" id="L103">        return getTreeData().getRootNode();</span>
+    }
+
+    /**
+     * {@inheritDoc} {@code InMemoryNodeModel} implements the
+     * {@code NodeHandler} interface itself. So this implementation just returns
+     * the &lt;strong&gt;this&lt;/strong&gt; reference.
+     */
+    @Override
+    public NodeHandler&lt;ImmutableNode&gt; getNodeHandler()
+    {
+<span class="fc" id="L114">        return getReferenceNodeHandler();</span>
+    }
+
+    @Override
+    public void addProperty(final String key, final Iterable&lt;?&gt; values,
+            final NodeKeyResolver&lt;ImmutableNode&gt; resolver)
+    {
+<span class="fc" id="L121">        addProperty(key, null, values, resolver);</span>
+<span class="fc" id="L122">    }</span>
+
+    /**
+     * Adds new property values using a tracked node as root node. This method
+     * works like the normal {@code addProperty()} method, but the origin of the
+     * operation (also for the interpretation of the passed in key) is a tracked
+     * node identified by the passed in {@code NodeSelector}. The selector can
+     * be &lt;b&gt;null&lt;/b&gt;, then the root node is assumed.
+     *
+     * @param key the key
+     * @param selector the {@code NodeSelector} defining the root node (or
+     *        &lt;b&gt;null&lt;/b&gt;)
+     * @param values the values to be added
+     * @param resolver the {@code NodeKeyResolver}
+     * @throws ConfigurationRuntimeException if the selector cannot be resolved
+     */
+    public void addProperty(final String key, final NodeSelector selector,
+            final Iterable&lt;?&gt; values,
+            final NodeKeyResolver&lt;ImmutableNode&gt; resolver)
+    {
+<span class="fc bfc" id="L142" title="All 2 branches covered.">        if (valuesNotEmpty(values))</span>
+        {
+<span class="fc" id="L144">            updateModel(new TransactionInitializer()</span>
+<span class="fc" id="L145">            {</span>
+                @Override
+                public boolean initTransaction(final ModelTransaction tx)
+                {
+<span class="fc" id="L149">                    initializeAddTransaction(tx, key, values, resolver);</span>
+<span class="fc" id="L150">                    return true;</span>
+                }
+            }, selector, resolver);
+        }
+<span class="fc" id="L154">    }</span>
+
+    @Override
+    public void addNodes(final String key, final Collection&lt;? extends ImmutableNode&gt; nodes,
+            final NodeKeyResolver&lt;ImmutableNode&gt; resolver)
+    {
+<span class="fc" id="L160">        addNodes(key, null, nodes, resolver);</span>
+<span class="fc" id="L161">    }</span>
+
+    /**
+     * Adds new nodes using a tracked node as root node. This method works like
+     * the normal {@code addNodes()} method, but the origin of the operation
+     * (also for the interpretation of the passed in key) is a tracked node
+     * identified by the passed in {@code NodeSelector}. The selector can be
+     * &lt;b&gt;null&lt;/b&gt;, then the root node is assumed.
+     *
+     * @param key the key
+     * @param selector the {@code NodeSelector} defining the root node (or
+     *        &lt;b&gt;null&lt;/b&gt;)
+     * @param nodes the collection of new nodes to be added
+     * @param resolver the {@code NodeKeyResolver}
+     * @throws ConfigurationRuntimeException if the selector cannot be resolved
+     */
+    public void addNodes(final String key, final NodeSelector selector,
+            final Collection&lt;? extends ImmutableNode&gt; nodes,
+            final NodeKeyResolver&lt;ImmutableNode&gt; resolver)
+    {
+<span class="fc bfc" id="L181" title="All 4 branches covered.">        if (nodes != null &amp;&amp; !nodes.isEmpty())</span>
+        {
+<span class="fc" id="L183">            updateModel(new TransactionInitializer()</span>
+<span class="fc" id="L184">            {</span>
+                @Override
+                public boolean initTransaction(final ModelTransaction tx)
+                {
+<span class="fc" id="L188">                    final List&lt;QueryResult&lt;ImmutableNode&gt;&gt; results =</span>
+<span class="fc" id="L189">                            resolver.resolveKey(tx.getQueryRoot(), key,</span>
+<span class="fc" id="L190">                                    tx.getCurrentData());</span>
+<span class="fc bfc" id="L191" title="All 2 branches covered.">                    if (results.size() == 1)</span>
+                    {
+<span class="fc bfc" id="L193" title="All 2 branches covered.">                        if (results.get(0).isAttributeResult())</span>
+                        {
+<span class="fc" id="L195">                            throw attributeKeyException(key);</span>
+                        }
+<span class="fc" id="L197">                        tx.addAddNodesOperation(results.get(0).getNode(), nodes);</span>
+                    }
+                    else
+                    {
+<span class="fc" id="L201">                        final NodeAddData&lt;ImmutableNode&gt; addData =</span>
+<span class="fc" id="L202">                                resolver.resolveAddKey(tx.getQueryRoot(), key,</span>
+<span class="fc" id="L203">                                        tx.getCurrentData());</span>
+<span class="fc bfc" id="L204" title="All 2 branches covered.">                        if (addData.isAttribute())</span>
+                        {
+<span class="fc" id="L206">                            throw attributeKeyException(key);</span>
+                        }
+<span class="fc" id="L208">                        final ImmutableNode newNode =</span>
+<span class="fc" id="L209">                                new ImmutableNode.Builder(nodes.size())</span>
+<span class="fc" id="L210">                                        .name(addData.getNewNodeName())</span>
+<span class="fc" id="L211">                                        .addChildren(nodes).create();</span>
+<span class="fc" id="L212">                        addNodesByAddData(tx, addData,</span>
+<span class="fc" id="L213">                                Collections.singleton(newNode));</span>
+                    }
+<span class="fc" id="L215">                    return true;</span>
+                }
+            }, selector, resolver);
+        }
+<span class="fc" id="L219">    }</span>
+
+    @Override
+    public void setProperty(final String key, final Object value,
+            final NodeKeyResolver&lt;ImmutableNode&gt; resolver)
+    {
+<span class="fc" id="L225">        setProperty(key, null, value, resolver);</span>
+<span class="fc" id="L226">    }</span>
+
+    /**
+     * Sets the value of a property using a tracked node as root node. This
+     * method works like the normal {@code setProperty()} method, but the origin
+     * of the operation (also for the interpretation of the passed in key) is a
+     * tracked node identified by the passed in {@code NodeSelector}. The
+     * selector can be &lt;b&gt;null&lt;/b&gt;, then the root node is assumed.
+     *
+     * @param key the key
+     * @param selector the {@code NodeSelector} defining the root node (or
+     *        &lt;b&gt;null&lt;/b&gt;)
+     * @param value the new value for this property
+     * @param resolver the {@code NodeKeyResolver}
+     * @throws ConfigurationRuntimeException if the selector cannot be resolved
+     */
+    public void setProperty(final String key, final NodeSelector selector,
+            final Object value, final NodeKeyResolver&lt;ImmutableNode&gt; resolver)
+    {
+<span class="fc" id="L245">        updateModel(new TransactionInitializer()</span>
+<span class="fc" id="L246">        {</span>
+            @Override
+            public boolean initTransaction(final ModelTransaction tx)
+            {
+<span class="fc" id="L250">                boolean added = false;</span>
+<span class="fc" id="L251">                final NodeUpdateData&lt;ImmutableNode&gt; updateData =</span>
+<span class="fc" id="L252">                        resolver.resolveUpdateKey(tx.getQueryRoot(), key,</span>
+<span class="fc" id="L253">                                value, tx.getCurrentData());</span>
+<span class="fc bfc" id="L254" title="All 2 branches covered.">                if (!updateData.getNewValues().isEmpty())</span>
+                {
+<span class="fc" id="L256">                    initializeAddTransaction(tx, key,</span>
+<span class="fc" id="L257">                            updateData.getNewValues(), resolver);</span>
+<span class="fc" id="L258">                    added = true;</span>
+                }
+<span class="fc" id="L260">                final boolean cleared =</span>
+<span class="fc" id="L261">                        initializeClearTransaction(tx,</span>
+<span class="fc" id="L262">                                updateData.getRemovedNodes());</span>
+<span class="fc" id="L263">                final boolean updated =</span>
+<span class="fc" id="L264">                        initializeUpdateTransaction(tx,</span>
+<span class="fc" id="L265">                                updateData.getChangedValues());</span>
+<span class="fc bfc" id="L266" title="All 6 branches covered.">                return added || cleared || updated;</span>
+            }
+        }, selector, resolver);
+<span class="fc" id="L269">    }</span>
+
+    /**
+     * {@inheritDoc} This implementation checks whether nodes become undefined
+     * after subtrees have been removed. If this is the case, such nodes are
+     * removed, too. Return value is a collection with {@code QueryResult}
+     * objects for the elements to be removed from the model.
+     */
+    @Override
+    public List&lt;QueryResult&lt;ImmutableNode&gt;&gt; clearTree(final String key,
+            final NodeKeyResolver&lt;ImmutableNode&gt; resolver)
+    {
+<span class="fc" id="L281">        return clearTree(key, null, resolver);</span>
+    }
+
+    /**
+     * Clears a whole sub tree using a tracked node as root node. This method
+     * works like the normal {@code clearTree()} method, but the origin of the
+     * operation (also for the interpretation of the passed in key) is a tracked
+     * node identified by the passed in {@code NodeSelector}. The selector can
+     * be &lt;b&gt;null&lt;/b&gt;, then the root node is assumed.
+     *
+     * @param key the key
+     * @param selector the {@code NodeSelector} defining the root node (or
+     *        &lt;b&gt;null&lt;/b&gt;)
+     * @param resolver the {@code NodeKeyResolver}
+     * @return a list with the results to be removed
+     * @throws ConfigurationRuntimeException if the selector cannot be resolved
+     */
+    public List&lt;QueryResult&lt;ImmutableNode&gt;&gt; clearTree(final String key,
+            final NodeSelector selector, final NodeKeyResolver&lt;ImmutableNode&gt; resolver)
+    {
+<span class="fc" id="L301">        final List&lt;QueryResult&lt;ImmutableNode&gt;&gt; removedElements =</span>
+                new LinkedList&lt;&gt;();
+<span class="fc" id="L303">        updateModel(new TransactionInitializer()</span>
+<span class="fc" id="L304">        {</span>
+            @Override
+            public boolean initTransaction(final ModelTransaction tx)
+            {
+<span class="fc" id="L308">                boolean changes = false;</span>
+<span class="fc" id="L309">                final TreeData currentStructure = tx.getCurrentData();</span>
+<span class="fc" id="L310">                final List&lt;QueryResult&lt;ImmutableNode&gt;&gt; results = resolver.resolveKey(</span>
+<span class="fc" id="L311">                        tx.getQueryRoot(), key, currentStructure);</span>
+<span class="fc" id="L312">                removedElements.clear();</span>
+<span class="fc" id="L313">                removedElements.addAll(results);</span>
+<span class="fc bfc" id="L314" title="All 2 branches covered.">                for (final QueryResult&lt;ImmutableNode&gt; result : results)</span>
+                {
+<span class="fc bfc" id="L316" title="All 2 branches covered.">                    if (result.isAttributeResult())</span>
+                    {
+<span class="fc" id="L318">                        tx.addRemoveAttributeOperation(result.getNode(),</span>
+<span class="fc" id="L319">                                result.getAttributeName());</span>
+                    }
+                    else
+                    {
+<span class="fc bfc" id="L323" title="All 2 branches covered.">                        if (result.getNode() == currentStructure.getRootNode())</span>
+                        {
+                            // the whole model is to be cleared
+<span class="fc" id="L326">                            clear(resolver);</span>
+<span class="fc" id="L327">                            return false;</span>
+                        }
+<span class="fc" id="L329">                        tx.addRemoveNodeOperation(</span>
+<span class="fc" id="L330">                                currentStructure.getParent(result.getNode()),</span>
+<span class="fc" id="L331">                                result.getNode());</span>
+                    }
+<span class="fc" id="L333">                    changes = true;</span>
+<span class="fc" id="L334">                }</span>
+<span class="fc" id="L335">                return changes;</span>
+            }
+        }, selector, resolver);
+
+<span class="fc" id="L339">        return removedElements;</span>
+    }
+
+    /**
+     * {@inheritDoc} If this operation leaves an affected node in an undefined
+     * state, it is removed from the model.
+     */
+    @Override
+    public void clearProperty(final String key,
+            final NodeKeyResolver&lt;ImmutableNode&gt; resolver)
+    {
+<span class="fc" id="L350">        clearProperty(key, null, resolver);</span>
+<span class="fc" id="L351">    }</span>
+
+    /**
+     * Clears a property using a tracked node as root node. This method works
+     * like the normal {@code clearProperty()} method, but the origin of the
+     * operation (also for the interpretation of the passed in key) is a tracked
+     * node identified by the passed in {@code NodeSelector}. The selector can
+     * be &lt;b&gt;null&lt;/b&gt;, then the root node is assumed.
+     *
+     * @param key the key
+     * @param selector the {@code NodeSelector} defining the root node (or
+     *        &lt;b&gt;null&lt;/b&gt;)
+     * @param resolver the {@code NodeKeyResolver}
+     * @throws ConfigurationRuntimeException if the selector cannot be resolved
+     */
+    public void clearProperty(final String key, final NodeSelector selector,
+            final NodeKeyResolver&lt;ImmutableNode&gt; resolver)
+    {
+<span class="fc" id="L369">        updateModel(new TransactionInitializer()</span>
+<span class="fc" id="L370">        {</span>
+            @Override
+            public boolean initTransaction(final ModelTransaction tx)
+            {
+<span class="fc" id="L374">                final List&lt;QueryResult&lt;ImmutableNode&gt;&gt; results =</span>
+<span class="fc" id="L375">                        resolver.resolveKey(tx.getQueryRoot(), key,</span>
+<span class="fc" id="L376">                                tx.getCurrentData());</span>
+<span class="fc" id="L377">                return initializeClearTransaction(tx, results);</span>
+            }
+        }, selector, resolver);
+<span class="fc" id="L380">    }</span>
+
+    /**
+     * {@inheritDoc} A new empty root node is created with the same name as the
+     * current root node. Implementation note: Because this is a hard reset the
+     * usual dance for dealing with concurrent updates is not required here.
+     *
+     * @param resolver the {@code NodeKeyResolver}
+     */
+    @Override
+    public void clear(final NodeKeyResolver&lt;ImmutableNode&gt; resolver)
+    {
+<span class="fc" id="L392">        final ImmutableNode newRoot =</span>
+<span class="fc" id="L393">                new ImmutableNode.Builder().name(getRootNode().getNodeName())</span>
+<span class="fc" id="L394">                        .create();</span>
+<span class="fc" id="L395">        setRootNode(newRoot);</span>
+<span class="fc" id="L396">    }</span>
+
+    /**
+     * {@inheritDoc} This implementation simply returns the current root node of this
+     * model.
+     */
+    @Override
+    public ImmutableNode getInMemoryRepresentation()
+    {
+<span class="fc" id="L405">        return getTreeData().getRootNode();</span>
+    }
+
+    /**
+     * {@inheritDoc} All tracked nodes and reference objects managed by this
+     * model are cleared.Care has to be taken when this method is used and the
+     * model is accessed by multiple threads. It is not deterministic which
+     * concurrent operations see the old root and which see the new root node.
+     *
+     * @param newRoot the new root node to be set (can be &lt;b&gt;null&lt;/b&gt;, then an
+     *        empty root node is set)
+     */
+    @Override
+    public void setRootNode(final ImmutableNode newRoot)
+    {
+<span class="fc" id="L420">        structure.set(createTreeData(initialRootNode(newRoot), structure.get()));</span>
+<span class="fc" id="L421">    }</span>
+
+    /**
+     * Replaces the root node of this model. This method is similar to
+     * {@link #setRootNode(ImmutableNode)}; however, tracked nodes will not get
+     * lost. The model applies the selectors of all tracked nodes on the new
+     * nodes hierarchy, so that corresponding nodes are selected (this may cause
+     * nodes to become detached if a select operation fails). This operation is
+     * useful if the new nodes hierarchy to be set is known to be similar to the
+     * old one. Note that reference objects are lost; there is no way to
+     * automatically match nodes between the old and the new nodes hierarchy.
+     *
+     * @param newRoot the new root node to be set (must not be &lt;b&gt;null&lt;/b&gt;)
+     * @param resolver the {@code NodeKeyResolver}
+     * @throws IllegalArgumentException if the new root node is &lt;b&gt;null&lt;/b&gt;
+     */
+    public void replaceRoot(final ImmutableNode newRoot,
+            final NodeKeyResolver&lt;ImmutableNode&gt; resolver)
+    {
+<span class="fc bfc" id="L440" title="All 2 branches covered.">        if (newRoot == null)</span>
+        {
+<span class="fc" id="L442">            throw new IllegalArgumentException(</span>
+                    &quot;Replaced root node must not be null!&quot;);
+        }
+
+<span class="fc" id="L446">        final TreeData current = structure.get();</span>
+        // this step is needed to get a valid NodeHandler
+<span class="fc" id="L448">        final TreeData temp =</span>
+<span class="fc" id="L449">                createTreeDataForRootAndTracker(newRoot,</span>
+<span class="fc" id="L450">                        current.getNodeTracker());</span>
+<span class="fc" id="L451">        structure.set(temp.updateNodeTracker(temp.getNodeTracker().update(</span>
+                newRoot, null, resolver, temp)));
+<span class="fc" id="L453">    }</span>
+
+    /**
+     * Merges the root node of this model with the specified node. This method
+     * is typically caused by configuration implementations when a configuration
+     * source is loaded, and its data has to be added to the model. It is
+     * possible to define the new name of the root node and to pass in a map
+     * with reference objects.
+     *
+     * @param node the node to be merged with the root node
+     * @param rootName the new name of the root node; can be &lt;b&gt;null&lt;/b&gt;, then
+     *        the name of the root node is not changed unless it is &lt;b&gt;null&lt;/b&gt;
+     * @param references an optional map with reference objects
+     * @param rootRef an optional reference object for the new root node
+     * @param resolver the {@code NodeKeyResolver}
+     */
+    public void mergeRoot(final ImmutableNode node, final String rootName,
+            final Map&lt;ImmutableNode, ?&gt; references, final Object rootRef,
+            final NodeKeyResolver&lt;ImmutableNode&gt; resolver)
+    {
+<span class="fc" id="L473">        updateModel(new TransactionInitializer()</span>
+<span class="fc" id="L474">        {</span>
+            @Override
+            public boolean initTransaction(final ModelTransaction tx)
+            {
+<span class="fc" id="L478">                final TreeData current = tx.getCurrentData();</span>
+<span class="fc" id="L479">                final String newRootName =</span>
+<span class="fc" id="L480">                        determineRootName(current.getRootNode(), node, rootName);</span>
+<span class="fc bfc" id="L481" title="All 2 branches covered.">                if (newRootName != null)</span>
+                {
+<span class="fc" id="L483">                    tx.addChangeNodeNameOperation(current.getRootNode(),</span>
+                            newRootName);
+                }
+<span class="fc" id="L486">                tx.addAddNodesOperation(current.getRootNode(),</span>
+<span class="fc" id="L487">                        node.getChildren());</span>
+<span class="fc" id="L488">                tx.addAttributesOperation(current.getRootNode(),</span>
+<span class="fc" id="L489">                        node.getAttributes());</span>
+<span class="fc bfc" id="L490" title="All 2 branches covered.">                if (node.getValue() != null)</span>
+                {
+<span class="fc" id="L492">                    tx.addChangeNodeValueOperation(current.getRootNode(),</span>
+<span class="fc" id="L493">                            node.getValue());</span>
+                }
+<span class="fc bfc" id="L495" title="All 2 branches covered.">                if (references != null)</span>
+                {
+<span class="fc" id="L497">                    tx.addNewReferences(references);</span>
+                }
+<span class="fc bfc" id="L499" title="All 2 branches covered.">                if (rootRef != null)</span>
+                {
+<span class="fc" id="L501">                    tx.addNewReference(current.getRootNode(), rootRef);</span>
+                }
+<span class="fc" id="L503">                return true;</span>
+            }
+        }, null, resolver);
+<span class="fc" id="L506">    }</span>
+
+    /**
+     * Adds a node to be tracked. After this method has been called with a
+     * specific {@code NodeSelector}, the node associated with this key can be
+     * always obtained using {@link #getTrackedNode(NodeSelector)} with the same
+     * selector. This is useful because during updates of a model parts of the
+     * structure are replaced. Therefore, it is not a good idea to simply hold a
+     * reference to a node; this might become outdated soon. Rather, the node
+     * should be tracked. This mechanism ensures that always the correct node
+     * reference can be obtained.
+     *
+     * @param selector the {@code NodeSelector} defining the desired node
+     * @param resolver the {@code NodeKeyResolver}
+     * @throws ConfigurationRuntimeException if the selector does not select a
+     *         single node
+     */
+    public void trackNode(final NodeSelector selector,
+            final NodeKeyResolver&lt;ImmutableNode&gt; resolver)
+    {
+        boolean done;
+        do
+        {
+<span class="fc" id="L529">            final TreeData current = structure.get();</span>
+<span class="fc" id="L530">            final NodeTracker newTracker =</span>
+<span class="fc" id="L531">                    current.getNodeTracker().trackNode(current.getRootNode(),</span>
+                            selector, resolver, current);
+<span class="fc" id="L533">            done =</span>
+<span class="fc" id="L534">                    structure.compareAndSet(current,</span>
+<span class="fc" id="L535">                            current.updateNodeTracker(newTracker));</span>
+<span class="fc bfc" id="L536" title="All 2 branches covered.">        } while (!done);</span>
+<span class="fc" id="L537">    }</span>
+
+    /**
+     * Allows tracking all nodes selected by a key. This method evaluates the
+     * specified key on the current nodes structure. For all selected nodes
+     * corresponding {@code NodeSelector} objects are created, and they are
+     * tracked. The returned collection of {@code NodeSelector} objects can be
+     * used for interacting with the selected nodes.
+     *
+     * @param key the key for selecting the nodes to track
+     * @param resolver the {@code NodeKeyResolver}
+     * @return a collection with the {@code NodeSelector} objects for the new
+     *         tracked nodes
+     */
+    public Collection&lt;NodeSelector&gt; selectAndTrackNodes(final String key,
+            final NodeKeyResolver&lt;ImmutableNode&gt; resolver)
+    {
+<span class="fc" id="L554">        final Mutable&lt;Collection&lt;NodeSelector&gt;&gt; refSelectors =</span>
+                new MutableObject&lt;&gt;();
+        boolean done;
+        do
+        {
+<span class="fc" id="L559">            final TreeData current = structure.get();</span>
+<span class="fc" id="L560">            final List&lt;ImmutableNode&gt; nodes =</span>
+<span class="fc" id="L561">                    resolver.resolveNodeKey(current.getRootNode(), key, current);</span>
+<span class="fc bfc" id="L562" title="All 2 branches covered.">            if (nodes.isEmpty())</span>
+            {
+<span class="fc" id="L564">                return Collections.emptyList();</span>
+            }
+<span class="fc" id="L566">            done =</span>
+<span class="fc" id="L567">                    structure.compareAndSet(</span>
+                            current,
+<span class="fc" id="L569">                            createSelectorsForTrackedNodes(refSelectors, nodes,</span>
+                                    current, resolver));
+<span class="pc bpc" id="L571" title="1 of 2 branches missed.">        } while (!done);</span>
+<span class="fc" id="L572">        return refSelectors.getValue();</span>
+    }
+
+    /**
+     * Tracks all nodes which are children of the node selected by the passed in
+     * key. If the key selects exactly one node, for all children of this node
+     * {@code NodeSelector} objects are created, and they become tracked nodes.
+     * The returned collection of {@code NodeSelector} objects can be used for
+     * interacting with the selected nodes.
+     *
+     * @param key the key for selecting the parent node whose children are to be
+     *        tracked
+     * @param resolver the {@code NodeKeyResolver}
+     * @return a collection with the {@code NodeSelector} objects for the new
+     *         tracked nodes
+     */
+    public Collection&lt;NodeSelector&gt; trackChildNodes(final String key,
+            final NodeKeyResolver&lt;ImmutableNode&gt; resolver)
+    {
+<span class="fc" id="L591">        final Mutable&lt;Collection&lt;NodeSelector&gt;&gt; refSelectors =</span>
+                new MutableObject&lt;&gt;();
+        boolean done;
+        do
+        {
+<span class="fc" id="L596">            refSelectors.setValue(Collections.&lt;NodeSelector&gt; emptyList());</span>
+<span class="fc" id="L597">            final TreeData current = structure.get();</span>
+<span class="fc" id="L598">            final List&lt;ImmutableNode&gt; nodes =</span>
+<span class="fc" id="L599">                    resolver.resolveNodeKey(current.getRootNode(), key, current);</span>
+<span class="fc bfc" id="L600" title="All 2 branches covered.">            if (nodes.size() == 1)</span>
+            {
+<span class="fc" id="L602">                final ImmutableNode node = nodes.get(0);</span>
+<span class="fc" id="L603">                done =</span>
+<span class="fc bfc" id="L604" title="All 2 branches covered.">                        node.getChildren().isEmpty()</span>
+<span class="pc bpc" id="L605" title="1 of 2 branches missed.">                                || structure.compareAndSet(</span>
+                                        current,
+<span class="fc" id="L607">                                        createSelectorsForTrackedNodes(</span>
+                                                refSelectors,
+<span class="fc" id="L609">                                                node.getChildren(), current,</span>
+                                                resolver));
+<span class="fc" id="L611">            }</span>
+            else
+            {
+<span class="fc" id="L614">                done = true;</span>
+            }
+<span class="pc bpc" id="L616" title="1 of 2 branches missed.">        } while (!done);</span>
+<span class="fc" id="L617">        return refSelectors.getValue();</span>
+    }
+
+    /**
+     * Tracks a node which is a child of another node selected by the passed in
+     * key. If the selected node has a child node with this name, it is tracked
+     * and its selector is returned. Otherwise, a new child node with this name
+     * is created first.
+     *
+     * @param key the key for selecting the parent node
+     * @param childName the name of the child node
+     * @param resolver the {@code NodeKeyResolver}
+     * @return the {@code NodeSelector} for the tracked child node
+     * @throws ConfigurationRuntimeException if the passed in key does not
+     *         select a single node
+     */
+    public NodeSelector trackChildNodeWithCreation(final String key,
+            final String childName, final NodeKeyResolver&lt;ImmutableNode&gt; resolver)
+    {
+<span class="fc" id="L636">        final MutableObject&lt;NodeSelector&gt; refSelector =</span>
+                new MutableObject&lt;&gt;();
+        boolean done;
+
+        do
+        {
+<span class="fc" id="L642">            final TreeData current = structure.get();</span>
+<span class="fc" id="L643">            final List&lt;ImmutableNode&gt; nodes =</span>
+<span class="fc" id="L644">                    resolver.resolveNodeKey(current.getRootNode(), key, current);</span>
+<span class="fc bfc" id="L645" title="All 2 branches covered.">            if (nodes.size() != 1)</span>
+            {
+<span class="fc" id="L647">                throw new ConfigurationRuntimeException(</span>
+                        &quot;Key does not select a single node: &quot; + key);
+            }
+
+<span class="fc" id="L651">            final ImmutableNode parent = nodes.get(0);</span>
+<span class="fc" id="L652">            final TreeData newData =</span>
+<span class="fc" id="L653">                    createDataWithTrackedChildNode(current, parent, childName,</span>
+                            resolver, refSelector);
+
+<span class="fc" id="L656">            done = structure.compareAndSet(current, newData);</span>
+<span class="pc bpc" id="L657" title="1 of 2 branches missed.">        } while (!done);</span>
+
+<span class="fc" id="L659">        return refSelector.getValue();</span>
+    }
+
+    /**
+     * Returns the current {@code ImmutableNode} instance associated with the
+     * given {@code NodeSelector}. The node must be a tracked node, i.e.
+     * {@link #trackNode(NodeSelector, NodeKeyResolver)} must have been called
+     * before with the given selector.
+     *
+     * @param selector the {@code NodeSelector} defining the desired node
+     * @return the current {@code ImmutableNode} associated with this selector
+     * @throws ConfigurationRuntimeException if the selector is unknown
+     */
+    public ImmutableNode getTrackedNode(final NodeSelector selector)
+    {
+<span class="fc" id="L674">        return structure.get().getNodeTracker().getTrackedNode(selector);</span>
+    }
+
+    /**
+     * Replaces a tracked node by another node. If the tracked node is not yet
+     * detached, it becomes now detached. The passed in node (which must not be
+     * &lt;b&gt;null&lt;/b&gt;) becomes the new root node of an independent model for this
+     * tracked node. Further updates of this model do not affect the tracked
+     * node's model and vice versa.
+     *
+     * @param selector the {@code NodeSelector} defining the tracked node
+     * @param newNode the node replacing the tracked node (must not be
+     *        &lt;b&gt;null&lt;/b&gt;)
+     * @throws ConfigurationRuntimeException if the selector cannot be resolved
+     * @throws IllegalArgumentException if the replacement node is &lt;b&gt;null&lt;/b&gt;
+     */
+    public void replaceTrackedNode(final NodeSelector selector, final ImmutableNode newNode)
+    {
+<span class="fc bfc" id="L692" title="All 2 branches covered.">        if (newNode == null)</span>
+        {
+<span class="fc" id="L694">            throw new IllegalArgumentException(</span>
+                    &quot;Replacement node must not be null!&quot;);
+        }
+
+        boolean done;
+        do
+        {
+<span class="fc" id="L701">            final TreeData currentData = structure.get();</span>
+<span class="fc" id="L702">            done =</span>
+<span class="fc bfc" id="L703" title="All 2 branches covered.">                    replaceDetachedTrackedNode(currentData, selector, newNode)</span>
+<span class="pc bpc" id="L704" title="1 of 2 branches missed.">                            || replaceActiveTrackedNode(currentData, selector,</span>
+                                    newNode);
+<span class="pc bpc" id="L706" title="1 of 2 branches missed.">        } while (!done);</span>
+<span class="fc" id="L707">    }</span>
+
+    /**
+     * Returns a {@code NodeHandler} for a tracked node. Such a handler may be
+     * required for operations on a sub tree of the model. The handler to be
+     * returned depends on the current state of the tracked node. If it is still
+     * active, a handler is used which shares some data (especially the parent
+     * mapping) with this model. Detached track nodes in contrast have their own
+     * separate model; in this case a handler associated with this model is
+     * returned.
+     *
+     * @param selector the {@code NodeSelector} defining the tracked node
+     * @return a {@code NodeHandler} for this tracked node
+     * @throws ConfigurationRuntimeException if the selector is unknown
+     */
+    public NodeHandler&lt;ImmutableNode&gt; getTrackedNodeHandler(
+            final NodeSelector selector)
+    {
+<span class="fc" id="L725">        final TreeData currentData = structure.get();</span>
+<span class="fc" id="L726">        final InMemoryNodeModel detachedNodeModel =</span>
+<span class="fc" id="L727">                currentData.getNodeTracker().getDetachedNodeModel(selector);</span>
+<span class="fc bfc" id="L728" title="All 2 branches covered.">        return (detachedNodeModel != null) ? detachedNodeModel.getNodeHandler()</span>
+<span class="fc" id="L729">                : new TrackedNodeHandler(currentData.getNodeTracker()</span>
+<span class="fc" id="L730">                        .getTrackedNode(selector), currentData);</span>
+    }
+
+    /**
+     * Returns a flag whether the specified tracked node is detached. As long as
+     * the {@code NodeSelector} associated with that node returns a single
+     * instance, the tracked node is said to be &lt;em&gt;life&lt;/em&gt;. If now an update
+     * of the model happens which invalidates the selector (maybe the target
+     * node was removed), the tracked node becomes detached. It is still
+     * possible to query the node; here the latest valid instance is returned.
+     * But further changes on the node model are no longer tracked for this
+     * node. So even if there are further changes which would make the
+     * {@code NodeSelector} valid again, the tracked node stays in detached
+     * state.
+     *
+     * @param selector the {@code NodeSelector} defining the desired node
+     * @return a flag whether this tracked node is in detached state
+     * @throws ConfigurationRuntimeException if the selector is unknown
+     */
+    public boolean isTrackedNodeDetached(final NodeSelector selector)
+    {
+<span class="fc" id="L751">        return structure.get().getNodeTracker().isTrackedNodeDetached(selector);</span>
+    }
+
+    /**
+     * Removes a tracked node. This method is the opposite of
+     * {@code trackNode()}. It has to be called if there is no longer the need
+     * to track a specific node. Note that for each call of {@code trackNode()}
+     * there has to be a corresponding {@code untrackNode()} call. This ensures
+     * that multiple observers can track the same node.
+     *
+     * @param selector the {@code NodeSelector} defining the desired node
+     * @throws ConfigurationRuntimeException if the specified node is not
+     *         tracked
+     */
+    public void untrackNode(final NodeSelector selector)
+    {
+        boolean done;
+        do
+        {
+<span class="fc" id="L770">            final TreeData current = structure.get();</span>
+<span class="fc" id="L771">            final NodeTracker newTracker =</span>
+<span class="fc" id="L772">                    current.getNodeTracker().untrackNode(selector);</span>
+<span class="fc" id="L773">            done =</span>
+<span class="fc" id="L774">                    structure.compareAndSet(current,</span>
+<span class="fc" id="L775">                            current.updateNodeTracker(newTracker));</span>
+<span class="pc bpc" id="L776" title="1 of 2 branches missed.">        } while (!done);</span>
+<span class="fc" id="L777">    }</span>
+
+    /**
+     * Returns a {@code ReferenceNodeHandler} object for this model. This
+     * extended node handler can be used to query references objects stored for
+     * this model.
+     *
+     * @return the {@code ReferenceNodeHandler}
+     */
+    public ReferenceNodeHandler getReferenceNodeHandler()
+    {
+<span class="fc" id="L788">        return getTreeData();</span>
+    }
+
+    /**
+     * Returns the current {@code TreeData} object. This object contains all
+     * information about the current node structure.
+     *
+     * @return the current {@code TreeData} object
+     */
+    TreeData getTreeData()
+    {
+<span class="fc" id="L799">        return structure.get();</span>
+    }
+
+    /**
+     * Updates the mapping from nodes to their parents for the passed in
+     * hierarchy of nodes. This method traverses all children and grand-children
+     * of the passed in root node. For each node in the subtree the parent
+     * relation is added to the map.
+     *
+     * @param parents the map with parent nodes
+     * @param root the root node of the current tree
+     */
+    static void updateParentMapping(final Map&lt;ImmutableNode, ImmutableNode&gt; parents,
+            final ImmutableNode root)
+    {
+<span class="fc" id="L814">        NodeTreeWalker.INSTANCE.walkBFS(root,</span>
+                new ConfigurationNodeVisitorAdapter&lt;ImmutableNode&gt;()
+<span class="fc" id="L816">                {</span>
+                    @Override
+                    public void visitBeforeChildren(final ImmutableNode node,
+                            final NodeHandler&lt;ImmutableNode&gt; handler)
+                    {
+<span class="fc bfc" id="L821" title="All 2 branches covered.">                        for (final ImmutableNode c : node.getChildren())</span>
+                        {
+<span class="fc" id="L823">                            parents.put(c, node);</span>
+<span class="fc" id="L824">                        }</span>
+<span class="fc" id="L825">                    }</span>
+                }, DUMMY_HANDLER);
+<span class="fc" id="L827">    }</span>
+
+    /**
+     * Checks if the passed in node is defined. Result is &lt;b&gt;true&lt;/b&gt; if the
+     * node contains any data.
+     *
+     * @param node the node in question
+     * @return &lt;b&gt;true&lt;/b&gt; if the node is defined, &lt;b&gt;false&lt;/b&gt; otherwise
+     */
+    static boolean checkIfNodeDefined(final ImmutableNode node)
+    {
+<span class="fc bfc" id="L838" title="All 4 branches covered.">        return node.getValue() != null || !node.getChildren().isEmpty()</span>
+<span class="fc bfc" id="L839" title="All 2 branches covered.">                || !node.getAttributes().isEmpty();</span>
+    }
+
+    /**
+     * Initializes a transaction for an add operation.
+     *
+     * @param tx the transaction to be initialized
+     * @param key the key
+     * @param values the collection with node values
+     * @param resolver the {@code NodeKeyResolver}
+     */
+    private void initializeAddTransaction(final ModelTransaction tx, final String key,
+            final Iterable&lt;?&gt; values, final NodeKeyResolver&lt;ImmutableNode&gt; resolver)
+    {
+<span class="fc" id="L853">        final NodeAddData&lt;ImmutableNode&gt; addData =</span>
+<span class="fc" id="L854">                resolver.resolveAddKey(tx.getQueryRoot(), key,</span>
+<span class="fc" id="L855">                        tx.getCurrentData());</span>
+<span class="fc bfc" id="L856" title="All 2 branches covered.">        if (addData.isAttribute())</span>
+        {
+<span class="fc" id="L858">            addAttributeProperty(tx, addData, values);</span>
+        }
+        else
+        {
+<span class="fc" id="L862">            addNodeProperty(tx, addData, values);</span>
+        }
+<span class="fc" id="L864">    }</span>
+
+    /**
+     * Creates a {@code TreeData} object for the specified root node.
+     *
+     * @param root the root node of the current tree
+     * @param current the current {@code TreeData} object (may be &lt;b&gt;null&lt;/b&gt;)
+     * @return the {@code TreeData} describing the current tree
+     */
+    private TreeData createTreeData(final ImmutableNode root, final TreeData current)
+    {
+<span class="fc bfc" id="L875" title="All 2 branches covered.">        final NodeTracker newTracker =</span>
+<span class="fc" id="L876">                (current != null) ? current.getNodeTracker()</span>
+<span class="fc" id="L877">                        .detachAllTrackedNodes() : new NodeTracker();</span>
+<span class="fc" id="L878">        return createTreeDataForRootAndTracker(root, newTracker);</span>
+    }
+
+    /**
+     * Creates a {@code TreeData} object for the specified root node and
+     * {@code NodeTracker}. Other parameters are set to default values.
+     *
+     * @param root the new root node for this model
+     * @param newTracker the new {@code NodeTracker}
+     * @return the new {@code TreeData} object
+     */
+    private TreeData createTreeDataForRootAndTracker(final ImmutableNode root,
+            final NodeTracker newTracker)
+    {
+<span class="fc" id="L892">        return new TreeData(root, createParentMapping(root),</span>
+<span class="fc" id="L893">                Collections.&lt;ImmutableNode, ImmutableNode&gt; emptyMap(),</span>
+                newTracker, new ReferenceTracker());
+    }
+
+    /**
+     * Handles an add property operation if the property to be added is a node.
+     *
+     * @param tx the transaction
+     * @param addData the {@code NodeAddData}
+     * @param values the collection with node values
+     */
+    private static void addNodeProperty(final ModelTransaction tx,
+            final NodeAddData&lt;ImmutableNode&gt; addData, final Iterable&lt;?&gt; values)
+    {
+<span class="fc" id="L907">        final Collection&lt;ImmutableNode&gt; newNodes =</span>
+<span class="fc" id="L908">                createNodesToAdd(addData.getNewNodeName(), values);</span>
+<span class="fc" id="L909">        addNodesByAddData(tx, addData, newNodes);</span>
+<span class="fc" id="L910">    }</span>
+
+    /**
+     * Initializes a transaction to add a collection of nodes as described by a
+     * {@code NodeAddData} object. If necessary, new path nodes are created.
+     * Eventually, the new nodes are added as children to the specified target
+     * node.
+     *
+     * @param tx the transaction
+     * @param addData the {@code NodeAddData}
+     * @param newNodes the collection of new child nodes
+     */
+    private static void addNodesByAddData(final ModelTransaction tx,
+            final NodeAddData&lt;ImmutableNode&gt; addData,
+            final Collection&lt;ImmutableNode&gt; newNodes)
+    {
+<span class="fc bfc" id="L926" title="All 2 branches covered.">        if (addData.getPathNodes().isEmpty())</span>
+        {
+<span class="fc" id="L928">            tx.addAddNodesOperation(addData.getParent(), newNodes);</span>
+        }
+        else
+        {
+<span class="fc" id="L932">            final ImmutableNode newChild = createNodeToAddWithPath(addData, newNodes);</span>
+<span class="fc" id="L933">            tx.addAddNodeOperation(addData.getParent(), newChild);</span>
+        }
+<span class="fc" id="L935">    }</span>
+
+    /**
+     * Handles an add property operation if the property to be added is an
+     * attribute.
+     *
+     * @param tx the transaction
+     * @param addData the {@code NodeAddData}
+     * @param values the collection with node values
+     */
+    private static void addAttributeProperty(final ModelTransaction tx,
+            final NodeAddData&lt;ImmutableNode&gt; addData, final Iterable&lt;?&gt; values)
+    {
+<span class="fc bfc" id="L948" title="All 2 branches covered.">        if (addData.getPathNodes().isEmpty())</span>
+        {
+<span class="fc" id="L950">            tx.addAttributeOperation(addData.getParent(),</span>
+<span class="fc" id="L951">                    addData.getNewNodeName(), values.iterator().next());</span>
+        }
+        else
+        {
+<span class="fc" id="L955">            final int pathNodeCount = addData.getPathNodes().size();</span>
+<span class="fc" id="L956">            final ImmutableNode childWithAttribute =</span>
+                    new ImmutableNode.Builder()
+<span class="fc" id="L958">                            .name(addData.getPathNodes().get(pathNodeCount - 1))</span>
+<span class="fc" id="L959">                            .addAttribute(addData.getNewNodeName(),</span>
+<span class="fc" id="L960">                                    values.iterator().next()).create();</span>
+<span class="fc bfc" id="L961" title="All 2 branches covered.">            final ImmutableNode newChild =</span>
+<span class="fc" id="L962">                    (pathNodeCount &gt; 1) ? createNodeOnPath(addData</span>
+<span class="fc" id="L963">                            .getPathNodes().subList(0, pathNodeCount - 1)</span>
+<span class="fc" id="L964">                            .iterator(),</span>
+<span class="fc" id="L965">                            Collections.singleton(childWithAttribute))</span>
+                            : childWithAttribute;
+<span class="fc" id="L967">            tx.addAddNodeOperation(addData.getParent(), newChild);</span>
+        }
+<span class="fc" id="L969">    }</span>
+
+    /**
+     * Creates a collection with new nodes with a given name and a value from a
+     * given collection.
+     *
+     * @param newNodeName the name of the new nodes
+     * @param values the collection with node values
+     * @return the newly created collection
+     */
+    private static Collection&lt;ImmutableNode&gt; createNodesToAdd(
+            final String newNodeName, final Iterable&lt;?&gt; values)
+    {
+<span class="fc" id="L982">        final Collection&lt;ImmutableNode&gt; nodes = new LinkedList&lt;&gt;();</span>
+<span class="fc bfc" id="L983" title="All 2 branches covered.">        for (final Object value : values)</span>
+        {
+<span class="fc" id="L985">            nodes.add(new ImmutableNode.Builder().name(newNodeName)</span>
+<span class="fc" id="L986">                    .value(value).create());</span>
+<span class="fc" id="L987">        }</span>
+<span class="fc" id="L988">        return nodes;</span>
+    }
+
+    /**
+     * Creates a node structure consisting of the path nodes defined by the
+     * passed in {@code NodeAddData} instance and all new child nodes.
+     *
+     * @param addData the {@code NodeAddData}
+     * @param newNodes the collection of new child nodes
+     * @return the parent node of the newly created hierarchy
+     */
+    private static ImmutableNode createNodeToAddWithPath(
+            final NodeAddData&lt;ImmutableNode&gt; addData,
+            final Collection&lt;ImmutableNode&gt; newNodes)
+    {
+<span class="fc" id="L1003">        return createNodeOnPath(addData.getPathNodes().iterator(), newNodes);</span>
+    }
+
+    /**
+     * Recursive helper method for creating a path node for an add operation.
+     * All path nodes except for the last have a single child. The last path
+     * node has the new nodes as children.
+     *
+     * @param it the iterator over the names of the path nodes
+     * @param newNodes the collection of new child nodes
+     * @return the newly created path node
+     */
+    private static ImmutableNode createNodeOnPath(final Iterator&lt;String&gt; it,
+            final Collection&lt;ImmutableNode&gt; newNodes)
+    {
+<span class="fc" id="L1018">        final String nodeName = it.next();</span>
+        ImmutableNode.Builder builder;
+<span class="fc bfc" id="L1020" title="All 2 branches covered.">        if (it.hasNext())</span>
+        {
+<span class="fc" id="L1022">            builder = new ImmutableNode.Builder(1);</span>
+<span class="fc" id="L1023">            builder.addChild(createNodeOnPath(it, newNodes));</span>
+        }
+        else
+        {
+<span class="fc" id="L1027">            builder = new ImmutableNode.Builder(newNodes.size());</span>
+<span class="fc" id="L1028">            builder.addChildren(newNodes);</span>
+        }
+<span class="fc" id="L1030">        return builder.name(nodeName).create();</span>
+    }
+
+    /**
+     * Initializes a transaction to clear the values of a property based on the
+     * passed in collection of affected results.
+     *
+     * @param tx the transaction to be initialized
+     * @param results a collection with results pointing to the nodes to be
+     *        cleared
+     * @return a flag whether there are elements to be cleared
+     */
+    private static boolean initializeClearTransaction(final ModelTransaction tx,
+            final Collection&lt;QueryResult&lt;ImmutableNode&gt;&gt; results)
+    {
+<span class="fc bfc" id="L1045" title="All 2 branches covered.">        for (final QueryResult&lt;ImmutableNode&gt; result : results)</span>
+        {
+<span class="fc bfc" id="L1047" title="All 2 branches covered.">            if (result.isAttributeResult())</span>
+            {
+<span class="fc" id="L1049">                tx.addRemoveAttributeOperation(result.getNode(),</span>
+<span class="fc" id="L1050">                        result.getAttributeName());</span>
+            }
+            else
+            {
+<span class="fc" id="L1054">                tx.addClearNodeValueOperation(result.getNode());</span>
+            }
+<span class="fc" id="L1056">        }</span>
+
+<span class="fc bfc" id="L1058" title="All 2 branches covered.">        return !results.isEmpty();</span>
+    }
+
+    /**
+     * Initializes a transaction to change the values of some query results
+     * based on the passed in map.
+     *
+     * @param tx the transaction to be initialized
+     * @param changedValues the map defining the elements to be changed
+     * @return a flag whether there are elements to be updated
+     */
+    private static boolean initializeUpdateTransaction(final ModelTransaction tx,
+            final Map&lt;QueryResult&lt;ImmutableNode&gt;, Object&gt; changedValues)
+    {
+<span class="fc bfc" id="L1072" title="All 2 branches covered.">        for (final Map.Entry&lt;QueryResult&lt;ImmutableNode&gt;, Object&gt; e : changedValues</span>
+<span class="fc" id="L1073">                .entrySet())</span>
+        {
+<span class="fc bfc" id="L1075" title="All 2 branches covered.">            if (e.getKey().isAttributeResult())</span>
+            {
+<span class="fc" id="L1077">                tx.addAttributeOperation(e.getKey().getNode(), e.getKey()</span>
+<span class="fc" id="L1078">                        .getAttributeName(), e.getValue());</span>
+            }
+            else
+            {
+<span class="fc" id="L1082">                tx.addChangeNodeValueOperation(e.getKey().getNode(),</span>
+<span class="fc" id="L1083">                        e.getValue());</span>
+            }
+<span class="fc" id="L1085">        }</span>
+
+<span class="fc bfc" id="L1087" title="All 2 branches covered.">        return !changedValues.isEmpty();</span>
+    }
+
+    /**
+     * Determines the initial root node of this model. If a root node has been
+     * provided, it is used. Otherwise, an empty dummy root node is created.
+     *
+     * @param providedRoot the passed in root node
+     * @return the root node to be used
+     */
+    private static ImmutableNode initialRootNode(final ImmutableNode providedRoot)
+    {
+<span class="fc bfc" id="L1099" title="All 2 branches covered.">        return (providedRoot != null) ? providedRoot</span>
+<span class="fc" id="L1100">                : new ImmutableNode.Builder().create();</span>
+    }
+
+    /**
+     * Determines the name of the root node for a merge operation. If a root
+     * name is provided, it is used. Otherwise, if the current root node has no
+     * name, the name of the node to be merged is used. A result of &lt;b&gt;null&lt;/b&gt;
+     * means that no node name has to be set.
+     *
+     * @param rootNode the current root node
+     * @param node the node to be merged with the root node
+     * @param rootName the name of the resulting node
+     * @return the new name of the root node
+     */
+    private static String determineRootName(final ImmutableNode rootNode,
+            final ImmutableNode node, final String rootName)
+    {
+<span class="fc bfc" id="L1117" title="All 2 branches covered.">        if (rootName != null)</span>
+        {
+<span class="fc" id="L1119">            return rootName;</span>
+        }
+<span class="fc bfc" id="L1121" title="All 2 branches covered.">        if (rootNode.getNodeName() == null)</span>
+        {
+<span class="fc" id="L1123">            return node.getNodeName();</span>
+        }
+<span class="fc" id="L1125">        return null;</span>
+    }
+
+    /**
+     * Creates the mapping to parent nodes for the nodes structured represented
+     * by the passed in root node. Each node is assigned its parent node. Here
+     * an iterative algorithm is used rather than a recursive one to avoid stack
+     * overflow for huge structures.
+     *
+     * @param root the root node of the structure
+     * @return the parent node mapping
+     */
+    private Map&lt;ImmutableNode, ImmutableNode&gt; createParentMapping(
+            final ImmutableNode root)
+    {
+<span class="fc" id="L1140">        final Map&lt;ImmutableNode, ImmutableNode&gt; parents =</span>
+                new HashMap&lt;&gt;();
+<span class="fc" id="L1142">        updateParentMapping(parents, root);</span>
+<span class="fc" id="L1143">        return parents;</span>
+    }
+
+    /**
+     * Performs a non-blocking, thread-safe update of this model based on a
+     * transaction initialized by the passed in initializer. This method uses
+     * the atomic reference for the model's current data to ensure that an
+     * update was successful even if the model is concurrently accessed.
+     *
+     * @param txInit the {@code TransactionInitializer}
+     * @param selector an optional {@code NodeSelector} defining the target node
+     *        of the transaction
+     * @param resolver the {@code NodeKeyResolver}
+     */
+    private void updateModel(final TransactionInitializer txInit,
+            final NodeSelector selector, final NodeKeyResolver&lt;ImmutableNode&gt; resolver)
+    {
+        boolean done;
+
+        do
+        {
+<span class="fc" id="L1164">            final TreeData currentData = getTreeData();</span>
+<span class="fc" id="L1165">            done =</span>
+<span class="fc bfc" id="L1166" title="All 2 branches covered.">                    executeTransactionOnDetachedTrackedNode(txInit, selector,</span>
+                            currentData, resolver)
+<span class="fc bfc" id="L1168" title="All 2 branches covered.">                            || executeTransactionOnCurrentStructure(txInit,</span>
+                                    selector, currentData, resolver);
+<span class="fc bfc" id="L1170" title="All 2 branches covered.">        } while (!done);</span>
+<span class="fc" id="L1171">    }</span>
+
+    /**
+     * Executes a transaction on the current data of this model. This method is
+     * called if an operation is to be executed on the model's root node or a
+     * tracked node which is not yet detached.
+     *
+     * @param txInit the {@code TransactionInitializer}
+     * @param selector an optional {@code NodeSelector} defining the target node
+     * @param currentData the current data of the model
+     * @param resolver the {@code NodeKeyResolver}
+     * @return a flag whether the operation has been completed successfully
+     */
+    private boolean executeTransactionOnCurrentStructure(
+            final TransactionInitializer txInit, final NodeSelector selector,
+            final TreeData currentData, final NodeKeyResolver&lt;ImmutableNode&gt; resolver)
+    {
+        boolean done;
+<span class="fc" id="L1189">        final ModelTransaction tx =</span>
+                new ModelTransaction(currentData, selector, resolver);
+<span class="fc bfc" id="L1191" title="All 2 branches covered.">        if (!txInit.initTransaction(tx))</span>
+        {
+<span class="fc" id="L1193">            done = true;</span>
+        }
+        else
+        {
+<span class="fc" id="L1197">            final TreeData newData = tx.execute();</span>
+<span class="fc" id="L1198">            done = structure.compareAndSet(tx.getCurrentData(), newData);</span>
+        }
+<span class="fc" id="L1200">        return done;</span>
+    }
+
+    /**
+     * Tries to execute a transaction on the model of a detached tracked node.
+     * This method checks whether the target node of the transaction is a
+     * tracked node and if this node is already detached. If this is the case,
+     * the update operation is independent on this model and has to be executed
+     * on the specific model for the detached node.
+     *
+     * @param txInit the {@code TransactionInitializer}
+     * @param selector an optional {@code NodeSelector} defining the target node
+     * @param currentData the current data of the model
+     * @param resolver the {@code NodeKeyResolver} @return a flag whether the
+     *        transaction could be executed
+     * @throws ConfigurationRuntimeException if the selector cannot be resolved
+     */
+    private boolean executeTransactionOnDetachedTrackedNode(
+            final TransactionInitializer txInit, final NodeSelector selector,
+            final TreeData currentData, final NodeKeyResolver&lt;ImmutableNode&gt; resolver)
+    {
+<span class="fc bfc" id="L1221" title="All 2 branches covered.">        if (selector != null)</span>
+        {
+<span class="fc" id="L1223">            final InMemoryNodeModel detachedNodeModel =</span>
+<span class="fc" id="L1224">                    currentData.getNodeTracker().getDetachedNodeModel(selector);</span>
+<span class="fc bfc" id="L1225" title="All 2 branches covered.">            if (detachedNodeModel != null)</span>
+            {
+<span class="fc" id="L1227">                detachedNodeModel.updateModel(txInit, null, resolver);</span>
+<span class="fc" id="L1228">                return true;</span>
+            }
+        }
+
+<span class="fc" id="L1232">        return false;</span>
+    }
+
+    /**
+     * Replaces a tracked node if it is already detached.
+     *
+     * @param currentData the current data of the model
+     * @param selector the {@code NodeSelector} defining the tracked node
+     * @param newNode the node replacing the tracked node
+     * @return a flag whether the operation was successful
+     */
+    private boolean replaceDetachedTrackedNode(final TreeData currentData,
+            final NodeSelector selector, final ImmutableNode newNode)
+    {
+<span class="fc" id="L1246">        final InMemoryNodeModel detachedNodeModel =</span>
+<span class="fc" id="L1247">                currentData.getNodeTracker().getDetachedNodeModel(selector);</span>
+<span class="fc bfc" id="L1248" title="All 2 branches covered.">        if (detachedNodeModel != null)</span>
+        {
+<span class="fc" id="L1250">            detachedNodeModel.setRootNode(newNode);</span>
+<span class="fc" id="L1251">            return true;</span>
+        }
+
+<span class="fc" id="L1254">        return false;</span>
+    }
+
+    /**
+     * Replaces an active tracked node. The node then becomes detached.
+     *
+     * @param currentData the current data of the model
+     * @param selector the {@code NodeSelector} defining the tracked node
+     * @param newNode the node replacing the tracked node
+     * @return a flag whether the operation was successful
+     */
+    private boolean replaceActiveTrackedNode(final TreeData currentData,
+            final NodeSelector selector, final ImmutableNode newNode)
+    {
+<span class="fc" id="L1268">        final NodeTracker newTracker =</span>
+<span class="fc" id="L1269">                currentData.getNodeTracker().replaceAndDetachTrackedNode(</span>
+                        selector, newNode);
+<span class="fc" id="L1271">        return structure.compareAndSet(currentData,</span>
+<span class="fc" id="L1272">                currentData.updateNodeTracker(newTracker));</span>
+    }
+
+    /**
+     * Creates tracked node entries for the specified nodes and creates the
+     * corresponding selectors.
+     *
+     * @param refSelectors the reference where to store the selectors
+     * @param nodes the nodes to be tracked
+     * @param current the current {@code TreeData} object
+     * @param resolver the {@code NodeKeyResolver}
+     * @return the updated {@code TreeData} object
+     */
+    private static TreeData createSelectorsForTrackedNodes(
+            final Mutable&lt;Collection&lt;NodeSelector&gt;&gt; refSelectors,
+            final List&lt;ImmutableNode&gt; nodes, final TreeData current,
+            final NodeKeyResolver&lt;ImmutableNode&gt; resolver)
+    {
+<span class="fc" id="L1290">        final List&lt;NodeSelector&gt; selectors =</span>
+<span class="fc" id="L1291">                new ArrayList&lt;&gt;(nodes.size());</span>
+<span class="fc" id="L1292">        final Map&lt;ImmutableNode, String&gt; cache = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L1293" title="All 2 branches covered.">        for (final ImmutableNode node : nodes)</span>
+        {
+<span class="fc" id="L1295">            selectors.add(new NodeSelector(resolver.nodeKey(node, cache,</span>
+                    current)));
+<span class="fc" id="L1297">        }</span>
+<span class="fc" id="L1298">        refSelectors.setValue(selectors);</span>
+<span class="fc" id="L1299">        final NodeTracker newTracker =</span>
+<span class="fc" id="L1300">                current.getNodeTracker().trackNodes(selectors, nodes);</span>
+<span class="fc" id="L1301">        return current.updateNodeTracker(newTracker);</span>
+    }
+
+    /**
+     * Adds a tracked node that has already been resolved to the specified data
+     * object.
+     *
+     * @param current the current {@code TreeData} object
+     * @param node the node in question
+     * @param resolver the {@code NodeKeyResolver}
+     * @param refSelector here the newly created {@code NodeSelector} is
+     *        returned
+     * @return the new {@code TreeData} instance
+     */
+    private static TreeData updateDataWithNewTrackedNode(final TreeData current,
+            final ImmutableNode node, final NodeKeyResolver&lt;ImmutableNode&gt; resolver,
+            final MutableObject&lt;NodeSelector&gt; refSelector)
+    {
+<span class="fc" id="L1319">        final NodeSelector selector =</span>
+<span class="fc" id="L1320">                new NodeSelector(resolver.nodeKey(node,</span>
+                        new HashMap&lt;ImmutableNode, String&gt;(), current));
+<span class="fc" id="L1322">        refSelector.setValue(selector);</span>
+<span class="fc" id="L1323">        final NodeTracker newTracker =</span>
+<span class="fc" id="L1324">                current.getNodeTracker().trackNodes(</span>
+<span class="fc" id="L1325">                        Collections.singleton(selector),</span>
+<span class="fc" id="L1326">                        Collections.singleton(node));</span>
+<span class="fc" id="L1327">        return current.updateNodeTracker(newTracker);</span>
+    }
+
+    /**
+     * Creates a new data object with a tracked child node of the given parent
+     * node. If such a child node already exists, it is used. Otherwise, a new
+     * one is created.
+     *
+     * @param current the current {@code TreeData} object
+     * @param parent the parent node
+     * @param childName the name of the child node
+     * @param resolver the {@code NodeKeyResolver}
+     * @param refSelector here the newly created {@code NodeSelector} is
+     *        returned
+     * @return the new {@code TreeData} instance
+     */
+    private static TreeData createDataWithTrackedChildNode(final TreeData current,
+            final ImmutableNode parent, final String childName,
+            final NodeKeyResolver&lt;ImmutableNode&gt; resolver,
+            final MutableObject&lt;NodeSelector&gt; refSelector)
+    {
+        TreeData newData;
+<span class="fc" id="L1349">        final List&lt;ImmutableNode&gt; namedChildren =</span>
+<span class="fc" id="L1350">                current.getChildren(parent, childName);</span>
+<span class="fc bfc" id="L1351" title="All 2 branches covered.">        if (!namedChildren.isEmpty())</span>
+        {
+<span class="fc" id="L1353">            newData =</span>
+<span class="fc" id="L1354">                    updateDataWithNewTrackedNode(current, namedChildren.get(0),</span>
+                            resolver, refSelector);
+        }
+        else
+        {
+<span class="fc" id="L1359">            final ImmutableNode child =</span>
+<span class="fc" id="L1360">                    new ImmutableNode.Builder().name(childName).create();</span>
+<span class="fc" id="L1361">            final ModelTransaction tx = new ModelTransaction(current, null, resolver);</span>
+<span class="fc" id="L1362">            tx.addAddNodeOperation(parent, child);</span>
+<span class="fc" id="L1363">            newData =</span>
+<span class="fc" id="L1364">                    updateDataWithNewTrackedNode(tx.execute(), child, resolver,</span>
+                            refSelector);
+        }
+<span class="fc" id="L1367">        return newData;</span>
+    }
+
+    /**
+     * Checks whether the specified collection with values is not empty.
+     *
+     * @param values the collection with node values
+     * @return &lt;b&gt;true&lt;/b&gt; if values are provided, &lt;b&gt;false&lt;/b&gt; otherwise
+     */
+    private static boolean valuesNotEmpty(final Iterable&lt;?&gt; values)
+    {
+<span class="fc" id="L1378">        return values.iterator().hasNext();</span>
+    }
+
+    /**
+     * Creates an exception referring to an invalid key for adding properties.
+     * Such an exception is thrown when an operation tries to add something to
+     * an attribute.
+     *
+     * @param key the invalid key causing this exception
+     * @return the exception
+     */
+    private static RuntimeException attributeKeyException(final String key)
+    {
+<span class="fc" id="L1391">        return new IllegalArgumentException(</span>
+                &quot;New nodes cannot be added to an attribute key: &quot; + key);
+    }
+
+    /**
+     * An interface used internally for handling concurrent updates. An
+     * implementation has to populate the passed in {@code ModelTransaction}.
+     * The transaction is then executed, and an atomic update of the model's
+     * {@code TreeData} is attempted. If this fails - because another update
+     * came across -, the whole operation has to be tried anew.
+     */
+    private interface TransactionInitializer
+    {
+        /**
+         * Initializes the specified transaction for an update operation. The
+         * return value indicates whether the transaction should be executed. A
+         * result of &lt;b&gt;false&lt;/b&gt; means that the update is to be aborted (maybe
+         * another update method was called).
+         *
+         * @param tx the transaction to be initialized
+         * @return a flag whether the update should continue
+         */
+        boolean initTransaction(ModelTransaction tx);
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

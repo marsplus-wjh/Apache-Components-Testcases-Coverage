@@ -1,0 +1,430 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>PluginRules.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester.plugins</a> &gt; <span class="el_source">PluginRules.java</span></div><h1>PluginRules.java</h1><pre class="source lang-java linenums">/* $Id$
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.digester.plugins;
+
+import java.util.List;
+
+import org.apache.commons.digester.Digester;
+import org.apache.commons.digester.Rule;
+import org.apache.commons.digester.Rules;
+import org.apache.commons.digester.RulesBase;
+import org.apache.commons.logging.Log;
+
+/**
+ * A custom digester Rules manager which must be used as the Rules object
+ * when using the plugins module functionality.
+ * &lt;p&gt;
+ * During parsing, a linked list of PluginCreateRule instances develop, and
+ * this list also acts like a stack. The original instance that was set before 
+ * the Digester started parsing is always at the tail of the list, and the
+ * Digester always holds a reference to the instance at the head of the list
+ * in the rules member. Initially, this list/stack holds just one instance,
+ * ie head and tail are the same object.
+ * &lt;p&gt;
+ * When the start of an xml element causes a PluginCreateRule to fire, a new 
+ * PluginRules instance is created and inserted at the head of the list (ie
+ * pushed onto the stack of Rules objects). Digester.getRules() therefore
+ * returns this new Rules object, and any custom rules associated with that 
+ * plugin are added to that instance. 
+ * &lt;p&gt;
+ * When the end of the xml element is encountered (and therefore the 
+ * PluginCreateRule end method fires), the stack of Rules objects is popped,
+ * so that Digester.getRules returns the previous Rules object. 
+ *
+ * @since 1.6
+ */
+
+public class PluginRules implements Rules {
+                                               
+    /**
+     * The Digester instance with which this Rules instance is associated.
+     */
+<span class="fc" id="L57">    protected Digester digester = null;</span>
+
+    /** 
+     * The (optional) object which generates new rules instances.
+     */
+    private RulesFactory rulesFactory;
+
+    /** 
+     * The rules implementation that we are &quot;enhancing&quot; with plugins
+     * functionality, as per the Decorator pattern.
+     */
+    private Rules decoratedRules;
+    
+    /** Object which contains information about all known plugins. */
+    private PluginManager pluginManager;
+
+    /**
+     * The path below which this rules object has responsibility.
+     * For paths shorter than or equal the mountpoint, the parent's 
+     * match is called.
+     */
+<span class="fc" id="L78">    private String mountPoint = null;</span>
+    
+    /**
+     * The Rules object that holds rules applying &quot;above&quot; the mountpoint,
+     * ie the next Rules object down in the stack.
+     */
+<span class="fc" id="L84">    private PluginRules parent = null;</span>
+    
+    /**
+     * A reference to the object that holds all data which should only
+     * exist once per digester instance.
+     */
+<span class="fc" id="L90">    private PluginContext pluginContext = null;</span>
+    
+    // ------------------------------------------------------------- Constructor
+    
+    /**
+     * Constructor for top-level Rules objects. Exactly one of these must
+     * be created and installed into the Digester instance as the Rules
+     * object before parsing starts.
+     */
+    public PluginRules() {
+<span class="fc" id="L100">        this(new RulesBase());</span>
+<span class="fc" id="L101">    }</span>
+
+    /**
+     * Constructor for top-level Rules object which handles rule-matching
+     * using the specified implementation.
+     */
+<span class="fc" id="L107">    public PluginRules(Rules decoratedRules) {</span>
+<span class="fc" id="L108">        this.decoratedRules = decoratedRules;</span>
+
+<span class="fc" id="L110">        pluginContext = new PluginContext();</span>
+<span class="fc" id="L111">        pluginManager = new PluginManager(pluginContext);</span>
+<span class="fc" id="L112">    }</span>
+
+    /**
+     * Constructs a Rules instance which has a parent Rules object 
+     * (which is different from having a delegate rules object). 
+     * &lt;p&gt;
+     * One of these is created each time a PluginCreateRule's begin method 
+     * fires, in order to manage the custom rules associated with whatever 
+     * concrete plugin class the user has specified.
+     *
+     * @param digester is the object this rules will be associated with.
+     * @param mountPoint is the digester match path for the element 
+     * matching a PluginCreateRule which caused this &quot;nested parsing scope&quot;
+     * to begin. This is expected to be equal to digester.getMatch().
+     * @param parent must be non-null.
+     * @param pluginClass is the plugin class whose custom rules will be
+     * loaded into this new PluginRules object.
+     */
+     PluginRules(
+     Digester digester, 
+     String mountPoint, 
+     PluginRules parent, 
+     Class&lt;?&gt; pluginClass) 
+<span class="fc" id="L135">     throws PluginException {</span>
+        // no need to set digester or decoratedRules.digester,
+        // because when Digester.setRules is called, the setDigester
+        // method on this object will be called.
+        
+<span class="fc" id="L140">        this.digester = digester;</span>
+<span class="fc" id="L141">        this.mountPoint = mountPoint;</span>
+<span class="fc" id="L142">        this.parent = parent;</span>
+<span class="fc" id="L143">        this.rulesFactory = parent.rulesFactory;</span>
+        
+<span class="pc bpc" id="L145" title="1 of 2 branches missed.">        if (rulesFactory == null) {</span>
+<span class="fc" id="L146">            decoratedRules = new RulesBase();</span>
+        } else {
+<span class="nc" id="L148">            decoratedRules = rulesFactory.newRules(digester, pluginClass);</span>
+        }
+        
+<span class="fc" id="L151">        pluginContext = parent.pluginContext;</span>
+<span class="fc" id="L152">        pluginManager = new PluginManager(parent.pluginManager);</span>
+<span class="fc" id="L153">    }</span>
+    
+    // ------------------------------------------------------------- Properties
+
+    /**
+     * Return the parent Rules object.
+     */
+    public Rules getParent() {
+<span class="fc" id="L161">        return parent;</span>
+    }
+    
+    /**
+     * Return the Digester instance with which this instance is associated.
+     */
+    public Digester getDigester() {
+<span class="nc" id="L168">        return digester;</span>
+    }
+
+    /**
+     * Set the Digester instance with which this Rules instance is associated.
+     *
+     * @param digester The newly associated Digester instance
+     */
+    public void setDigester(Digester digester) {
+<span class="fc" id="L177">        this.digester = digester;</span>
+<span class="fc" id="L178">        decoratedRules.setDigester(digester);</span>
+<span class="fc" id="L179">    }</span>
+
+    /**
+     * Return the namespace URI that will be applied to all subsequently
+     * added &lt;code&gt;Rule&lt;/code&gt; objects.
+     */
+    public String getNamespaceURI() {
+<span class="nc" id="L186">        return decoratedRules.getNamespaceURI();</span>
+    }
+
+    /**
+     * Set the namespace URI that will be applied to all subsequently
+     * added &lt;code&gt;Rule&lt;/code&gt; objects.
+     *
+     * @param namespaceURI Namespace URI that must match on all
+     *  subsequently added rules, or &lt;code&gt;null&lt;/code&gt; for matching
+     *  regardless of the current namespace URI
+     */
+    public void setNamespaceURI(String namespaceURI) {
+<span class="nc" id="L198">        decoratedRules.setNamespaceURI(namespaceURI);</span>
+<span class="nc" id="L199">    }</span>
+
+    /**
+     * Return the object which &quot;knows&quot; about all declared plugins.
+     * 
+     * @return The pluginManager value
+     */
+    public PluginManager getPluginManager() {
+<span class="fc" id="L207">        return pluginManager;</span>
+    }
+    
+    /**
+     * See {@link PluginContext#getRuleFinders}.
+     */
+    public List&lt;RuleFinder&gt; getRuleFinders() {
+<span class="nc" id="L214">        return pluginContext.getRuleFinders();</span>
+    }
+    
+    /**
+     * See {@link PluginContext#setRuleFinders}.
+     */
+    public void setRuleFinders(List&lt;RuleFinder&gt; ruleFinders) {
+<span class="nc" id="L221">        pluginContext.setRuleFinders(ruleFinders);</span>
+<span class="nc" id="L222">    }</span>
+    
+    /**
+     * Return the rules factory object (or null if one has not been specified).
+     */
+    public RulesFactory getRulesFactory() {
+<span class="nc" id="L228">        return rulesFactory;</span>
+    }
+    
+    /**
+     * Set the object which is used to generate the new Rules instances created
+     * to hold and process the rules associated with each plugged-in class.
+     */
+    public void setRulesFactory(RulesFactory factory) {
+<span class="nc" id="L236">        rulesFactory = factory;</span>
+<span class="nc" id="L237">    }</span>
+    
+    // --------------------------------------------------------- Public Methods
+
+    /**
+     * This package-scope method is used by the PluginCreateRule class to
+     * get direct access to the rules that were dynamically added by the
+     * plugin. No other class should need access to this object.
+     */
+    Rules getDecoratedRules() {
+<span class="fc" id="L247">        return decoratedRules;</span>
+    }
+    
+    /**
+     * Return the list of rules registered with this object, in the order
+     * they were registered with this object.
+     * &lt;p&gt;
+     * Note that Rule objects stored in parent Rules objects are not
+     * returned by this method.
+     * 
+     * @return list of all Rule objects known to this Rules instance.
+     */
+    public List&lt;Rule&gt; rules() {
+<span class="fc" id="L260">        return decoratedRules.rules();</span>
+    }
+
+    /**
+     * Register a new Rule instance matching the specified pattern.
+     * 
+     * @param pattern Nesting pattern to be matched for this Rule.
+     * This parameter treats equally patterns that begin with and without
+     * a leading slash ('/').
+     * @param rule Rule instance to be registered
+     */
+    public void add(String pattern, Rule rule) {
+<span class="fc" id="L272">        Log log = LogUtils.getLogger(digester);</span>
+<span class="fc" id="L273">        boolean debug = log.isDebugEnabled();</span>
+        
+<span class="pc bpc" id="L275" title="1 of 2 branches missed.">        if (debug) {</span>
+<span class="nc" id="L276">            log.debug(&quot;add entry&quot; + &quot;: mapping pattern [&quot; + pattern + &quot;]&quot; + </span>
+<span class="nc" id="L277">                  &quot; to rule of type [&quot; + rule.getClass().getName() + &quot;]&quot;);</span>
+        }
+        
+        // allow patterns with a leading slash character
+<span class="fc bfc" id="L281" title="All 2 branches covered.">        if (pattern.startsWith(&quot;/&quot;))</span>
+        {
+<span class="fc" id="L283">            pattern = pattern.substring(1);</span>
+        }
+
+<span class="fc bfc" id="L286" title="All 2 branches covered.">        if (mountPoint != null</span>
+<span class="fc bfc" id="L287" title="All 2 branches covered.">                &amp;&amp; !pattern.equals(mountPoint)</span>
+<span class="pc bpc" id="L288" title="1 of 2 branches missed.">                &amp;&amp; !pattern.startsWith(mountPoint + &quot;/&quot;)) {</span>
+            // This can only occur if a plugin attempts to add a
+            // rule with a pattern that doesn't start with the
+            // prefix passed to the addRules method. Plugins mustn't
+            // add rules outside the scope of the tag they were specified
+            // on, so refuse this.
+            
+            // alas, can't throw exception
+<span class="nc" id="L296">            log.warn(</span>
+                &quot;An attempt was made to add a rule with a pattern that&quot;
+                + &quot;is not at or below the mountpoint of the current&quot;
+                + &quot; PluginRules object.&quot;
+                + &quot; Rule pattern: &quot; + pattern
+                + &quot;, mountpoint: &quot; + mountPoint
+<span class="nc" id="L302">                + &quot;, rule type: &quot; + rule.getClass().getName());</span>
+<span class="nc" id="L303">            return;</span>
+        }
+        
+<span class="fc" id="L306">        decoratedRules.add(pattern, rule);</span>
+
+<span class="fc bfc" id="L308" title="All 2 branches covered.">        if (rule instanceof InitializableRule) {</span>
+            try {
+<span class="fc" id="L310">                ((InitializableRule)rule).postRegisterInit(pattern);</span>
+<span class="nc" id="L311">            } catch (PluginConfigurationException e) {</span>
+                // Currently, Digester doesn't handle exceptions well
+                // from the add method. The workaround is for the
+                // initialisable rule to remember that its initialisation
+                // failed, and to throw the exception when begin is
+                // called for the first time.
+<span class="nc bnc" id="L317" title="All 2 branches missed.">                if (debug) {</span>
+<span class="nc" id="L318">                    log.debug(&quot;Rule initialisation failed&quot;, e);</span>
+                }
+                // throw e; -- alas, can't do this
+<span class="nc" id="L321">                return;</span>
+<span class="fc" id="L322">            }</span>
+        }
+        
+<span class="pc bpc" id="L325" title="1 of 2 branches missed.">        if (debug) {</span>
+<span class="nc" id="L326">            log.debug(&quot;add exit&quot; + &quot;: mapped pattern [&quot; + pattern + &quot;]&quot; + </span>
+<span class="nc" id="L327">                  &quot; to rule of type [&quot; + rule.getClass().getName() + &quot;]&quot;);</span>
+        }
+<span class="fc" id="L329">    }</span>
+
+    /**
+     * Clear all rules.
+     */
+    public void clear() {
+<span class="nc" id="L335">        decoratedRules.clear();</span>
+<span class="nc" id="L336">    }</span>
+    
+    /**
+     * Return a List of all registered Rule instances that match the specified
+     * nesting pattern, or a zero-length List if there are no matches.  If more
+     * than one Rule instance matches, they &lt;strong&gt;must&lt;/strong&gt; be returned
+     * in the order originally registered through the &lt;code&gt;add()&lt;/code&gt;
+     * method.
+     *
+     * @param path the path to the xml nodes to be matched.
+     *
+     * @deprecated Call match(namespaceURI,pattern) instead.
+     */
+    @Deprecated
+    public List&lt;Rule&gt; match(String path) {
+<span class="nc" id="L351">        return (match(null, path));</span>
+    }
+
+    /**
+     * Return a List of all registered Rule instances that match the specified
+     * nodepath, or a zero-length List if there are no matches.  If more
+     * than one Rule instance matches, they &lt;strong&gt;must&lt;/strong&gt; be returned
+     * in the order originally registered through the &lt;code&gt;add()&lt;/code&gt;
+     * method.
+     * &lt;p&gt;
+     * @param namespaceURI Namespace URI for which to select matching rules,
+     *  or &lt;code&gt;null&lt;/code&gt; to match regardless of namespace URI
+     * @param path the path to the xml nodes to be matched.
+     */
+    public List&lt;Rule&gt; match(String namespaceURI, String path) {
+<span class="fc" id="L366">        Log log = LogUtils.getLogger(digester);</span>
+<span class="fc" id="L367">        boolean debug = log.isDebugEnabled();</span>
+        
+<span class="pc bpc" id="L369" title="1 of 2 branches missed.">        if (debug) {</span>
+<span class="nc" id="L370">            log.debug(</span>
+                &quot;Matching path [&quot; + path +
+<span class="nc" id="L372">                &quot;] on rules object &quot; + this.toString());</span>
+        }
+
+        List&lt;Rule&gt; matches;
+<span class="fc bfc" id="L376" title="All 2 branches covered.">        if ((mountPoint != null) &amp;&amp; </span>
+<span class="pc bpc" id="L377" title="1 of 2 branches missed.">            (path.length() &lt;= mountPoint.length())) {</span>
+<span class="nc bnc" id="L378" title="All 2 branches missed.">            if (debug) {</span>
+<span class="nc" id="L379">                log.debug(</span>
+                    &quot;Path [&quot; + path + &quot;] delegated to parent.&quot;);
+            }
+            
+<span class="nc" id="L383">            matches = parent.match(namespaceURI, path);</span>
+            
+            // Note that in the case where path equals mountPoint, 
+            // we deliberately return only the rules from the parent,
+            // even though this object may hold some rules matching
+            // this same path. See PluginCreateRule's begin, body and end
+            // methods for the reason.
+        } else {
+<span class="fc" id="L391">                log.debug(&quot;delegating to decorated rules.&quot;);</span>
+<span class="fc" id="L392">            matches = decoratedRules.match(namespaceURI, path); </span>
+        }
+
+<span class="fc" id="L395">        return matches;</span>
+    }
+
+    /** See {@link PluginContext#setPluginClassAttribute}. */
+    public void setPluginClassAttribute(String namespaceUri, 
+                                        String attrName) {
+<span class="fc" id="L401">        pluginContext.setPluginClassAttribute(namespaceUri, attrName);</span>
+<span class="fc" id="L402">    }</span>
+
+    /** See {@link PluginContext#setPluginIdAttribute}. */
+    public void setPluginIdAttribute(String namespaceUri, 
+                                     String attrName) {
+<span class="fc" id="L407">        pluginContext.setPluginIdAttribute(namespaceUri, attrName);</span>
+<span class="fc" id="L408">    }</span>
+    
+    /** See {@link PluginContext#getPluginClassAttrNs}. */
+    public String getPluginClassAttrNs() {
+<span class="fc" id="L412">        return pluginContext.getPluginClassAttrNs();</span>
+    }
+    
+    /** See {@link PluginContext#getPluginClassAttr}. */
+    public String getPluginClassAttr() {
+<span class="fc" id="L417">        return pluginContext.getPluginClassAttr();</span>
+    }
+    
+    /** See {@link PluginContext#getPluginIdAttrNs}. */
+    public String getPluginIdAttrNs() {
+<span class="fc" id="L422">        return pluginContext.getPluginIdAttrNs();</span>
+    }
+    
+    /** See {@link PluginContext#getPluginIdAttr}. */
+    public String getPluginIdAttr() {
+<span class="fc" id="L427">        return pluginContext.getPluginIdAttr();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

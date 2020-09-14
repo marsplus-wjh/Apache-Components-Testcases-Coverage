@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>MethodLookupUtils.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.util</a> &gt; <span class="el_source">MethodLookupUtils.java</span></div><h1>MethodLookupUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.util;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
+
+import org.apache.commons.jxpath.ExpressionContext;
+import org.apache.commons.jxpath.JXPathException;
+
+/**
+ * Method lookup utilities, which find static and non-static methods as well
+ * as constructors based on a name and list of parameters.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision$ $Date$
+ */
+<span class="nc" id="L34">public class MethodLookupUtils {</span>
+
+    private static final int NO_MATCH = 0;
+    private static final int APPROXIMATE_MATCH = 1;
+    private static final int EXACT_MATCH = 2;
+
+    /**
+     * Look up a constructor.
+     * @param targetClass the class constructed
+     * @param parameters arguments
+     * @return Constructor found if any.
+     */
+    public static Constructor lookupConstructor(
+        Class targetClass,
+        Object[] parameters) {
+<span class="fc" id="L49">        boolean tryExact = true;</span>
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">        int count = parameters == null ? 0 : parameters.length;</span>
+<span class="fc" id="L51">        Class[] types = new Class[count];</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">        for (int i = 0; i &lt; count; i++) {</span>
+<span class="fc" id="L53">            Object param = parameters[i];</span>
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">            if (param != null) {</span>
+<span class="fc" id="L55">                types[i] = param.getClass();</span>
+            }
+            else {
+<span class="nc" id="L58">                types[i] = null;</span>
+<span class="nc" id="L59">                tryExact = false;</span>
+            }
+        }
+
+<span class="fc" id="L63">        Constructor constructor = null;</span>
+
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">        if (tryExact) {</span>
+            // First - without type conversion
+            try {
+<span class="fc" id="L68">                constructor = targetClass.getConstructor(types);</span>
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">                if (constructor != null) {</span>
+<span class="fc" id="L70">                    return constructor;</span>
+                }
+            }
+<span class="fc" id="L73">            catch (NoSuchMethodException ex) { //NOPMD</span>
+                // Ignore
+<span class="nc" id="L75">            }</span>
+        }
+
+<span class="fc" id="L78">        int currentMatch = 0;</span>
+<span class="fc" id="L79">        boolean ambiguous = false;</span>
+
+        // Then - with type conversion
+<span class="fc" id="L82">        Constructor[] constructors = targetClass.getConstructors();</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        for (int i = 0; i &lt; constructors.length; i++) {</span>
+<span class="fc" id="L84">            int match =</span>
+<span class="fc" id="L85">                matchParameterTypes(</span>
+<span class="fc" id="L86">                    constructors[i].getParameterTypes(),</span>
+                    parameters);
+<span class="fc bfc" id="L88" title="All 2 branches covered.">            if (match != NO_MATCH) {</span>
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">                if (match &gt; currentMatch) {</span>
+<span class="fc" id="L90">                    constructor = constructors[i];</span>
+<span class="fc" id="L91">                    currentMatch = match;</span>
+<span class="fc" id="L92">                    ambiguous = false;</span>
+                }
+<span class="nc bnc" id="L94" title="All 2 branches missed.">                else if (match == currentMatch) {</span>
+<span class="nc" id="L95">                    ambiguous = true;</span>
+                }
+            }
+        }
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">        if (ambiguous) {</span>
+<span class="nc" id="L100">            throw new JXPathException(</span>
+<span class="nc" id="L101">                &quot;Ambigous constructor &quot; + Arrays.asList(parameters));</span>
+        }
+<span class="fc" id="L103">        return constructor;</span>
+    }
+
+    /**
+     * Look up a static method.
+     * @param targetClass the owning class
+     * @param name method name
+     * @param parameters method parameters
+     * @return Method found if any
+     */
+    public static Method lookupStaticMethod(
+        Class targetClass,
+        String name,
+        Object[] parameters) {
+<span class="fc" id="L117">        boolean tryExact = true;</span>
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">        int count = parameters == null ? 0 : parameters.length;</span>
+<span class="fc" id="L119">        Class[] types = new Class[count];</span>
+<span class="fc bfc" id="L120" title="All 2 branches covered.">        for (int i = 0; i &lt; count; i++) {</span>
+<span class="fc" id="L121">            Object param = parameters[i];</span>
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">            if (param != null) {</span>
+<span class="fc" id="L123">                types[i] = param.getClass();</span>
+            }
+            else {
+<span class="nc" id="L126">                types[i] = null;</span>
+<span class="nc" id="L127">                tryExact = false;</span>
+            }
+        }
+
+<span class="fc" id="L131">        Method method = null;</span>
+
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">        if (tryExact) {</span>
+            // First - without type conversion
+            try {
+<span class="fc" id="L136">                method = targetClass.getMethod(name, types);</span>
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">                if (method != null</span>
+<span class="pc bpc" id="L138" title="1 of 2 branches missed.">                    &amp;&amp; Modifier.isStatic(method.getModifiers())) {</span>
+<span class="fc" id="L139">                    return method;</span>
+                }
+            }
+<span class="fc" id="L142">            catch (NoSuchMethodException ex) { //NOPMD</span>
+                // Ignore
+<span class="nc" id="L144">            }</span>
+        }
+
+<span class="fc" id="L147">        int currentMatch = 0;</span>
+<span class="fc" id="L148">        boolean ambiguous = false;</span>
+
+        // Then - with type conversion
+<span class="fc" id="L151">        Method[] methods = targetClass.getMethods();</span>
+<span class="fc bfc" id="L152" title="All 2 branches covered.">        for (int i = 0; i &lt; methods.length; i++) {</span>
+<span class="fc bfc" id="L153" title="All 2 branches covered.">            if (Modifier.isStatic(methods[i].getModifiers())</span>
+<span class="fc bfc" id="L154" title="All 2 branches covered.">                &amp;&amp; methods[i].getName().equals(name)) {</span>
+<span class="fc" id="L155">                int match =</span>
+<span class="fc" id="L156">                    matchParameterTypes(</span>
+<span class="fc" id="L157">                        methods[i].getParameterTypes(),</span>
+                        parameters);
+<span class="pc bpc" id="L159" title="1 of 2 branches missed.">                if (match != NO_MATCH) {</span>
+<span class="pc bpc" id="L160" title="1 of 2 branches missed.">                    if (match &gt; currentMatch) {</span>
+<span class="fc" id="L161">                        method = methods[i];</span>
+<span class="fc" id="L162">                        currentMatch = match;</span>
+<span class="fc" id="L163">                        ambiguous = false;</span>
+                    }
+<span class="nc bnc" id="L165" title="All 2 branches missed.">                    else if (match == currentMatch) {</span>
+<span class="nc" id="L166">                        ambiguous = true;</span>
+                    }
+                }
+            }
+        }
+<span class="pc bpc" id="L171" title="1 of 2 branches missed.">        if (ambiguous) {</span>
+<span class="nc" id="L172">            throw new JXPathException(&quot;Ambigous method call: &quot; + name);</span>
+        }
+<span class="fc" id="L174">        return method;</span>
+    }
+
+    /**
+     * Look up a method.
+     * @param targetClass owning class
+     * @param name method name
+     * @param parameters method parameters
+     * @return Method found if any
+     */
+    public static Method lookupMethod(
+        Class targetClass,
+        String name,
+        Object[] parameters) {
+<span class="pc bpc" id="L188" title="3 of 6 branches missed.">        if (parameters == null</span>
+            || parameters.length &lt; 1
+            || parameters[0] == null) {
+<span class="nc" id="L191">            return null;</span>
+        }
+
+<span class="fc bfc" id="L194" title="All 2 branches covered.">        if (matchType(targetClass, parameters[0]) == NO_MATCH) {</span>
+<span class="fc" id="L195">            return null;</span>
+        }
+
+<span class="fc" id="L198">        targetClass = TypeUtils.convert(parameters[0], targetClass).getClass();</span>
+
+<span class="fc" id="L200">        boolean tryExact = true;</span>
+<span class="fc" id="L201">        int count = parameters.length - 1;</span>
+<span class="fc" id="L202">        Class[] types = new Class[count];</span>
+<span class="fc" id="L203">        Object[] arguments = new Object[count];</span>
+<span class="fc bfc" id="L204" title="All 2 branches covered.">        for (int i = 0; i &lt; count; i++) {</span>
+<span class="fc" id="L205">            Object param = parameters[i + 1];</span>
+<span class="fc" id="L206">            arguments[i] = param;</span>
+<span class="pc bpc" id="L207" title="1 of 2 branches missed.">            if (param != null) {</span>
+<span class="fc" id="L208">                types[i] = param.getClass();</span>
+            }
+            else {
+<span class="nc" id="L211">                types[i] = null;</span>
+<span class="nc" id="L212">                tryExact = false;</span>
+            }
+        }
+
+<span class="fc" id="L216">        Method method = null;</span>
+
+<span class="pc bpc" id="L218" title="1 of 2 branches missed.">        if (tryExact) {</span>
+            // First - without type conversion
+            try {
+<span class="fc" id="L221">                method = targetClass.getMethod(name, types);</span>
+<span class="pc bpc" id="L222" title="1 of 2 branches missed.">                if (method != null</span>
+<span class="pc bpc" id="L223" title="1 of 2 branches missed.">                    &amp;&amp; !Modifier.isStatic(method.getModifiers())) {</span>
+<span class="fc" id="L224">                    return method;</span>
+                }
+            }
+<span class="fc" id="L227">            catch (NoSuchMethodException ex) { //NOPMD</span>
+                // Ignore
+<span class="nc" id="L229">            }</span>
+        }
+
+<span class="fc" id="L232">        int currentMatch = 0;</span>
+<span class="fc" id="L233">        boolean ambiguous = false;</span>
+
+        // Then - with type conversion
+<span class="fc" id="L236">        Method[] methods = targetClass.getMethods();</span>
+<span class="fc bfc" id="L237" title="All 2 branches covered.">        for (int i = 0; i &lt; methods.length; i++) {</span>
+<span class="fc bfc" id="L238" title="All 2 branches covered.">            if (!Modifier.isStatic(methods[i].getModifiers())</span>
+<span class="fc bfc" id="L239" title="All 2 branches covered.">                &amp;&amp; methods[i].getName().equals(name)) {</span>
+<span class="fc" id="L240">                int match =</span>
+<span class="fc" id="L241">                    matchParameterTypes(</span>
+<span class="fc" id="L242">                        methods[i].getParameterTypes(),</span>
+                        arguments);
+<span class="fc bfc" id="L244" title="All 2 branches covered.">                if (match != NO_MATCH) {</span>
+<span class="pc bpc" id="L245" title="1 of 2 branches missed.">                    if (match &gt; currentMatch) {</span>
+<span class="fc" id="L246">                        method = methods[i];</span>
+<span class="fc" id="L247">                        currentMatch = match;</span>
+<span class="fc" id="L248">                        ambiguous = false;</span>
+                    }
+<span class="nc bnc" id="L250" title="All 2 branches missed.">                    else if (match == currentMatch) {</span>
+<span class="nc" id="L251">                        ambiguous = true;</span>
+                    }
+                }
+            }
+        }
+<span class="pc bpc" id="L256" title="1 of 2 branches missed.">        if (ambiguous) {</span>
+<span class="nc" id="L257">            throw new JXPathException(&quot;Ambigous method call: &quot; + name);</span>
+        }
+<span class="fc" id="L259">        return method;</span>
+    }
+
+    /**
+     * Return a match code of objects to types.
+     * @param types Class[] of expected types
+     * @param parameters Object[] to attempt to match
+     * @return int code
+     */
+    private static int matchParameterTypes(
+        Class[] types,
+        Object[] parameters) {
+<span class="fc" id="L271">        int pi = 0;</span>
+<span class="fc bfc" id="L272" title="All 4 branches covered.">        if (types.length &gt;= 1</span>
+<span class="fc bfc" id="L273" title="All 2 branches covered.">            &amp;&amp; ExpressionContext.class.isAssignableFrom(types[0])) {</span>
+<span class="fc" id="L274">            pi++;</span>
+        }
+<span class="pc bpc" id="L276" title="1 of 2 branches missed.">        int length = parameters == null ? 0 : parameters.length;</span>
+<span class="fc bfc" id="L277" title="All 2 branches covered.">        if (types.length != length + pi) {</span>
+<span class="fc" id="L278">            return NO_MATCH;</span>
+        }
+<span class="fc" id="L280">        int totalMatch = EXACT_MATCH;</span>
+<span class="fc bfc" id="L281" title="All 2 branches covered.">        for (int i = 0; i &lt; length; i++) {</span>
+<span class="fc" id="L282">            int match = matchType(types[i + pi], parameters[i]);</span>
+<span class="pc bpc" id="L283" title="1 of 2 branches missed.">            if (match == NO_MATCH) {</span>
+<span class="nc" id="L284">                return NO_MATCH;</span>
+            }
+<span class="fc bfc" id="L286" title="All 2 branches covered.">            if (match &lt; totalMatch) {</span>
+<span class="fc" id="L287">                totalMatch = match;</span>
+            }
+        }
+<span class="fc" id="L290">        return totalMatch;</span>
+    }
+
+    /**
+     * Return a match code between an object and type.
+     * @param expected class to test
+     * @param object object to test
+     * @return int code
+     */
+    private static int matchType(Class expected, Object object) {
+<span class="pc bpc" id="L300" title="1 of 2 branches missed.">        if (object == null) {</span>
+<span class="nc" id="L301">            return APPROXIMATE_MATCH;</span>
+        }
+
+<span class="fc" id="L304">        Class actual = object.getClass();</span>
+
+<span class="fc bfc" id="L306" title="All 2 branches covered.">        if (expected.equals(actual)) {</span>
+<span class="fc" id="L307">            return EXACT_MATCH;</span>
+        }
+<span class="fc bfc" id="L309" title="All 2 branches covered.">        if (expected.isAssignableFrom(actual)) {</span>
+<span class="fc" id="L310">            return EXACT_MATCH;</span>
+        }
+
+<span class="fc bfc" id="L313" title="All 2 branches covered.">        if (TypeUtils.canConvert(object, expected)) {</span>
+<span class="fc" id="L314">            return APPROXIMATE_MATCH;</span>
+        }
+
+<span class="fc" id="L317">        return NO_MATCH;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

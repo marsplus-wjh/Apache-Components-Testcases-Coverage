@@ -1,0 +1,883 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>JDOMNodePointer.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri.model.jdom</a> &gt; <span class="el_source">JDOMNodePointer.java</span></div><h1>JDOMNodePointer.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri.model.jdom;
+
+import java.util.List;
+import java.util.Locale;
+
+import org.apache.commons.jxpath.JXPathAbstractFactoryException;
+import org.apache.commons.jxpath.JXPathContext;
+import org.apache.commons.jxpath.JXPathException;
+import org.apache.commons.jxpath.ri.Compiler;
+import org.apache.commons.jxpath.ri.NamespaceResolver;
+import org.apache.commons.jxpath.ri.QName;
+import org.apache.commons.jxpath.ri.compiler.NodeNameTest;
+import org.apache.commons.jxpath.ri.compiler.NodeTest;
+import org.apache.commons.jxpath.ri.compiler.NodeTypeTest;
+import org.apache.commons.jxpath.ri.compiler.ProcessingInstructionTest;
+import org.apache.commons.jxpath.ri.model.NodeIterator;
+import org.apache.commons.jxpath.ri.model.NodePointer;
+import org.apache.commons.jxpath.util.TypeUtils;
+import org.jdom.Attribute;
+import org.jdom.CDATA;
+import org.jdom.Comment;
+import org.jdom.Document;
+import org.jdom.Element;
+import org.jdom.Namespace;
+import org.jdom.ProcessingInstruction;
+import org.jdom.Text;
+
+/**
+ * A Pointer that points to a DOM node.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision$ $Date$
+ */
+public class JDOMNodePointer extends NodePointer {
+    private static final long serialVersionUID = -6346532297491082651L;
+
+    private Object node;
+    private String id;
+    private NamespaceResolver localNamespaceResolver;
+
+    /** XML ns uri */
+    public static final String XML_NAMESPACE_URI =
+            &quot;http://www.w3.org/XML/1998/namespace&quot;;
+
+    /** XMLNS ns uri */
+    public static final String XMLNS_NAMESPACE_URI =
+            &quot;http://www.w3.org/2000/xmlns/&quot;;
+
+    /**
+     * Create a new JDOMNodePointer.
+     * @param node pointed
+     * @param locale Locale
+     */
+    public JDOMNodePointer(Object node, Locale locale) {
+<span class="fc" id="L71">        super(null, locale);</span>
+<span class="fc" id="L72">        this.node = node;</span>
+<span class="fc" id="L73">    }</span>
+
+    /**
+     * Create a new JDOMNodePointer.
+     * @param node pointed
+     * @param locale Locale
+     * @param id String id
+     */
+    public JDOMNodePointer(Object node, Locale locale, String id) {
+<span class="nc" id="L82">        super(null, locale);</span>
+<span class="nc" id="L83">        this.node = node;</span>
+<span class="nc" id="L84">        this.id = id;</span>
+<span class="nc" id="L85">    }</span>
+
+    /**
+     * Create a new JDOMNodePointer.
+     * @param parent NodePointer
+     * @param node pointed
+     */
+    public JDOMNodePointer(NodePointer parent, Object node) {
+<span class="fc" id="L93">        super(parent);</span>
+<span class="fc" id="L94">        this.node = node;</span>
+<span class="fc" id="L95">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    public NodeIterator childIterator(
+        NodeTest test,
+        boolean reverse,
+        NodePointer startWith) {
+<span class="fc" id="L104">        return new JDOMNodeIterator(this, test, reverse, startWith);</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public NodeIterator attributeIterator(QName name) {
+<span class="fc" id="L111">        return new JDOMAttributeIterator(this, name);</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public NodeIterator namespaceIterator() {
+<span class="fc" id="L118">        return new JDOMNamespaceIterator(this);</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public NodePointer namespacePointer(String prefix) {
+<span class="fc" id="L125">        return new JDOMNamespacePointer(this, prefix);</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String getNamespaceURI() {
+<span class="fc" id="L132">        return getNamespaceURI(node);</span>
+    }
+
+    /**
+     * Get the ns uri of the specified node.
+     * @param node Node to check
+     * @return String
+     */
+    private static String getNamespaceURI(Object node) {
+<span class="pc bpc" id="L141" title="1 of 2 branches missed.">        if (node instanceof Element) {</span>
+<span class="fc" id="L142">            Element element = (Element) node;</span>
+<span class="fc" id="L143">            String ns = element.getNamespaceURI();</span>
+<span class="pc bpc" id="L144" title="1 of 4 branches missed.">            if (ns != null &amp;&amp; ns.equals(&quot;&quot;)) {</span>
+<span class="fc" id="L145">                ns = null;</span>
+            }
+<span class="fc" id="L147">            return ns;</span>
+        }
+<span class="nc" id="L149">        return null;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public synchronized NamespaceResolver getNamespaceResolver() {
+<span class="fc bfc" id="L156" title="All 2 branches covered.">        if (localNamespaceResolver == null) {</span>
+<span class="fc" id="L157">            localNamespaceResolver = new NamespaceResolver(super.getNamespaceResolver());</span>
+<span class="fc" id="L158">            localNamespaceResolver.setNamespaceContextPointer(this);</span>
+        }
+<span class="fc" id="L160">        return localNamespaceResolver;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String getNamespaceURI(String prefix) {
+<span class="fc bfc" id="L167" title="All 2 branches covered.">        if (prefix.equals(&quot;xml&quot;)) {</span>
+<span class="fc" id="L168">            return Namespace.XML_NAMESPACE.getURI();</span>
+        }
+<span class="fc" id="L170">        Element element = null;</span>
+<span class="fc bfc" id="L171" title="All 2 branches covered.">        if (node instanceof Document) {</span>
+<span class="fc" id="L172">            element = ((Document) node).getRootElement();</span>
+        }
+<span class="fc bfc" id="L174" title="All 2 branches covered.">        if (node instanceof Element) {</span>
+<span class="fc" id="L175">            element = (Element) node;</span>
+        }
+<span class="pc bpc" id="L177" title="1 of 2 branches missed.">        if (element == null) {</span>
+<span class="nc" id="L178">            return null;</span>
+        }
+<span class="fc" id="L180">        Namespace ns = element.getNamespace(prefix);</span>
+<span class="fc bfc" id="L181" title="All 2 branches covered.">        return ns == null ? null : ns.getURI();</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public int compareChildNodePointers(
+        NodePointer pointer1,
+        NodePointer pointer2) {
+<span class="fc" id="L190">        Object node1 = pointer1.getBaseValue();</span>
+<span class="fc" id="L191">        Object node2 = pointer2.getBaseValue();</span>
+<span class="pc bpc" id="L192" title="1 of 2 branches missed.">        if (node1 == node2) {</span>
+<span class="nc" id="L193">            return 0;</span>
+        }
+
+<span class="pc bpc" id="L196" title="3 of 4 branches missed.">        if ((node1 instanceof Attribute) &amp;&amp; !(node2 instanceof Attribute)) {</span>
+<span class="nc" id="L197">            return -1;</span>
+        }
+<span class="pc bpc" id="L199" title="2 of 4 branches missed.">        if (</span>
+            !(node1 instanceof Attribute) &amp;&amp; (node2 instanceof Attribute)) {
+<span class="nc" id="L201">            return 1;</span>
+        }
+<span class="pc bpc" id="L203" title="3 of 4 branches missed.">        if (</span>
+            (node1 instanceof Attribute) &amp;&amp; (node2 instanceof Attribute)) {
+<span class="nc" id="L205">            List list = ((Element) getNode()).getAttributes();</span>
+<span class="nc" id="L206">            int length = list.size();</span>
+<span class="nc bnc" id="L207" title="All 2 branches missed.">            for (int i = 0; i &lt; length; i++) {</span>
+<span class="nc" id="L208">                Object n = list.get(i);</span>
+<span class="nc bnc" id="L209" title="All 2 branches missed.">                if (n == node1) {</span>
+<span class="nc" id="L210">                    return -1;</span>
+                }
+<span class="nc bnc" id="L212" title="All 2 branches missed.">                else if (n == node2) {</span>
+<span class="nc" id="L213">                    return 1;</span>
+                }
+            }
+<span class="nc" id="L216">            return 0; // Should not happen</span>
+        }
+
+<span class="pc bpc" id="L219" title="1 of 2 branches missed.">        if (!(node instanceof Element)) {</span>
+<span class="nc" id="L220">            throw new RuntimeException(</span>
+                &quot;JXPath internal error: &quot;
+                    + &quot;compareChildNodes called for &quot;
+                    + node);
+        }
+
+<span class="fc" id="L226">        List children = ((Element) node).getContent();</span>
+<span class="fc" id="L227">        int length = children.size();</span>
+<span class="pc bpc" id="L228" title="1 of 2 branches missed.">        for (int i = 0; i &lt; length; i++) {</span>
+<span class="fc" id="L229">            Object n = children.get(i);</span>
+<span class="fc bfc" id="L230" title="All 2 branches covered.">            if (n == node1) {</span>
+<span class="fc" id="L231">                return -1;</span>
+            }
+<span class="fc bfc" id="L233" title="All 2 branches covered.">            if (n == node2) {</span>
+<span class="fc" id="L234">                return 1;</span>
+            }
+        }
+
+<span class="nc" id="L238">        return 0;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public Object getBaseValue() {
+<span class="fc" id="L245">        return node;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean isCollection() {
+<span class="nc" id="L252">        return false;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public int getLength() {
+<span class="fc" id="L259">        return 1;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean isLeaf() {
+<span class="fc bfc" id="L266" title="All 2 branches covered.">        if (node instanceof Element) {</span>
+<span class="fc bfc" id="L267" title="All 2 branches covered.">            return ((Element) node).getContent().size() == 0;</span>
+        }
+<span class="fc bfc" id="L269" title="All 2 branches covered.">        if (node instanceof Document) {</span>
+<span class="pc bpc" id="L270" title="1 of 2 branches missed.">            return ((Document) node).getContent().size() == 0;</span>
+        }
+<span class="fc" id="L272">        return true;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public QName getName() {
+<span class="fc" id="L279">        String ns = null;</span>
+<span class="fc" id="L280">        String ln = null;</span>
+<span class="fc bfc" id="L281" title="All 2 branches covered.">        if (node instanceof Element) {</span>
+<span class="fc" id="L282">            ns = ((Element) node).getNamespacePrefix();</span>
+<span class="pc bpc" id="L283" title="1 of 4 branches missed.">            if (ns != null &amp;&amp; ns.equals(&quot;&quot;)) {</span>
+<span class="fc" id="L284">                ns = null;</span>
+            }
+<span class="fc" id="L286">            ln = ((Element) node).getName();</span>
+        }
+<span class="pc bpc" id="L288" title="1 of 2 branches missed.">        else if (node instanceof ProcessingInstruction) {</span>
+<span class="fc" id="L289">            ln = ((ProcessingInstruction) node).getTarget();</span>
+        }
+<span class="fc" id="L291">        return new QName(ns, ln);</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public Object getImmediateNode() {
+<span class="fc" id="L298">        return node;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public Object getValue() {
+<span class="fc bfc" id="L305" title="All 2 branches covered.">        if (node instanceof Element) {</span>
+<span class="fc" id="L306">            StringBuffer buf = new StringBuffer();</span>
+<span class="fc bfc" id="L307" title="All 2 branches covered.">            for (NodeIterator children = childIterator(null, false, null); children.setPosition(children.getPosition() + 1);) {</span>
+<span class="fc" id="L308">                NodePointer ptr = children.getNodePointer();</span>
+<span class="fc bfc" id="L309" title="All 4 branches covered.">                if (ptr.getImmediateNode() instanceof Element || ptr.getImmediateNode() instanceof Text) {</span>
+<span class="fc" id="L310">                    buf.append(ptr.getValue());</span>
+                }
+<span class="fc" id="L312">            }</span>
+<span class="fc" id="L313">            return buf.toString();</span>
+        }
+<span class="fc bfc" id="L315" title="All 2 branches covered.">        if (node instanceof Comment) {</span>
+<span class="fc" id="L316">            String text = ((Comment) node).getText();</span>
+<span class="pc bpc" id="L317" title="1 of 2 branches missed.">            if (text != null) {</span>
+<span class="fc" id="L318">                text = text.trim();</span>
+            }
+<span class="fc" id="L320">            return text;</span>
+        }
+<span class="fc" id="L322">        String result = null;</span>
+<span class="fc bfc" id="L323" title="All 2 branches covered.">        if (node instanceof Text) {</span>
+<span class="fc" id="L324">            result = ((Text) node).getText();</span>
+        }
+<span class="fc bfc" id="L326" title="All 2 branches covered.">        if (node instanceof ProcessingInstruction) {</span>
+<span class="fc" id="L327">            result = ((ProcessingInstruction) node).getData();</span>
+        }
+<span class="fc bfc" id="L329" title="All 2 branches covered.">        boolean trim = !&quot;preserve&quot;.equals(findEnclosingAttribute(node, &quot;space&quot;, Namespace.XML_NAMESPACE));</span>
+<span class="pc bpc" id="L330" title="1 of 4 branches missed.">        return result != null &amp;&amp; trim ? result.trim() : result;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void setValue(Object value) {
+<span class="pc bpc" id="L337" title="1 of 2 branches missed.">        if (node instanceof Text) {</span>
+<span class="nc bnc" id="L338" title="All 2 branches missed.">            String string = (String) TypeUtils.convert(value, String.class);</span>
+<span class="nc bnc" id="L339" title="All 4 branches missed.">            if (string != null &amp;&amp; !string.equals(&quot;&quot;)) {</span>
+<span class="nc" id="L340">                ((Text) node).setText(string);</span>
+            }
+            else {
+<span class="nc" id="L343">                nodeParent(node).removeContent((Text) node);</span>
+            }
+<span class="nc" id="L345">        }</span>
+        else {
+<span class="fc" id="L347">            Element element = (Element) node;</span>
+<span class="fc" id="L348">            element.getContent().clear();</span>
+
+<span class="pc bpc" id="L350" title="1 of 2 branches missed.">            if (value instanceof Element) {</span>
+<span class="nc" id="L351">                Element valueElement = (Element) value;</span>
+<span class="nc" id="L352">                addContent(valueElement.getContent());</span>
+<span class="nc" id="L353">            }</span>
+<span class="pc bpc" id="L354" title="1 of 2 branches missed.">            else if (value instanceof Document) {</span>
+<span class="nc" id="L355">                Document valueDocument = (Document) value;</span>
+<span class="nc" id="L356">                addContent(valueDocument.getContent());</span>
+<span class="nc" id="L357">            }</span>
+<span class="pc bpc" id="L358" title="2 of 4 branches missed.">            else if (value instanceof Text || value instanceof CDATA) {</span>
+<span class="nc" id="L359">                String string = ((Text) value).getText();</span>
+<span class="nc" id="L360">                element.addContent(new Text(string));</span>
+<span class="nc" id="L361">            }</span>
+<span class="pc bpc" id="L362" title="1 of 2 branches missed.">            else if (value instanceof ProcessingInstruction) {</span>
+<span class="nc" id="L363">                ProcessingInstruction pi =</span>
+                    (ProcessingInstruction) ((ProcessingInstruction) value)
+<span class="nc" id="L365">                        .clone();</span>
+<span class="nc" id="L366">                element.addContent(pi);</span>
+<span class="nc" id="L367">            }</span>
+<span class="pc bpc" id="L368" title="1 of 2 branches missed.">            else if (value instanceof Comment) {</span>
+<span class="nc" id="L369">                Comment comment = (Comment) ((Comment) value).clone();</span>
+<span class="nc" id="L370">                element.addContent(comment);</span>
+<span class="nc" id="L371">            }</span>
+            else {
+<span class="fc bfc" id="L373" title="All 2 branches covered.">                String string = (String) TypeUtils.convert(value, String.class);</span>
+<span class="pc bpc" id="L374" title="1 of 4 branches missed.">                if (string != null &amp;&amp; !string.equals(&quot;&quot;)) {</span>
+<span class="fc" id="L375">                    element.addContent(new Text(string));</span>
+                }
+            }
+        }
+<span class="fc" id="L379">    }</span>
+
+    /**
+     * Add the specified content to this element.
+     * @param content List
+     */
+    private void addContent(List content) {
+<span class="nc" id="L386">        Element element = (Element) node;</span>
+<span class="nc" id="L387">        int count = content.size();</span>
+
+<span class="nc bnc" id="L389" title="All 2 branches missed.">        for (int i = 0; i &lt; count; i++) {</span>
+<span class="nc" id="L390">            Object child = content.get(i);</span>
+<span class="nc bnc" id="L391" title="All 2 branches missed.">            if (child instanceof Element) {</span>
+<span class="nc" id="L392">                child = ((Element) child).clone();</span>
+<span class="nc" id="L393">                element.addContent((Element) child);</span>
+            }
+<span class="nc bnc" id="L395" title="All 2 branches missed.">            else if (child instanceof Text) {</span>
+<span class="nc" id="L396">                child = ((Text) child).clone();</span>
+<span class="nc" id="L397">                element.addContent((Text) child);</span>
+            }
+<span class="nc bnc" id="L399" title="All 2 branches missed.">            else if (node instanceof CDATA) {</span>
+<span class="nc" id="L400">                child = ((CDATA) child).clone();</span>
+<span class="nc" id="L401">                element.addContent((CDATA) child);</span>
+            }
+<span class="nc bnc" id="L403" title="All 2 branches missed.">            else if (node instanceof ProcessingInstruction) {</span>
+<span class="nc" id="L404">                child = ((ProcessingInstruction) child).clone();</span>
+<span class="nc" id="L405">                element.addContent((ProcessingInstruction) child);</span>
+            }
+<span class="nc bnc" id="L407" title="All 2 branches missed.">            else if (node instanceof Comment) {</span>
+<span class="nc" id="L408">                child = ((Comment) child).clone();</span>
+<span class="nc" id="L409">                element.addContent((Comment) child);</span>
+            }
+        }
+<span class="nc" id="L412">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean testNode(NodeTest test) {
+<span class="fc" id="L418">        return testNode(this, node, test);</span>
+    }
+
+    /**
+     * Execute test against node on behalf of pointer.
+     * @param pointer Pointer
+     * @param node to test
+     * @param test to execute
+     * @return true if node passes test
+     */
+    public static boolean testNode(
+        NodePointer pointer,
+        Object node,
+        NodeTest test) {
+<span class="fc bfc" id="L432" title="All 2 branches covered.">        if (test == null) {</span>
+<span class="fc" id="L433">            return true;</span>
+        }
+<span class="fc bfc" id="L435" title="All 2 branches covered.">        if (test instanceof NodeNameTest) {</span>
+<span class="fc bfc" id="L436" title="All 2 branches covered.">            if (!(node instanceof Element)) {</span>
+<span class="fc" id="L437">                return false;</span>
+            }
+
+<span class="fc" id="L440">            NodeNameTest nodeNameTest = (NodeNameTest) test;</span>
+<span class="fc" id="L441">            QName testName = nodeNameTest.getNodeName();</span>
+<span class="fc" id="L442">            String namespaceURI = nodeNameTest.getNamespaceURI();</span>
+<span class="fc" id="L443">            boolean wildcard = nodeNameTest.isWildcard();</span>
+<span class="fc" id="L444">            String testPrefix = testName.getPrefix();</span>
+<span class="fc bfc" id="L445" title="All 4 branches covered.">            if (wildcard &amp;&amp; testPrefix == null) {</span>
+<span class="fc" id="L446">                return true;</span>
+            }
+<span class="fc bfc" id="L448" title="All 2 branches covered.">            if (wildcard</span>
+<span class="fc" id="L449">                || testName.getName()</span>
+<span class="fc bfc" id="L450" title="All 2 branches covered.">                        .equals(JDOMNodePointer.getLocalName(node))) {</span>
+<span class="fc" id="L451">                String nodeNS = JDOMNodePointer.getNamespaceURI(node);</span>
+<span class="fc bfc" id="L452" title="All 4 branches covered.">                return equalStrings(namespaceURI, nodeNS) || nodeNS == null</span>
+<span class="pc bpc" id="L453" title="1 of 2 branches missed.">                        &amp;&amp; equalStrings(testPrefix, getPrefix(node));</span>
+            }
+<span class="fc" id="L455">            return false;</span>
+        }
+<span class="fc bfc" id="L457" title="All 2 branches covered.">        if (test instanceof NodeTypeTest) {</span>
+<span class="pc bpc" id="L458" title="1 of 5 branches missed.">            switch (((NodeTypeTest) test).getNodeType()) {</span>
+                case Compiler.NODE_TYPE_NODE :
+<span class="fc" id="L460">                    return true;</span>
+                case Compiler.NODE_TYPE_TEXT :
+<span class="pc bpc" id="L462" title="1 of 4 branches missed.">                    return (node instanceof Text) || (node instanceof CDATA);</span>
+                case Compiler.NODE_TYPE_COMMENT :
+<span class="fc" id="L464">                    return node instanceof Comment;</span>
+                case Compiler.NODE_TYPE_PI :
+<span class="fc" id="L466">                    return node instanceof ProcessingInstruction;</span>
+                default:
+<span class="nc" id="L468">                    return false;</span>
+            }
+        }
+<span class="pc bpc" id="L471" title="1 of 4 branches missed.">        if (test instanceof ProcessingInstructionTest &amp;&amp; node instanceof ProcessingInstruction) {</span>
+<span class="fc" id="L472">            String testPI = ((ProcessingInstructionTest) test).getTarget();</span>
+<span class="fc" id="L473">            String nodePI = ((ProcessingInstruction) node).getTarget();</span>
+<span class="fc" id="L474">            return testPI.equals(nodePI);</span>
+        }
+<span class="fc" id="L476">        return false;</span>
+    }
+
+    /**
+     * Learn whether two strings are == or .equals()
+     * @param s1 string 1
+     * @param s2 string 2
+     * @return true if equal
+     */
+    private static boolean equalStrings(String s1, String s2) {
+<span class="fc bfc" id="L486" title="All 2 branches covered.">        if (s1 == s2) {</span>
+<span class="fc" id="L487">            return true;</span>
+        }
+<span class="pc bpc" id="L489" title="1 of 2 branches missed.">        s1 = s1 == null ? &quot;&quot; : s1.trim();</span>
+<span class="fc bfc" id="L490" title="All 2 branches covered.">        s2 = s2 == null ? &quot;&quot; : s2.trim();</span>
+<span class="fc" id="L491">        return s1.equals(s2);</span>
+    }
+
+    /**
+     * Get the prefix from a given node.
+     * @param node to check
+     * @return String
+     */
+    public static String getPrefix(Object node) {
+<span class="fc bfc" id="L500" title="All 2 branches covered.">        if (node instanceof Element) {</span>
+<span class="fc" id="L501">            String prefix = ((Element) node).getNamespacePrefix();</span>
+<span class="pc bpc" id="L502" title="2 of 4 branches missed.">            return (prefix == null || prefix.equals(&quot;&quot;)) ? null : prefix;</span>
+        }
+<span class="pc bpc" id="L504" title="1 of 2 branches missed.">        if (node instanceof Attribute) {</span>
+<span class="fc" id="L505">            String prefix = ((Attribute) node).getNamespacePrefix();</span>
+<span class="pc bpc" id="L506" title="1 of 4 branches missed.">            return (prefix == null || prefix.equals(&quot;&quot;)) ? null : prefix;</span>
+        }
+<span class="nc" id="L508">        return null;</span>
+    }
+
+    /**
+     * Get the local name of the specified node.
+     * @param node to check
+     * @return String local name
+     */
+    public static String getLocalName(Object node) {
+<span class="fc bfc" id="L517" title="All 2 branches covered.">        if (node instanceof Element) {</span>
+<span class="fc" id="L518">            return ((Element) node).getName();</span>
+        }
+<span class="pc bpc" id="L520" title="1 of 2 branches missed.">        if (node instanceof Attribute) {</span>
+<span class="fc" id="L521">            return ((Attribute) node).getName();</span>
+        }
+<span class="nc" id="L523">        return null;</span>
+    }
+
+    /**
+     * Returns true if the xml:lang attribute for the current node
+     * or its parent has the specified prefix &lt;i&gt;lang&lt;/i&gt;.
+     * If no node has this prefix, calls &lt;code&gt;super.isLanguage(lang)&lt;/code&gt;.
+     * @param lang to compare
+     * @return true if this element uses the specified language.
+     */
+    public boolean isLanguage(String lang) {
+<span class="fc" id="L534">        String current = getLanguage();</span>
+<span class="fc bfc" id="L535" title="All 2 branches covered.">        return current == null ? super.isLanguage(lang) : current.toUpperCase().startsWith(lang.toUpperCase());</span>
+    }
+
+    /**
+     * Get the language of this element.
+     * @return String language
+     */
+    protected String getLanguage() {
+<span class="fc" id="L543">        return findEnclosingAttribute(node, &quot;lang&quot;, Namespace.XML_NAMESPACE);</span>
+    }
+
+    /**
+     * Find the nearest occurrence of the specified attribute
+     * on the specified and enclosing elements.
+     * @param n current node
+     * @param attrName attribute name
+     * @param ns Namespace
+     * @return attribute value
+     */
+    protected static String findEnclosingAttribute(Object n, String attrName, Namespace ns) {
+<span class="fc bfc" id="L555" title="All 2 branches covered.">        while (n != null) {</span>
+<span class="fc bfc" id="L556" title="All 2 branches covered.">            if (n instanceof Element) {</span>
+<span class="fc" id="L557">                Element e = (Element) n;</span>
+<span class="fc" id="L558">                String attr = e.getAttributeValue(attrName, ns);</span>
+<span class="pc bpc" id="L559" title="1 of 4 branches missed.">                if (attr != null &amp;&amp; !attr.equals(&quot;&quot;)) {</span>
+<span class="fc" id="L560">                    return attr;</span>
+                }
+            }
+<span class="fc" id="L563">            n = nodeParent(n);</span>
+        }
+<span class="fc" id="L565">        return null;</span>
+    }
+
+    /**
+     * Get the parent of the specified node.
+     * @param node to check
+     * @return parent Element
+     */
+    private static Element nodeParent(Object node) {
+<span class="fc bfc" id="L574" title="All 2 branches covered.">        if (node instanceof Element) {</span>
+<span class="fc" id="L575">            Object parent = ((Element) node).getParent();</span>
+<span class="fc bfc" id="L576" title="All 2 branches covered.">            return parent instanceof Element ? (Element) parent : null;</span>
+        }
+<span class="fc bfc" id="L578" title="All 2 branches covered.">        if (node instanceof Text) {</span>
+<span class="fc" id="L579">            return (Element) ((Text) node).getParent();</span>
+        }
+<span class="pc bpc" id="L581" title="1 of 2 branches missed.">        if (node instanceof CDATA) {</span>
+<span class="nc" id="L582">            return (Element) ((CDATA) node).getParent();</span>
+        }
+<span class="pc bpc" id="L584" title="1 of 2 branches missed.">        if (node instanceof ProcessingInstruction) {</span>
+<span class="fc" id="L585">            return (Element) ((ProcessingInstruction) node).getParent();</span>
+        }
+<span class="nc bnc" id="L587" title="All 2 branches missed.">        if (node instanceof Comment) {</span>
+<span class="nc" id="L588">            return (Element) ((Comment) node).getParent();</span>
+        }
+<span class="nc" id="L590">        return null;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public NodePointer createChild(
+        JXPathContext context,
+        QName name,
+        int index) {
+<span class="fc bfc" id="L600" title="All 2 branches covered.">        if (index == WHOLE_COLLECTION) {</span>
+<span class="fc" id="L601">            index = 0;</span>
+        }
+<span class="fc" id="L603">        boolean success =</span>
+<span class="fc" id="L604">            getAbstractFactory(context).createObject(</span>
+                context,
+                this,
+                node,
+<span class="fc" id="L608">                name.toString(),</span>
+                index);
+<span class="pc bpc" id="L610" title="1 of 2 branches missed.">        if (success) {</span>
+            NodeTest nodeTest;
+<span class="fc" id="L612">            String prefix = name.getPrefix();</span>
+<span class="fc bfc" id="L613" title="All 2 branches covered.">            String namespaceURI = prefix == null ? null : context</span>
+<span class="fc" id="L614">                    .getNamespaceURI(prefix);</span>
+<span class="fc" id="L615">            nodeTest = new NodeNameTest(name, namespaceURI);</span>
+
+<span class="fc" id="L617">            NodeIterator it =</span>
+<span class="fc" id="L618">                childIterator(nodeTest, false, null);</span>
+<span class="pc bpc" id="L619" title="2 of 4 branches missed.">            if (it != null &amp;&amp; it.setPosition(index + 1)) {</span>
+<span class="fc" id="L620">                return it.getNodePointer();</span>
+            }
+        }
+<span class="nc" id="L623">        throw new JXPathAbstractFactoryException(&quot;Factory could not create &quot;</span>
+<span class="nc" id="L624">                + &quot;a child node for path: &quot; + asPath() + &quot;/&quot; + name + &quot;[&quot;</span>
+                + (index + 1) + &quot;]&quot;);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public NodePointer createChild(
+            JXPathContext context, QName name, int index, Object value) {
+<span class="fc" id="L633">        NodePointer ptr = createChild(context, name, index);</span>
+<span class="fc" id="L634">        ptr.setValue(value);</span>
+<span class="fc" id="L635">        return ptr;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public NodePointer createAttribute(JXPathContext context, QName name) {
+<span class="pc bpc" id="L642" title="1 of 2 branches missed.">        if (!(node instanceof Element)) {</span>
+<span class="nc" id="L643">            return super.createAttribute(context, name);</span>
+        }
+
+<span class="fc" id="L646">        Element element = (Element) node;</span>
+<span class="fc" id="L647">        String prefix = name.getPrefix();</span>
+<span class="fc bfc" id="L648" title="All 2 branches covered.">        if (prefix != null) {</span>
+<span class="fc" id="L649">            String namespaceUri = getNamespaceResolver().getNamespaceURI(prefix);</span>
+<span class="pc bpc" id="L650" title="1 of 2 branches missed.">            if (namespaceUri == null) {</span>
+<span class="nc" id="L651">                throw new JXPathException(</span>
+                    &quot;Unknown namespace prefix: &quot; + prefix);
+            }
+<span class="fc" id="L654">            Namespace ns = Namespace.getNamespace(prefix, namespaceUri);</span>
+<span class="fc" id="L655">            Attribute attr = element.getAttribute(name.getName(), ns);</span>
+<span class="pc bpc" id="L656" title="1 of 2 branches missed.">            if (attr == null) {</span>
+<span class="fc" id="L657">                element.setAttribute(name.getName(), &quot;&quot;, ns);</span>
+            }
+<span class="fc" id="L659">        }</span>
+        else {
+<span class="fc" id="L661">            Attribute attr = element.getAttribute(name.getName());</span>
+<span class="pc bpc" id="L662" title="1 of 2 branches missed.">            if (attr == null) {</span>
+<span class="fc" id="L663">                element.setAttribute(name.getName(), &quot;&quot;);</span>
+            }
+        }
+<span class="fc" id="L666">        NodeIterator it = attributeIterator(name);</span>
+<span class="fc" id="L667">        it.setPosition(1);</span>
+<span class="fc" id="L668">        return it.getNodePointer();</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void remove() {
+<span class="fc" id="L675">        Element parent = nodeParent(node);</span>
+<span class="pc bpc" id="L676" title="1 of 2 branches missed.">        if (parent == null) {</span>
+<span class="nc" id="L677">            throw new JXPathException(&quot;Cannot remove root JDOM node&quot;);</span>
+        }
+<span class="fc" id="L679">        parent.getContent().remove(node);</span>
+<span class="fc" id="L680">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    public String asPath() {
+<span class="pc bpc" id="L686" title="1 of 2 branches missed.">        if (id != null) {</span>
+<span class="nc" id="L687">            return &quot;id('&quot; + escape(id) + &quot;')&quot;;</span>
+        }
+
+<span class="fc" id="L690">        StringBuffer buffer = new StringBuffer();</span>
+<span class="pc bpc" id="L691" title="1 of 2 branches missed.">        if (parent != null) {</span>
+<span class="fc" id="L692">            buffer.append(parent.asPath());</span>
+        }
+<span class="fc bfc" id="L694" title="All 2 branches covered.">        if (node instanceof Element) {</span>
+            // If the parent pointer is not a JDOMNodePointer, it is
+            // the parent's responsibility to produce the node test part
+            // of the path
+<span class="pc bpc" id="L698" title="1 of 2 branches missed.">            if (parent instanceof JDOMNodePointer) {</span>
+<span class="pc bpc" id="L699" title="1 of 2 branches missed.">                if (buffer.length() == 0</span>
+<span class="fc bfc" id="L700" title="All 2 branches covered.">                    || buffer.charAt(buffer.length() - 1) != '/') {</span>
+<span class="fc" id="L701">                    buffer.append('/');</span>
+                }
+<span class="fc" id="L703">                String nsURI = getNamespaceURI();</span>
+<span class="fc" id="L704">                String ln = JDOMNodePointer.getLocalName(node);</span>
+
+<span class="fc bfc" id="L706" title="All 2 branches covered.">                if (nsURI == null) {</span>
+<span class="fc" id="L707">                    buffer.append(ln);</span>
+<span class="fc" id="L708">                    buffer.append('[');</span>
+<span class="fc" id="L709">                    buffer.append(getRelativePositionByName()).append(']');</span>
+                }
+                else {
+<span class="fc" id="L712">                    String prefix = getNamespaceResolver().getPrefix(nsURI);</span>
+<span class="pc bpc" id="L713" title="1 of 2 branches missed.">                    if (prefix != null) {</span>
+<span class="fc" id="L714">                        buffer.append(prefix);</span>
+<span class="fc" id="L715">                        buffer.append(':');</span>
+<span class="fc" id="L716">                        buffer.append(ln);</span>
+<span class="fc" id="L717">                        buffer.append('[');</span>
+<span class="fc" id="L718">                        buffer.append(getRelativePositionByName());</span>
+<span class="fc" id="L719">                        buffer.append(']');</span>
+                    }
+                    else {
+<span class="nc" id="L722">                        buffer.append(&quot;node()&quot;);</span>
+<span class="nc" id="L723">                        buffer.append('[');</span>
+<span class="nc" id="L724">                        buffer.append(getRelativePositionOfElement());</span>
+<span class="nc" id="L725">                        buffer.append(']');</span>
+                    }
+                }
+
+<span class="fc" id="L729">            }</span>
+        }
+<span class="pc bpc" id="L731" title="1 of 4 branches missed.">        else if (node instanceof Text || node instanceof CDATA) {</span>
+<span class="fc" id="L732">            buffer.append(&quot;/text()&quot;);</span>
+<span class="fc" id="L733">            buffer.append('[').append(getRelativePositionOfTextNode()).append(</span>
+                ']');
+        }
+<span class="fc bfc" id="L736" title="All 2 branches covered.">        else if (node instanceof ProcessingInstruction) {</span>
+<span class="fc" id="L737">            buffer.append(&quot;/processing-instruction(\'&quot;).append(((ProcessingInstruction) node).getTarget()).append(</span>
+                &quot;')&quot;);
+<span class="fc" id="L739">            buffer.append('[').append(getRelativePositionOfPI()).append(</span>
+                ']');
+        }
+<span class="fc" id="L742">        return buffer.toString();</span>
+    }
+
+    /**
+     * Get relative position of this among like-named siblings.
+     * @return 1..n
+     */
+    private int getRelativePositionByName() {
+<span class="pc bpc" id="L750" title="1 of 2 branches missed.">        if (node instanceof Element) {</span>
+<span class="fc" id="L751">            Object parent = ((Element) node).getParent();</span>
+<span class="fc bfc" id="L752" title="All 2 branches covered.">            if (!(parent instanceof Element)) {</span>
+<span class="fc" id="L753">                return 1;</span>
+            }
+
+<span class="fc" id="L756">            List children = ((Element) parent).getContent();</span>
+<span class="fc" id="L757">            int count = 0;</span>
+<span class="fc" id="L758">            String name = ((Element) node).getQualifiedName();</span>
+<span class="pc bpc" id="L759" title="1 of 2 branches missed.">            for (int i = 0; i &lt; children.size(); i++) {</span>
+<span class="fc" id="L760">                Object child = children.get(i);</span>
+<span class="fc bfc" id="L761" title="All 2 branches covered.">                if ((child instanceof Element)</span>
+<span class="fc bfc" id="L762" title="All 2 branches covered.">                    &amp;&amp; ((Element) child).getQualifiedName().equals(name)) {</span>
+<span class="fc" id="L763">                    count++;</span>
+                }
+<span class="fc bfc" id="L765" title="All 2 branches covered.">                if (child == node) {</span>
+<span class="fc" id="L766">                    break;</span>
+                }
+            }
+<span class="fc" id="L769">            return count;</span>
+        }
+<span class="nc" id="L771">        return 1;</span>
+    }
+
+    /**
+     * Get relative position of this among all siblings.
+     * @return 1..n
+     */
+    private int getRelativePositionOfElement() {
+<span class="nc" id="L779">        Object parent = ((Element) node).getParent();</span>
+<span class="nc bnc" id="L780" title="All 2 branches missed.">        if (parent == null) {</span>
+<span class="nc" id="L781">            return 1;</span>
+        }
+        List children;
+<span class="nc bnc" id="L784" title="All 2 branches missed.">        if (parent instanceof Element) {</span>
+<span class="nc" id="L785">            children = ((Element) parent).getContent();</span>
+        }
+        else {
+<span class="nc" id="L788">            children = ((Document) parent).getContent();</span>
+        }
+<span class="nc" id="L790">        int count = 0;</span>
+<span class="nc bnc" id="L791" title="All 2 branches missed.">        for (int i = 0; i &lt; children.size(); i++) {</span>
+<span class="nc" id="L792">            Object child = children.get(i);</span>
+<span class="nc bnc" id="L793" title="All 2 branches missed.">            if (child instanceof Element) {</span>
+<span class="nc" id="L794">                count++;</span>
+            }
+<span class="nc bnc" id="L796" title="All 2 branches missed.">            if (child == node) {</span>
+<span class="nc" id="L797">                break;</span>
+            }
+        }
+<span class="nc" id="L800">        return count;</span>
+    }
+
+    /**
+     * Get the relative position of this among sibling text nodes.
+     * @return 1..n
+     */
+    private int getRelativePositionOfTextNode() {
+        Element parent;
+<span class="pc bpc" id="L809" title="1 of 2 branches missed.">        if (node instanceof Text) {</span>
+<span class="fc" id="L810">            parent = (Element) ((Text) node).getParent();</span>
+        }
+        else {
+<span class="nc" id="L813">            parent = (Element) ((CDATA) node).getParent();</span>
+        }
+<span class="pc bpc" id="L815" title="1 of 2 branches missed.">        if (parent == null) {</span>
+<span class="nc" id="L816">            return 1;</span>
+        }
+<span class="fc" id="L818">        List children = parent.getContent();</span>
+<span class="fc" id="L819">        int count = 0;</span>
+<span class="pc bpc" id="L820" title="1 of 2 branches missed.">        for (int i = 0; i &lt; children.size(); i++) {</span>
+<span class="fc" id="L821">            Object child = children.get(i);</span>
+<span class="pc bpc" id="L822" title="3 of 4 branches missed.">            if (child instanceof Text || child instanceof CDATA) {</span>
+<span class="fc" id="L823">                count++;</span>
+            }
+<span class="pc bpc" id="L825" title="1 of 2 branches missed.">            if (child == node) {</span>
+<span class="fc" id="L826">                break;</span>
+            }
+        }
+<span class="fc" id="L829">        return count;</span>
+    }
+
+    /**
+     * Get the relative position of this among same-target processing instruction siblings.
+     * @return 1..n
+     */
+    private int getRelativePositionOfPI() {
+<span class="fc" id="L837">        String target = ((ProcessingInstruction) node).getTarget();</span>
+<span class="fc" id="L838">        Element parent = (Element) ((ProcessingInstruction) node).getParent();</span>
+<span class="pc bpc" id="L839" title="1 of 2 branches missed.">        if (parent == null) {</span>
+<span class="nc" id="L840">            return 1;</span>
+        }
+<span class="fc" id="L842">        List children = parent.getContent();</span>
+<span class="fc" id="L843">        int count = 0;</span>
+<span class="pc bpc" id="L844" title="1 of 2 branches missed.">        for (int i = 0; i &lt; children.size(); i++) {</span>
+<span class="fc" id="L845">            Object child = children.get(i);</span>
+<span class="pc bpc" id="L846" title="1 of 4 branches missed.">            if (child instanceof ProcessingInstruction</span>
+                &amp;&amp; (target == null
+<span class="fc bfc" id="L848" title="All 2 branches covered.">                    || target.equals(</span>
+<span class="fc" id="L849">                        ((ProcessingInstruction) child).getTarget()))) {</span>
+<span class="fc" id="L850">                count++;</span>
+            }
+<span class="fc bfc" id="L852" title="All 2 branches covered.">            if (child == node) {</span>
+<span class="fc" id="L853">                break;</span>
+            }
+        }
+<span class="fc" id="L856">        return count;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public int hashCode() {
+<span class="fc" id="L863">        return node.hashCode();</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean equals(Object object) {
+<span class="pc bpc" id="L870" title="1 of 2 branches missed.">        if (object == this) {</span>
+<span class="nc" id="L871">            return true;</span>
+        }
+
+<span class="pc bpc" id="L874" title="1 of 2 branches missed.">        if (!(object instanceof JDOMNodePointer)) {</span>
+<span class="nc" id="L875">            return false;</span>
+        }
+
+<span class="fc" id="L878">        JDOMNodePointer other = (JDOMNodePointer) object;</span>
+<span class="fc bfc" id="L879" title="All 2 branches covered.">        return node == other.node;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

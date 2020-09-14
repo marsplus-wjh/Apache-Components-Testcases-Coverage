@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FromBinderRuleSet.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester3.binder</a> &gt; <span class="el_source">FromBinderRuleSet.java</span></div><h1>FromBinderRuleSet.java</h1><pre class="source lang-java linenums">package org.apache.commons.digester3.binder;
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
+
+import org.apache.commons.digester3.Digester;
+import org.apache.commons.digester3.Rule;
+import org.apache.commons.digester3.RuleSet;
+
+/**
+ * {@link RuleSet} implementation that allows register {@link RuleProvider} instances
+ * and add rules to the {@link Digester}.
+ *
+ * @since 3.0
+ */
+<span class="fc" id="L38">final class FromBinderRuleSet</span>
+    implements RuleSet
+{
+
+    /**
+     * The data structure where storing the providers binding.
+     */
+<span class="fc" id="L45">    private final Collection&lt;AbstractBackToLinkedRuleBuilder&lt;? extends Rule&gt;&gt; providers =</span>
+        new LinkedList&lt;AbstractBackToLinkedRuleBuilder&lt;? extends Rule&gt;&gt;();
+
+    /**
+     * Index for quick-retrieve provider.
+     */
+<span class="fc" id="L51">    private final Map&lt;Key, Collection&lt;AbstractBackToLinkedRuleBuilder&lt;? extends Rule&gt;&gt;&gt; providersIndex =</span>
+        new HashMap&lt;Key, Collection&lt;AbstractBackToLinkedRuleBuilder&lt;? extends Rule&gt;&gt;&gt;();
+
+    /**
+     * Register the given rule builder and returns it.
+     *
+     * @param &lt;R&gt; The Digester rule type
+     * @param &lt;RB&gt; The Digester rule builder type
+     * @param ruleBuilder The input rule builder instance.
+     */
+    public &lt;R extends Rule, RB extends AbstractBackToLinkedRuleBuilder&lt;R&gt;&gt; void registerProvider( RB ruleBuilder )
+    {
+<span class="fc" id="L63">        this.providers.add( ruleBuilder );</span>
+
+<span class="fc" id="L65">        Key key = new Key( ruleBuilder.getPattern(), ruleBuilder.getNamespaceURI() );</span>
+
+        // O(1)
+<span class="fc" id="L68">        Collection&lt;AbstractBackToLinkedRuleBuilder&lt;? extends Rule&gt;&gt; indexedProviders = this.providersIndex.get( key );</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">        if ( indexedProviders == null )</span>
+        {
+<span class="fc" id="L71">            indexedProviders = new ArrayList&lt;AbstractBackToLinkedRuleBuilder&lt;? extends Rule&gt;&gt;();</span>
+<span class="fc" id="L72">            this.providersIndex.put( key, indexedProviders ); // O(1)</span>
+        }
+<span class="fc" id="L74">        indexedProviders.add( ruleBuilder );</span>
+<span class="fc" id="L75">    }</span>
+
+    /**
+     * Returns the first instance of {@link RuleProvider} assignable to the input type.
+     *
+     * This method is useful for rules that requires be unique in the pattern,
+     * like {@link org.apache.commons.digester3.SetPropertiesRule}
+     * and {@link org.apache.commons.digester3.SetNestedPropertiesRule}.
+     *
+     * @param &lt;R&gt; The Digester rule type
+     * @param &lt;RB&gt; The Digester rule builder type
+     * @param keyPattern the rule pattern
+     * @param namespaceURI the namespace URI (can be null)
+     * @param type the rule builder type the client is looking for
+     * @return the rule builder of input type, if any
+     */
+    public &lt;R extends Rule, RB extends AbstractBackToLinkedRuleBuilder&lt;R&gt;&gt; RB getProvider( String keyPattern,
+    /* @Nullable */String namespaceURI, Class&lt;RB&gt; type )
+    {
+<span class="fc" id="L94">        Key key = new Key( keyPattern, namespaceURI );</span>
+
+        // O(1)
+<span class="fc" id="L97">        Collection&lt;AbstractBackToLinkedRuleBuilder&lt;? extends Rule&gt;&gt; indexedProviders = this.providersIndex.get( key );</span>
+
+<span class="pc bpc" id="L99" title="1 of 4 branches missed.">        if ( indexedProviders == null || indexedProviders.isEmpty() )</span>
+        {
+<span class="fc" id="L101">            return null;</span>
+        }
+
+        // FIXME O(n) not so good
+<span class="fc bfc" id="L105" title="All 2 branches covered.">        for ( AbstractBackToLinkedRuleBuilder&lt;? extends Rule&gt; ruleProvider : indexedProviders )</span>
+        {
+<span class="fc bfc" id="L107" title="All 2 branches covered.">            if ( type.isInstance( ruleProvider ) )</span>
+            {
+<span class="fc" id="L109">                return type.cast( ruleProvider );</span>
+            }
+<span class="fc" id="L111">        }</span>
+
+<span class="fc" id="L113">        return null;</span>
+    }
+
+    /**
+     * Clean the provider index.
+     */
+    public void clear()
+    {
+<span class="fc" id="L121">        providers.clear();</span>
+<span class="fc" id="L122">        providersIndex.clear();</span>
+<span class="fc" id="L123">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    public void addRuleInstances( Digester digester )
+    {
+<span class="fc bfc" id="L130" title="All 2 branches covered.">        for ( AbstractBackToLinkedRuleBuilder&lt;? extends Rule&gt; provider : providers )</span>
+        {
+<span class="fc" id="L132">            digester.addRule( provider.getPattern(), provider.get() );</span>
+<span class="fc" id="L133">        }</span>
+<span class="fc" id="L134">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    public String getNamespaceURI()
+    {
+<span class="nc" id="L141">        return null;</span>
+    }
+
+    /**
+     * Used to associate pattern/namespaceURI
+     */
+    private static final class Key
+    {
+
+        private final String pattern;
+
+        private final String namespaceURI;
+
+        public Key( String pattern, String namespaceURI )
+<span class="fc" id="L155">        {</span>
+<span class="fc" id="L156">            this.pattern = pattern;</span>
+<span class="fc" id="L157">            this.namespaceURI = namespaceURI;</span>
+<span class="fc" id="L158">        }</span>
+
+        public String getPattern()
+        {
+<span class="fc" id="L162">            return pattern;</span>
+        }
+
+        public String getNamespaceURI()
+        {
+<span class="fc" id="L167">            return namespaceURI;</span>
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int hashCode()
+        {
+<span class="fc" id="L176">            final int prime = 31;</span>
+<span class="fc" id="L177">            int result = 1;</span>
+<span class="fc bfc" id="L178" title="All 2 branches covered.">            result = prime * result + ( ( namespaceURI == null ) ? 0 : namespaceURI.hashCode() );</span>
+<span class="pc bpc" id="L179" title="1 of 2 branches missed.">            result = prime * result + ( ( pattern == null ) ? 0 : pattern.hashCode() );</span>
+<span class="fc" id="L180">            return result;</span>
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean equals( Object obj )
+        {
+<span class="pc bpc" id="L189" title="1 of 2 branches missed.">            if ( this == obj )</span>
+            {
+<span class="nc" id="L191">                return true;</span>
+            }
+
+<span class="pc bpc" id="L194" title="1 of 2 branches missed.">            if ( obj == null )</span>
+            {
+<span class="nc" id="L196">                return false;</span>
+            }
+
+<span class="pc bpc" id="L199" title="1 of 2 branches missed.">            if ( getClass() != obj.getClass() )</span>
+            {
+<span class="nc" id="L201">                return false;</span>
+            }
+
+<span class="fc" id="L204">            Key other = (Key) obj;</span>
+<span class="fc bfc" id="L205" title="All 2 branches covered.">            if ( namespaceURI == null )</span>
+            {
+<span class="pc bpc" id="L207" title="1 of 2 branches missed.">                if ( other.getNamespaceURI() != null )</span>
+                {
+<span class="nc" id="L209">                    return false;</span>
+                }
+            }
+<span class="pc bpc" id="L212" title="1 of 2 branches missed.">            else if ( !namespaceURI.equals( other.getNamespaceURI() ) )</span>
+            {
+<span class="nc" id="L214">                return false;</span>
+            }
+
+<span class="pc bpc" id="L217" title="1 of 2 branches missed.">            if ( pattern == null )</span>
+            {
+<span class="nc bnc" id="L219" title="All 2 branches missed.">                if ( other.getPattern() != null )</span>
+                {
+<span class="nc" id="L221">                    return false;</span>
+                }
+            }
+<span class="pc bpc" id="L224" title="1 of 2 branches missed.">            else if ( !pattern.equals( other.getPattern() ) )</span>
+            {
+<span class="nc" id="L226">                return false;</span>
+            }
+
+<span class="fc" id="L229">            return true;</span>
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String toString()
+        {
+<span class="nc" id="L238">            return &quot;Key [pattern=&quot; + pattern + &quot;, namespaceURI=&quot; + namespaceURI + &quot;]&quot;;</span>
+        }
+
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

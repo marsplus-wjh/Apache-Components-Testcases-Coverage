@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>PluginContext.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester.plugins</a> &gt; <span class="el_source">PluginContext.java</span></div><h1>PluginContext.java</h1><pre class="source lang-java linenums">/* $Id$
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.digester.plugins;
+
+import java.util.List;
+import java.util.LinkedList;
+
+import org.apache.commons.digester.plugins.strategies.FinderFromFile;
+import org.apache.commons.digester.plugins.strategies.FinderFromResource;
+import org.apache.commons.digester.plugins.strategies.FinderFromClass;
+import org.apache.commons.digester.plugins.strategies.FinderFromMethod;
+import org.apache.commons.digester.plugins.strategies.FinderFromDfltMethod;
+import org.apache.commons.digester.plugins.strategies.FinderFromDfltClass;
+import org.apache.commons.digester.plugins.strategies.FinderFromDfltResource;
+import org.apache.commons.digester.plugins.strategies.FinderSetProperties;
+
+/**
+ * Provides data and services which should exist only once per digester.
+ * &lt;p&gt;
+ * This class holds a number of useful items which should be shared by all
+ * plugin objects. Such data cannot be stored on the PluginRules or 
+ * PluginManager classes, as there can be multiple instances of these at 
+ * various times during a parse. 
+ * &lt;p&gt;
+ * The name &quot;Context&quot; refers to the similarity between this class and a
+ * ServletContext class in a servlet engine. A ServletContext object provides
+ * access to the container's services such as obtaining global configuration
+ * parameters for the container, or getting access to logging services. For
+ * plugins, a Digester instance can be regarded as &quot;the container&quot;.
+ *
+ * @since 1.6
+ */
+
+public class PluginContext {
+
+    // TODO: Consider making following four constants static in 2.0
+    // the xml attribute the user uses on an xml element to specify
+    // the plugin's class
+<span class="fc" id="L54">    public final String DFLT_PLUGIN_CLASS_ATTR_NS = null;</span>
+<span class="fc" id="L55">    public final String DFLT_PLUGIN_CLASS_ATTR = &quot;plugin-class&quot;;</span>
+
+    // the xml attribute the user uses on an xml element to specify
+    // the plugin's class
+<span class="fc" id="L59">    public final String DFLT_PLUGIN_ID_ATTR_NS = null;</span>
+<span class="fc" id="L60">    public final String DFLT_PLUGIN_ID_ATTR = &quot;plugin-id&quot;;</span>
+    
+    /** See {@link #setPluginClassAttribute}. */
+<span class="fc" id="L63">    private String pluginClassAttrNs = DFLT_PLUGIN_CLASS_ATTR_NS;</span>
+
+    /** See {@link #setPluginClassAttribute}. */
+<span class="fc" id="L66">    private String pluginClassAttr = DFLT_PLUGIN_CLASS_ATTR;</span>
+
+    /** See {@link #setPluginClassAttribute}. */
+<span class="fc" id="L69">    private String pluginIdAttrNs = DFLT_PLUGIN_ID_ATTR_NS;</span>
+
+    /** See {@link #setPluginClassAttribute}. */
+<span class="fc" id="L72">    private String pluginIdAttr = DFLT_PLUGIN_ID_ATTR;</span>
+    
+    /** 
+     * A list of RuleFinder objects used by all Declarations (and thus
+     * indirectly by all PluginCreateRules to locate the custom rules
+     * for plugin classes.
+     */
+    private List&lt;RuleFinder&gt; ruleFinders;
+
+    //------------------- constructors ---------------------------------------
+    
+<span class="fc" id="L83">    public PluginContext() {</span>
+<span class="fc" id="L84">    }</span>
+    
+    //------------------- methods ---------------------------------------
+
+    /**
+     * Return the list of RuleFinder objects. Under normal circumstances
+     * this method creates a default list of these objects when first called
+     * (ie &quot;on-demand&quot; or &quot;lazy initialization&quot;). However if setRuleFinders
+     * has been called first, then the list specified there is returned.
+     * &lt;p&gt;
+     * It is explicitly permitted for the caller to modify this list
+     * by inserting or removing RuleFinder objects.
+     */
+    public List&lt;RuleFinder&gt; getRuleFinders() {
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        if (ruleFinders == null) {</span>
+            // when processing a plugin declaration, attempts are made to
+            // find custom rules in the order in which the Finder objects
+            // are added below. However this list can be modified
+<span class="fc" id="L102">            ruleFinders = new LinkedList&lt;RuleFinder&gt;();</span>
+<span class="fc" id="L103">            ruleFinders.add(new FinderFromFile());</span>
+<span class="fc" id="L104">            ruleFinders.add(new FinderFromResource());</span>
+<span class="fc" id="L105">            ruleFinders.add(new FinderFromClass());</span>
+<span class="fc" id="L106">            ruleFinders.add(new FinderFromMethod());</span>
+<span class="fc" id="L107">            ruleFinders.add(new FinderFromDfltMethod());</span>
+<span class="fc" id="L108">            ruleFinders.add(new FinderFromDfltClass());</span>
+<span class="fc" id="L109">            ruleFinders.add(new FinderFromDfltResource());</span>
+<span class="fc" id="L110">            ruleFinders.add(new FinderFromDfltResource(&quot;.xml&quot;));</span>
+<span class="fc" id="L111">            ruleFinders.add(new FinderSetProperties());</span>
+        }
+<span class="fc" id="L113">        return ruleFinders;</span>
+    }
+    
+    /**
+     * Set the list of RuleFinder objects. This may be useful if working
+     * in a non-english language, allowing the application developer to
+     * replace the standard list with a list of objects which look for xml 
+     * attributes in the local language.
+     * &lt;p&gt;
+     * If the intent is just to add an additional rule-finding algorithm, then
+     * it may be better to call #getRuleFinders, and insert a new object into 
+     * the start of the list.
+     */
+    public void setRuleFinders(List&lt;RuleFinder&gt; ruleFinders) {
+<span class="nc" id="L127">        this.ruleFinders = ruleFinders;</span>
+<span class="nc" id="L128">    }</span>
+
+    /**
+     * Sets the xml attribute which the input xml uses to indicate to a 
+     * PluginCreateRule which class should be instantiated.
+     * &lt;p&gt;
+     * Example:
+     * &lt;pre&gt;
+     * setPluginClassAttribute(null, &quot;class&quot;);
+     * &lt;/pre&gt;
+     * will allow this in the input xml:
+     * &lt;pre&gt;
+     *  &amp;lt;root&amp;gt;
+     *    &amp;lt;some-plugin class=&quot;com.acme.widget&quot;&amp;gt; ......
+     * &lt;/pre&gt;
+     * instead of the default syntax:
+     * &lt;pre&gt;
+     *  &amp;lt;root&amp;gt;
+     *    &amp;lt;some-plugin plugin-class=&quot;com.acme.widget&quot;&amp;gt; ......
+     * &lt;/pre&gt;
+     * This is particularly useful if the input xml document is not in
+     * English.
+     * &lt;p&gt;
+     * Note that the xml attributes used by PluginDeclarationRules are not
+     * affected by this method.
+     *
+     * @param namespaceUri is the namespace uri that the specified attribute
+     * is in. If the attribute is in no namespace, then this should be null.
+     * Note that if a namespace is used, the attrName value should &lt;i&gt;not&lt;/i&gt;
+     * contain any kind of namespace-prefix. Note also that if you are using
+     * a non-namespace-aware parser, this parameter &lt;i&gt;must&lt;/i&gt; be null.
+     *
+     * @param attrName is the attribute whose value contains the name of the
+     * class to be instantiated.
+     */
+    public void setPluginClassAttribute(String namespaceUri, 
+                                        String attrName) {
+<span class="fc" id="L165">        pluginClassAttrNs = namespaceUri;</span>
+<span class="fc" id="L166">        pluginClassAttr = attrName;</span>
+<span class="fc" id="L167">    }</span>
+
+    /**
+     * Sets the xml attribute which the input xml uses to indicate to a 
+     * PluginCreateRule which plugin declaration is being referenced.
+     * &lt;p&gt;
+     * Example:
+     * &lt;pre&gt;
+     * setPluginIdAttribute(null, &quot;id&quot;);
+     * &lt;/pre&gt;
+     * will allow this in the input xml:
+     * &lt;pre&gt;
+     *  &amp;lt;root&amp;gt;
+     *    &amp;lt;some-plugin id=&quot;widget&quot;&amp;gt; ......
+     * &lt;/pre&gt;
+     * rather than the default behaviour:
+     * &lt;pre&gt;
+     *  &amp;lt;root&amp;gt;
+     *    &amp;lt;some-plugin plugin-id=&quot;widget&quot;&amp;gt; ......
+     * &lt;/pre&gt;
+     * This is particularly useful if the input xml document is not in
+     * English.
+     * &lt;p&gt;
+     * Note that the xml attributes used by PluginDeclarationRules are not
+     * affected by this method.
+     *
+     * @param namespaceUri is the namespace uri that the specified attribute
+     * is in. If the attribute is in no namespace, then this should be null.
+     * Note that if a namespace is used, the attrName value should &lt;i&gt;not&lt;/i&gt;
+     * contain any kind of namespace-prefix. Note also that if you are using
+     * a non-namespace-aware parser, this parameter &lt;i&gt;must&lt;/i&gt; be null.
+     *
+     * @param attrName is the attribute whose value contains the id of the
+     * plugin declaration to be used when instantiating an object.
+     */
+    public void setPluginIdAttribute(String namespaceUri, 
+                                     String attrName) {
+<span class="fc" id="L204">        pluginIdAttrNs = namespaceUri;</span>
+<span class="fc" id="L205">        pluginIdAttr = attrName;</span>
+<span class="fc" id="L206">    }</span>
+
+    /**
+     * Get the namespace for the xml attribute which indicates to a 
+     * PluginCreateRule which class is to be plugged in.
+     * &lt;p&gt;
+     * May be null (in fact, normally will be).
+     */
+    public String getPluginClassAttrNs() {
+<span class="fc" id="L215">        return pluginClassAttrNs;</span>
+    }
+    
+    /**
+     * Get the namespace for the xml attribute which indicates to a 
+     * PluginCreateRule which class is to be plugged in.
+     * &lt;p&gt;
+     * The return value is never null.
+     */
+    public String getPluginClassAttr() {
+<span class="fc" id="L225">        return pluginClassAttr;</span>
+    }
+    
+    /**
+     * Get the namespace for the xml attribute which indicates to a 
+     * PluginCreateRule which previous plugin declaration should be used.
+     * &lt;p&gt;
+     * May be null (in fact, normally will be).
+     */
+    public String getPluginIdAttrNs() {
+<span class="fc" id="L235">        return pluginIdAttrNs;</span>
+    }
+    
+    /**
+     * Get the namespace for the xml attribute which indicates to a 
+     * PluginCreateRule which previous plugin declaration should be used.
+     * &lt;p&gt;
+     * The return value is never null.
+     */
+    public String getPluginIdAttr() {
+<span class="fc" id="L245">        return pluginIdAttr;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

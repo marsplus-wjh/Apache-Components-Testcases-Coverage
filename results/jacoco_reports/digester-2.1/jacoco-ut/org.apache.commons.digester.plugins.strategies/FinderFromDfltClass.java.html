@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>FinderFromDfltClass.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester.plugins.strategies</a> &gt; <span class="el_source">FinderFromDfltClass.java</span></div><h1>FinderFromDfltClass.java</h1><pre class="source lang-java linenums">/* $Id$
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.digester.plugins.strategies;
+
+import java.util.Properties;
+import org.apache.commons.digester.Digester;
+import org.apache.commons.digester.plugins.RuleFinder;
+import org.apache.commons.digester.plugins.RuleLoader;
+import org.apache.commons.digester.plugins.PluginException;
+
+/**
+ * A rule-finding algorithm which looks for a method with a specific name
+ * on a class whose name is derived from the plugin class name.
+ *
+ * @since 1.6
+ */
+
+public class FinderFromDfltClass extends RuleFinder {
+<span class="fc" id="L34">    public static String DFLT_RULECLASS_SUFFIX = &quot;RuleInfo&quot;;</span>
+<span class="fc" id="L35">    public static String DFLT_METHOD_NAME = &quot;addRules&quot;;</span>
+    
+    private String rulesClassSuffix;
+    private String methodName;
+    
+    /** See {@link #findLoader}. */
+    public FinderFromDfltClass() {
+<span class="fc" id="L42">        this(DFLT_RULECLASS_SUFFIX, DFLT_METHOD_NAME);</span>
+<span class="fc" id="L43">    }</span>
+    
+    /**
+     * Create a rule-finder which invokes a method on a class whenever 
+     * dynamic rules for a plugin need to be loaded. See the findRules 
+     * method for more info.
+     *
+     * @param rulesClassSuffix must be non-null.
+     * @param methodName may be null.
+     */
+<span class="fc" id="L53">     public FinderFromDfltClass(String rulesClassSuffix, String methodName) { </span>
+<span class="fc" id="L54">        this.rulesClassSuffix = rulesClassSuffix;</span>
+<span class="fc" id="L55">        this.methodName = methodName;</span>
+<span class="fc" id="L56">    }</span>
+    
+    /**
+     * If there exists a class whose name is the plugin class name + the
+     * suffix specified to the constructor, then load that class, locate 
+     * the appropriate rules-adding method on that class, and return an 
+     * object encapsulating that info.
+     * &lt;p&gt;
+     * If there is no such class, then just return null.
+     * &lt;p&gt;
+     * The returned object (when non-null) will invoke the target method
+     * on the selected class whenever its addRules method is invoked. The
+     * target method is expected to have the following prototype:
+     * &lt;code&gt; public static void xxxxx(Digester d, String patternPrefix); &lt;/code&gt;
+     */
+    @Override
+    public RuleLoader findLoader(Digester digester, Class&lt;?&gt; pluginClass, Properties p)
+                            throws PluginException {
+
+<span class="fc" id="L75">        String rulesClassName = pluginClass.getName() + rulesClassSuffix;</span>
+
+<span class="fc" id="L77">        Class&lt;?&gt; rulesClass = null;</span>
+        try {
+<span class="fc" id="L79">            rulesClass = digester.getClassLoader().loadClass(rulesClassName);</span>
+<span class="fc" id="L80">        } catch(ClassNotFoundException cnfe) {</span>
+            // nope, no rule-info class in the classpath
+<span class="fc" id="L82">            return null;</span>
+<span class="fc" id="L83">        }</span>
+
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">        if (methodName == null) {</span>
+<span class="nc" id="L86">            methodName = DFLT_METHOD_NAME;</span>
+        }
+        
+<span class="fc" id="L89">        return new LoaderFromClass(rulesClass, methodName);</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

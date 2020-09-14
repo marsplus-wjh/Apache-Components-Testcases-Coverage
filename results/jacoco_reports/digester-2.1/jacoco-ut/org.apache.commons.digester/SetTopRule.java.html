@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>SetTopRule.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester</a> &gt; <span class="el_source">SetTopRule.java</span></div><h1>SetTopRule.java</h1><pre class="source lang-java linenums">/* $Id$
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+package org.apache.commons.digester;
+
+
+import org.apache.commons.beanutils.MethodUtils;
+
+
+/**
+ * &lt;p&gt;Rule implementation that calls a &quot;set parent&quot; method on the top (child)
+ * object, passing the (top-1) (parent) object as an argument.&lt;/p&gt;
+ *
+ * &lt;p&gt;This rule now supports more flexible method matching by default.
+ * It is possible that this may break (some) code 
+ * written against release 1.1.1 or earlier.
+ * See {@link #isExactMatch()} for more details.&lt;/p&gt;
+ */
+
+public class SetTopRule extends Rule {
+
+
+    // ----------------------------------------------------------- Constructors
+
+
+    /**
+     * Construct a &quot;set parent&quot; rule with the specified method name.  The
+     * &quot;set parent&quot; method's argument type is assumed to be the class of the
+     * parent object.
+     *
+     * @param digester The associated Digester
+     * @param methodName Method name of the &quot;set parent&quot; method to call
+     *
+     * @deprecated The digester instance is now set in the {@link Digester#addRule} method. 
+     * Use {@link #SetTopRule(String methodName)} instead.
+     */
+    @Deprecated
+    public SetTopRule(Digester digester, String methodName) {
+
+<span class="nc" id="L56">        this(methodName);</span>
+
+<span class="nc" id="L58">    }</span>
+
+
+    /**
+     * Construct a &quot;set parent&quot; rule with the specified method name.
+     *
+     * @param digester The associated Digester
+     * @param methodName Method name of the &quot;set parent&quot; method to call
+     * @param paramType Java class of the &quot;set parent&quot; method's argument
+     *  (if you wish to use a primitive type, specify the corresonding
+     *  Java wrapper class instead, such as &lt;code&gt;java.lang.Boolean&lt;/code&gt;
+     *  for a &lt;code&gt;boolean&lt;/code&gt; parameter)
+     *
+     * @deprecated The digester instance is now set in the {@link Digester#addRule} method. 
+     * Use {@link #SetTopRule(String methodName, String paramType)} instead.
+     */
+    @Deprecated
+    public SetTopRule(Digester digester, String methodName,
+                      String paramType) {
+
+<span class="nc" id="L78">        this(methodName, paramType);</span>
+
+<span class="nc" id="L80">    }</span>
+
+    /**
+     * Construct a &quot;set parent&quot; rule with the specified method name.  The
+     * &quot;set parent&quot; method's argument type is assumed to be the class of the
+     * parent object.
+     *
+     * @param methodName Method name of the &quot;set parent&quot; method to call
+     */
+    public SetTopRule(String methodName) {
+
+<span class="fc" id="L91">        this(methodName, null);</span>
+
+<span class="fc" id="L93">    }</span>
+
+
+    /**
+     * Construct a &quot;set parent&quot; rule with the specified method name.
+     *
+     * @param methodName Method name of the &quot;set parent&quot; method to call
+     * @param paramType Java class of the &quot;set parent&quot; method's argument
+     *  (if you wish to use a primitive type, specify the corresonding
+     *  Java wrapper class instead, such as &lt;code&gt;java.lang.Boolean&lt;/code&gt;
+     *  for a &lt;code&gt;boolean&lt;/code&gt; parameter)
+     */
+    public SetTopRule(String methodName,
+<span class="fc" id="L106">                      String paramType) {</span>
+
+<span class="fc" id="L108">        this.methodName = methodName;</span>
+<span class="fc" id="L109">        this.paramType = paramType;</span>
+
+<span class="fc" id="L111">    }</span>
+
+
+    // ----------------------------------------------------- Instance Variables
+
+
+    /**
+     * The method name to call on the child object.
+     */
+<span class="fc" id="L120">    protected String methodName = null;</span>
+
+
+    /**
+     * The Java class name of the parameter type expected by the method.
+     */
+<span class="fc" id="L126">    protected String paramType = null;</span>
+    
+    /**
+     * Should we use exact matching. Default is no.
+     */
+<span class="fc" id="L131">    protected boolean useExactMatch = false;</span>
+
+
+    // --------------------------------------------------------- Public Methods
+
+    /**
+     * &lt;p&gt;Is exact matching being used.&lt;/p&gt;
+     *
+     * &lt;p&gt;This rule uses &lt;code&gt;org.apache.commons.beanutils.MethodUtils&lt;/code&gt; 
+     * to introspect the relevent objects so that the right method can be called.
+     * Originally, &lt;code&gt;MethodUtils.invokeExactMethod&lt;/code&gt; was used.
+     * This matches methods very strictly 
+     * and so may not find a matching method when one exists.
+     * This is still the behaviour when exact matching is enabled.&lt;/p&gt;
+     *
+     * &lt;p&gt;When exact matching is disabled, &lt;code&gt;MethodUtils.invokeMethod&lt;/code&gt; is used.
+     * This method finds more methods but is less precise when there are several methods 
+     * with correct signatures.
+     * So, if you want to choose an exact signature you might need to enable this property.&lt;/p&gt;
+     *
+     * &lt;p&gt;The default setting is to disable exact matches.&lt;/p&gt;
+     *
+     * @return true iff exact matching is enabled
+     * @since Digester Release 1.1.1
+     */
+    public boolean isExactMatch() {
+    
+<span class="nc" id="L158">        return useExactMatch;</span>
+    }
+    
+    /**
+     * &lt;p&gt;Set whether exact matching is enabled.&lt;/p&gt;
+     *
+     * &lt;p&gt;See {@link #isExactMatch()}.&lt;/p&gt;
+     *
+     * @param useExactMatch should this rule use exact method matching
+     * @since Digester Release 1.1.1
+     */
+    public void setExactMatch(boolean useExactMatch) {
+
+<span class="nc" id="L171">        this.useExactMatch = useExactMatch;</span>
+<span class="nc" id="L172">    }</span>
+    
+    /**
+     * Process the end of this element.
+     */
+    @Override
+    public void end() throws Exception {
+
+        // Identify the objects to be used
+<span class="fc" id="L181">        Object child = digester.peek(0);</span>
+<span class="fc" id="L182">        Object parent = digester.peek(1);</span>
+        
+<span class="pc bpc" id="L184" title="1 of 2 branches missed.">        if (digester.log.isDebugEnabled()) {</span>
+<span class="nc bnc" id="L185" title="All 2 branches missed.">            if (child == null) {</span>
+<span class="nc" id="L186">                digester.log.debug(&quot;[SetTopRule]{&quot; + digester.match +</span>
+                        &quot;} Call [NULL CHILD].&quot; +
+                        methodName + &quot;(&quot; + parent + &quot;)&quot;);
+            } else {
+<span class="nc" id="L190">                digester.log.debug(&quot;[SetTopRule]{&quot; + digester.match +</span>
+<span class="nc" id="L191">                        &quot;} Call &quot; + child.getClass().getName() + &quot;.&quot; +</span>
+                        methodName + &quot;(&quot; + parent + &quot;)&quot;);
+            }
+        }
+
+        // Call the specified method
+<span class="fc" id="L197">        Class&lt;?&gt; paramTypes[] = new Class&lt;?&gt;[1];</span>
+<span class="fc bfc" id="L198" title="All 2 branches covered.">        if (paramType != null) {</span>
+<span class="fc" id="L199">            paramTypes[0] =</span>
+<span class="fc" id="L200">                    digester.getClassLoader().loadClass(paramType);</span>
+        } else {
+<span class="fc" id="L202">            paramTypes[0] = parent.getClass();</span>
+        }
+
+<span class="pc bpc" id="L205" title="1 of 2 branches missed.">        if (useExactMatch) {</span>
+        
+<span class="nc" id="L207">            MethodUtils.invokeExactMethod(child, methodName,</span>
+                new Object[]{ parent }, paramTypes);
+                
+        } else {
+        
+<span class="fc" id="L212">            MethodUtils.invokeMethod(child, methodName,</span>
+                new Object[]{ parent }, paramTypes);
+        
+        }
+<span class="fc" id="L216">    }</span>
+
+
+    /**
+     * Render a printable version of this Rule.
+     */
+    @Override
+    public String toString() {
+
+<span class="nc" id="L225">        StringBuffer sb = new StringBuffer(&quot;SetTopRule[&quot;);</span>
+<span class="nc" id="L226">        sb.append(&quot;methodName=&quot;);</span>
+<span class="nc" id="L227">        sb.append(methodName);</span>
+<span class="nc" id="L228">        sb.append(&quot;, paramType=&quot;);</span>
+<span class="nc" id="L229">        sb.append(paramType);</span>
+<span class="nc" id="L230">        sb.append(&quot;]&quot;);</span>
+<span class="nc" id="L231">        return (sb.toString());</span>
+
+    }
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

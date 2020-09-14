@@ -1,0 +1,427 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ObjectCreateRule.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester3</a> &gt; <span class="el_source">ObjectCreateRule.java</span></div><h1>ObjectCreateRule.java</h1><pre class="source lang-java linenums">package org.apache.commons.digester3;
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import static java.lang.System.arraycopy;
+import static java.lang.String.format;
+import static org.apache.commons.beanutils.ConstructorUtils.getAccessibleConstructor;
+import static org.apache.commons.beanutils.ConvertUtils.convert;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+
+import net.sf.cglib.proxy.Callback;
+import net.sf.cglib.proxy.Enhancer;
+import net.sf.cglib.proxy.Factory;
+import net.sf.cglib.proxy.MethodInterceptor;
+import net.sf.cglib.proxy.MethodProxy;
+
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+
+/**
+ * Rule implementation that creates a new object and pushes it onto the object stack. When the element is complete, the
+ * object will be popped
+ */
+public class ObjectCreateRule
+    extends Rule
+{
+    private static class DeferredConstructionCallback implements MethodInterceptor
+    {
+        Constructor&lt;?&gt; constructor;
+        Object[] constructorArgs;
+<span class="fc" id="L52">        ArrayList&lt;RecordedInvocation&gt; invocations = new ArrayList&lt;RecordedInvocation&gt;();</span>
+        Object delegate;
+
+        DeferredConstructionCallback( Constructor&lt;?&gt; constructor, Object[] constructorArgs )
+<span class="fc" id="L56">        {</span>
+<span class="fc" id="L57">            this.constructor = constructor;</span>
+<span class="fc" id="L58">            this.constructorArgs = constructorArgs;</span>
+<span class="fc" id="L59">        }</span>
+
+        public Object intercept( Object obj, Method method, Object[] args, MethodProxy proxy )
+            throws Throwable
+        {
+<span class="fc bfc" id="L64" title="All 2 branches covered.">            boolean hasDelegate = delegate != null;</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">            if ( !hasDelegate )</span>
+            {
+<span class="fc" id="L67">                invocations.add( new RecordedInvocation( method, args ) );</span>
+            }
+<span class="fc bfc" id="L69" title="All 2 branches covered.">            if ( hasDelegate )</span>
+            {
+<span class="fc" id="L71">                return proxy.invoke( delegate, args );</span>
+            }
+<span class="fc" id="L73">            return proxy.invokeSuper( obj, args );</span>
+        }
+
+        void establishDelegate()
+            throws Exception
+        {
+<span class="fc" id="L79">            convertTo( constructor.getParameterTypes(), constructorArgs );</span>
+<span class="fc" id="L80">            delegate = constructor.newInstance( constructorArgs );</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">            for ( RecordedInvocation invocation : invocations )</span>
+            {
+<span class="fc" id="L83">                invocation.getInvokedMethod().invoke( delegate, invocation.getArguments() );</span>
+<span class="fc" id="L84">            }</span>
+<span class="fc" id="L85">            constructor = null;</span>
+<span class="fc" id="L86">            constructorArgs = null;</span>
+<span class="fc" id="L87">            invocations = null;</span>
+<span class="fc" id="L88">        }</span>
+    }
+
+    private static class ProxyManager
+    {
+        private final Class&lt;?&gt; clazz;
+        private final Constructor&lt;?&gt; constructor;
+        private final Object[] templateConstructorArguments;
+        private final Digester digester;
+        private final boolean hasDefaultConstructor;
+        private Factory factory;
+
+        ProxyManager( Class&lt;?&gt; clazz, Constructor&lt;?&gt; constructor, Object[] constructorArguments, Digester digester )
+<span class="fc" id="L101">        {</span>
+<span class="fc" id="L102">            this.clazz = clazz;</span>
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">            hasDefaultConstructor = getAccessibleConstructor( clazz, new Class[0] ) != null;</span>
+<span class="fc" id="L104">            this.constructor = constructor;</span>
+<span class="fc" id="L105">            Class&lt;?&gt;[] argTypes = constructor.getParameterTypes();</span>
+<span class="fc" id="L106">            templateConstructorArguments = new Object[argTypes.length];</span>
+<span class="fc bfc" id="L107" title="All 2 branches covered.">            if ( constructorArguments == null )</span>
+            {
+<span class="fc bfc" id="L109" title="All 2 branches covered.">                for ( int i = 0; i &lt; templateConstructorArguments.length; i++ )</span>
+                {
+<span class="fc bfc" id="L111" title="All 2 branches covered.">                    if ( argTypes[i].equals( boolean.class ) )</span>
+                    {
+<span class="fc" id="L113">                        templateConstructorArguments[i] = Boolean.FALSE;</span>
+<span class="fc" id="L114">                        continue;</span>
+                    }
+<span class="pc bpc" id="L116" title="1 of 2 branches missed.">                    if ( argTypes[i].isPrimitive() )</span>
+                    {
+<span class="fc" id="L118">                        templateConstructorArguments[i] = convert( &quot;0&quot;, argTypes[i] );</span>
+<span class="fc" id="L119">                        continue;</span>
+                    }
+<span class="nc" id="L121">                    templateConstructorArguments[i] = null;</span>
+                }
+            }
+            else
+            {
+<span class="pc bpc" id="L126" title="1 of 2 branches missed.">                if ( constructorArguments.length != argTypes.length )</span>
+                {
+<span class="nc" id="L128">                    throw new IllegalArgumentException(</span>
+<span class="nc" id="L129">                        format( &quot;wrong number of constructor arguments specified: %s instead of %s&quot;,</span>
+<span class="nc" id="L130">                        constructorArguments.length, argTypes.length ) );</span>
+                }
+<span class="fc" id="L132">                arraycopy( constructorArguments, 0, templateConstructorArguments, 0, constructorArguments.length );</span>
+            }
+<span class="fc" id="L134">            convertTo( argTypes, templateConstructorArguments );</span>
+<span class="fc" id="L135">            this.digester = digester;</span>
+<span class="fc" id="L136">        }</span>
+
+        Object createProxy()
+        {
+<span class="fc" id="L140">            Object[] constructorArguments = new Object[templateConstructorArguments.length];</span>
+<span class="fc" id="L141">            arraycopy( templateConstructorArguments, 0, constructorArguments, 0, constructorArguments.length );</span>
+<span class="fc" id="L142">            digester.pushParams( constructorArguments );</span>
+
+<span class="fc" id="L144">            DeferredConstructionCallback callback =</span>
+                new DeferredConstructionCallback( constructor, constructorArguments );
+
+            Object result;
+
+<span class="fc bfc" id="L149" title="All 2 branches covered.">            if ( factory == null )</span>
+            {
+<span class="fc" id="L151">                Enhancer enhancer = new Enhancer();</span>
+<span class="fc" id="L152">                enhancer.setSuperclass( clazz );</span>
+<span class="fc" id="L153">                enhancer.setCallback( callback );</span>
+<span class="fc" id="L154">                enhancer.setClassLoader( digester.getClassLoader() );</span>
+<span class="fc" id="L155">                enhancer.setInterceptDuringConstruction( false );</span>
+<span class="pc bpc" id="L156" title="1 of 2 branches missed.">                if ( hasDefaultConstructor )</span>
+                {
+<span class="fc" id="L158">                    result = enhancer.create();</span>
+                }
+                else
+                {
+<span class="nc" id="L162">                    result = enhancer.create( constructor.getParameterTypes(), constructorArguments );</span>
+                }
+<span class="fc" id="L164">                factory = (Factory) result;</span>
+<span class="fc" id="L165">                return result;</span>
+            }
+
+<span class="pc bpc" id="L168" title="1 of 2 branches missed.">            if ( hasDefaultConstructor )</span>
+            {
+<span class="fc" id="L170">                result = factory.newInstance( callback );</span>
+            }
+            else
+            {
+<span class="nc" id="L174">                result = factory.newInstance( constructor.getParameterTypes(),</span>
+                    constructorArguments, new Callback[] { callback } );
+            }
+<span class="fc" id="L177">            return result;</span>
+        }
+
+        void finalize( Object proxy )
+            throws Exception
+        {
+<span class="fc" id="L183">            digester.popParams();</span>
+<span class="fc" id="L184">            ( (DeferredConstructionCallback) ( (Factory) proxy ).getCallback( 0 ) ).establishDelegate();</span>
+<span class="fc" id="L185">        }</span>
+    }
+
+    // ----------------------------------------------------------- Constructors
+
+    /**
+     * Construct an object create rule with the specified class name.
+     *
+     * @param className Java class name of the object to be created
+     */
+    public ObjectCreateRule( String className )
+    {
+<span class="fc" id="L197">        this( className, (String) null );</span>
+<span class="fc" id="L198">    }</span>
+
+    /**
+     * Construct an object create rule with the specified class.
+     *
+     * @param clazz Java class name of the object to be created
+     */
+    public ObjectCreateRule( Class&lt;?&gt; clazz )
+    {
+<span class="fc" id="L207">        this( clazz.getName(), (String) null );</span>
+<span class="fc" id="L208">        this.clazz = clazz;</span>
+<span class="fc" id="L209">    }</span>
+
+    /**
+     * Construct an object create rule with the specified class name and an optional attribute name containing an
+     * override.
+     *
+     * @param className Java class name of the object to be created
+     * @param attributeName Attribute name which, if present, contains an override of the class name to create
+     */
+    public ObjectCreateRule( String className, String attributeName )
+<span class="fc" id="L219">    {</span>
+<span class="fc" id="L220">        this.className = className;</span>
+<span class="fc" id="L221">        this.attributeName = attributeName;</span>
+<span class="fc" id="L222">    }</span>
+
+    /**
+     * Construct an object create rule with the specified class and an optional attribute name containing an override.
+     *
+     * @param attributeName Attribute name which, if present, contains an
+     * @param clazz Java class name of the object to be created override of the class name to create
+     */
+    public ObjectCreateRule( String attributeName, Class&lt;?&gt; clazz )
+    {
+<span class="fc" id="L232">        this( clazz.getName(), attributeName );</span>
+<span class="fc" id="L233">        this.clazz = clazz;</span>
+<span class="fc" id="L234">    }</span>
+
+    // ----------------------------------------------------- Instance Variables
+
+    /**
+     * The attribute containing an override class name if it is present.
+     */
+<span class="fc" id="L241">    protected String attributeName = null;</span>
+
+    /**
+     * The Java class of the object to be created.
+     */
+<span class="fc" id="L246">    protected Class&lt;?&gt; clazz = null;</span>
+
+    /**
+     * The Java class name of the object to be created.
+     */
+<span class="fc" id="L251">    protected String className = null;</span>
+
+    /**
+     * The constructor argument types.
+     *
+     * @since 3.2
+     */
+    private Class&lt;?&gt;[] constructorArgumentTypes;
+
+    /**
+     * The explictly specified default constructor arguments which may be overridden by CallParamRules.
+     *
+     * @since 3.2
+     */
+    private Object[] defaultConstructorArguments;
+
+    /**
+     * Helper object for managing proxies.
+     *
+     * @since 3.2
+     */
+    private ProxyManager proxyManager;
+
+    // --------------------------------------------------------- Public Methods
+
+    /**
+     * Allows users to specify constructor argument types.
+     *
+     * @param constructorArgumentTypes the constructor argument types
+     * @since 3.2
+     */
+    public void setConstructorArgumentTypes( Class&lt;?&gt;... constructorArgumentTypes )
+    {
+<span class="pc bpc" id="L284" title="1 of 2 branches missed.">        if ( constructorArgumentTypes == null )</span>
+        {
+<span class="nc" id="L286">            throw new IllegalArgumentException( &quot;Parameter 'constructorArgumentTypes' must not be null&quot; );</span>
+        }
+
+<span class="fc" id="L289">        this.constructorArgumentTypes = constructorArgumentTypes;</span>
+<span class="fc" id="L290">    }</span>
+
+    /**
+     * Allows users to specify default constructor arguments.  If a default/no-arg constructor is not available
+     * for the target class, these arguments will be used to create the proxy object.  For any argument
+     * not supplied by a {@link CallParamRule}, the corresponding item from this array will be used
+     * to construct the final object as well.
+     *
+     * @param constructorArguments the default constructor arguments.
+     * @since 3.2
+     */
+    public void setDefaultConstructorArguments( Object... constructorArguments )
+    {
+<span class="pc bpc" id="L303" title="1 of 2 branches missed.">        if ( constructorArguments == null )</span>
+        {
+<span class="nc" id="L305">            throw new IllegalArgumentException( &quot;Parameter 'constructorArguments' must not be null&quot; );</span>
+        }
+
+<span class="fc" id="L308">        this.defaultConstructorArguments = constructorArguments;</span>
+<span class="fc" id="L309">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void begin( String namespace, String name, Attributes attributes )
+        throws Exception
+    {
+<span class="fc" id="L318">        Class&lt;?&gt; clazz = this.clazz;</span>
+
+<span class="fc bfc" id="L320" title="All 2 branches covered.">        if ( clazz == null )</span>
+        {
+            // Identify the name of the class to instantiate
+<span class="fc" id="L323">            String realClassName = className;</span>
+<span class="fc bfc" id="L324" title="All 2 branches covered.">            if ( attributeName != null )</span>
+            {
+<span class="fc" id="L326">                String value = attributes.getValue( attributeName );</span>
+<span class="pc bpc" id="L327" title="1 of 2 branches missed.">                if ( value != null )</span>
+                {
+<span class="fc" id="L329">                    realClassName = value;</span>
+                }
+            }
+<span class="pc bpc" id="L332" title="1 of 2 branches missed.">            if ( getDigester().getLogger().isDebugEnabled() )</span>
+            {
+<span class="nc" id="L334">                getDigester().getLogger().debug( format( &quot;[ObjectCreateRule]{%s} New '%s'&quot;,</span>
+<span class="nc" id="L335">                                                         getDigester().getMatch(),</span>
+                                                         realClassName ) );
+            }
+
+            // Instantiate the new object and push it on the context stack
+<span class="fc" id="L340">            clazz = getDigester().getClassLoader().loadClass( realClassName );</span>
+        }
+        Object instance;
+<span class="pc bpc" id="L343" title="1 of 4 branches missed.">        if ( constructorArgumentTypes == null || constructorArgumentTypes.length == 0 )</span>
+        {
+<span class="pc bpc" id="L345" title="1 of 2 branches missed.">            if ( getDigester().getLogger().isDebugEnabled() )</span>
+            {
+<span class="nc" id="L347">                getDigester()</span>
+<span class="nc" id="L348">                    .getLogger()</span>
+<span class="nc" id="L349">                    .debug( format( &quot;[ObjectCreateRule]{%s} New '%s' using default empty constructor&quot;,</span>
+<span class="nc" id="L350">                                    getDigester().getMatch(),</span>
+<span class="nc" id="L351">                                    clazz.getName() ) );</span>
+            }
+
+<span class="fc" id="L354">            instance = clazz.newInstance();</span>
+        }
+        else
+        {
+<span class="fc bfc" id="L358" title="All 2 branches covered.">            if ( proxyManager == null )</span>
+            {
+<span class="fc" id="L360">                Constructor&lt;?&gt; constructor = getAccessibleConstructor( clazz, constructorArgumentTypes );</span>
+
+<span class="fc bfc" id="L362" title="All 2 branches covered.">                if ( constructor == null )</span>
+                {
+<span class="fc" id="L364">                    throw new SAXException(</span>
+<span class="fc" id="L365">                                   format( &quot;[ObjectCreateRule]{%s} Class '%s' does not have a construcor with types %s&quot;,</span>
+<span class="fc" id="L366">                                           getDigester().getMatch(),</span>
+<span class="fc" id="L367">                                           clazz.getName(),</span>
+<span class="fc" id="L368">                                           Arrays.toString( constructorArgumentTypes ) ) );</span>
+                }
+<span class="fc" id="L370">                proxyManager = new ProxyManager( clazz, constructor, defaultConstructorArguments, getDigester() );</span>
+            }
+<span class="fc" id="L372">            instance = proxyManager.createProxy();</span>
+        }
+<span class="fc" id="L374">        getDigester().push( instance );</span>
+<span class="fc" id="L375">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void end( String namespace, String name )
+        throws Exception
+    {
+<span class="fc" id="L384">        Object top = getDigester().pop();</span>
+
+<span class="fc bfc" id="L386" title="All 2 branches covered.">        if ( proxyManager != null )</span>
+        {
+<span class="fc" id="L388">            proxyManager.finalize( top );</span>
+        }
+
+<span class="pc bpc" id="L391" title="1 of 2 branches missed.">        if ( getDigester().getLogger().isDebugEnabled() )</span>
+        {
+<span class="nc" id="L393">            getDigester().getLogger().debug( format( &quot;[ObjectCreateRule]{%s} Pop '%s'&quot;,</span>
+<span class="nc" id="L394">                                                     getDigester().getMatch(),</span>
+<span class="nc" id="L395">                                                     top.getClass().getName() ) );</span>
+        }
+<span class="fc" id="L397">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString()
+    {
+<span class="nc" id="L405">        return format( &quot;ObjectCreateRule[className=%s, attributeName=%s]&quot;, className, attributeName );</span>
+    }
+
+    private static void convertTo( Class&lt;?&gt;[] types, Object[] array )
+    {
+<span class="pc bpc" id="L410" title="1 of 2 branches missed.">        if ( array.length != types.length )</span>
+        {
+<span class="nc" id="L412">            throw new IllegalArgumentException();</span>
+        }
+        // this piece of code is adapted from CallMethodRule
+<span class="fc bfc" id="L415" title="All 2 branches covered.">        for ( int i = 0; i &lt; array.length; i++ )</span>
+        {
+            // convert nulls and convert stringy parameters for non-stringy param types
+<span class="pc bpc" id="L418" title="1 of 4 branches missed.">            if ( array[i] == null</span>
+<span class="pc bpc" id="L419" title="1 of 2 branches missed.">                    || ( array[i] instanceof String &amp;&amp; !String.class.isAssignableFrom( types[i] ) ) )</span>
+            {
+<span class="fc" id="L421">                array[i] = convert( (String) array[i], types[i] );</span>
+            }
+        }
+<span class="fc" id="L424">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

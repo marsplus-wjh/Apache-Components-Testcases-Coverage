@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>CoreOperation.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri.compiler</a> &gt; <span class="el_source">CoreOperation.java</span></div><h1>CoreOperation.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri.compiler;
+
+import org.apache.commons.jxpath.ri.EvalContext;
+
+/**
+ * The common subclass for tree elements representing core operations like &quot;+&quot;,
+ * &quot;- &quot;, &quot;*&quot; etc.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision$ $Date$
+ */
+public abstract class CoreOperation extends Operation {
+
+    /** or precedence */
+    protected static final int OR_PRECEDENCE = 0;
+    /** and precedence */
+    protected static final int AND_PRECEDENCE = 1;
+    /** compare precedence */
+    protected static final int COMPARE_PRECEDENCE = 2;
+    /** relational expression precedence */
+    protected static final int RELATIONAL_EXPR_PRECEDENCE = 3;
+    /** add/subtract precedence */
+    protected static final int ADD_PRECEDENCE = 4;
+    /** multiply/divide/mod precedence */
+    protected static final int MULTIPLY_PRECEDENCE = 5;
+    /** negate precedence */
+    protected static final int NEGATE_PRECEDENCE = 6;
+    /** union precedence */
+    protected static final int UNION_PRECEDENCE = 7;
+
+    /**
+     * Create a new CoreOperation.
+     * @param args Expression[]
+     */
+    public CoreOperation(Expression[] args) {
+<span class="fc" id="L52">        super(args);</span>
+<span class="fc" id="L53">    }</span>
+
+    public Object compute(EvalContext context) {
+<span class="fc" id="L56">        return computeValue(context);</span>
+    }
+
+    public abstract Object computeValue(EvalContext context);
+
+    /**
+     * Returns the XPath symbol for this operation, e.g. &quot;+&quot;, &quot;div&quot;, etc.
+     * @return String symbol
+     */
+    public abstract String getSymbol();
+
+    /**
+     * Returns true if the operation is not sensitive to the order of arguments,
+     * e.g. &quot;=&quot;, &quot;and&quot; etc, and false if it is, e.g. &quot;&amp;lt;=&quot;, &quot;div&quot;.
+     * @return boolean
+     */
+    protected abstract boolean isSymmetric();
+
+    /**
+     * Computes the precedence of the operation.
+     * @return int precedence
+     */
+    protected abstract int getPrecedence();
+
+    public String toString() {
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        if (args.length == 1) {</span>
+<span class="fc" id="L82">            return getSymbol() + parenthesize(args[0], false);</span>
+        }
+<span class="fc" id="L84">        StringBuffer buffer = new StringBuffer();</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">        for (int i = 0; i &lt; args.length; i++) {</span>
+<span class="fc bfc" id="L86" title="All 2 branches covered.">            if (i &gt; 0) {</span>
+<span class="fc" id="L87">                buffer.append(' ');</span>
+<span class="fc" id="L88">                buffer.append(getSymbol());</span>
+<span class="fc" id="L89">                buffer.append(' ');</span>
+            }
+<span class="fc bfc" id="L91" title="All 2 branches covered.">            buffer.append(parenthesize(args[i], i == 0));</span>
+        }
+<span class="fc" id="L93">        return buffer.toString();</span>
+    }
+
+    /**
+     * Wrap an expression in parens if necessary.
+     * @param expression other Expression
+     * @param left whether &lt;code&gt;expression&lt;/code&gt; is left of this one.
+     * @return String
+     */
+    private String parenthesize(Expression expression, boolean left) {
+<span class="fc" id="L103">        String s = expression.toString();</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">        if (!(expression instanceof CoreOperation)) {</span>
+<span class="fc" id="L105">            return s;</span>
+        }
+<span class="fc" id="L107">        int compared = getPrecedence() - ((CoreOperation) expression).getPrecedence();</span>
+
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        if (compared &lt; 0) {</span>
+<span class="fc" id="L110">            return s;</span>
+        }
+<span class="fc bfc" id="L112" title="All 6 branches covered.">        if (compared == 0 &amp;&amp; (isSymmetric() || left)) {</span>
+<span class="fc" id="L113">            return s;</span>
+        }
+<span class="fc" id="L115">        return '(' + s + ')';</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RegexRules.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester3</a> &gt; <span class="el_source">RegexRules.java</span></div><h1>RegexRules.java</h1><pre class="source lang-java linenums">package org.apache.commons.digester3;
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.xml.sax.Attributes;
+
+/**
+ * &lt;p&gt;
+ * Rules implementation that uses regular expression matching for paths.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * The regex implementation is pluggable, allowing different strategies to be used. The basic way that this class work
+ * does not vary. All patterns are tested to see if they match the path using the regex matcher. All those that do are
+ * return in the order which the rules were added.
+ * &lt;/p&gt;
+ * 
+ * @since 1.5
+ */
+public class RegexRules
+    extends AbstractRulesImpl
+{
+
+    // --------------------------------------------------------- Fields
+
+    /** All registered &lt;code&gt;Rule&lt;/code&gt;'s */
+<span class="fc" id="L46">    private ArrayList&lt;RegisteredRule&gt; registeredRules = new ArrayList&lt;RegisteredRule&gt;();</span>
+
+    /** The regex strategy used by this RegexRules */
+    private RegexMatcher matcher;
+
+    // --------------------------------------------------------- Constructor
+
+    /**
+     * Construct sets the Regex matching strategy.
+     * 
+     * @param matcher the regex strategy to be used, not null
+     */
+    public RegexRules( RegexMatcher matcher )
+<span class="fc" id="L59">    {</span>
+<span class="fc" id="L60">        setRegexMatcher( matcher );</span>
+<span class="fc" id="L61">    }</span>
+
+    // --------------------------------------------------------- Properties
+
+    /**
+     * Gets the current regex matching strategy.
+     *
+     * @return the current regex matching strategy.
+     */
+    public RegexMatcher getRegexMatcher()
+    {
+<span class="nc" id="L72">        return matcher;</span>
+    }
+
+    /**
+     * Sets the current regex matching strategy.
+     * 
+     * @param matcher use this RegexMatcher, not null
+     */
+    public void setRegexMatcher( RegexMatcher matcher )
+    {
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">        if ( matcher == null )</span>
+        {
+<span class="nc" id="L84">            throw new IllegalArgumentException( &quot;RegexMatcher must not be null.&quot; );</span>
+        }
+<span class="fc" id="L86">        this.matcher = matcher;</span>
+<span class="fc" id="L87">    }</span>
+
+    // --------------------------------------------------------- Public Methods
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void registerRule( String pattern, Rule rule )
+    {
+<span class="fc" id="L97">        registeredRules.add( new RegisteredRule( pattern, rule ) );</span>
+<span class="fc" id="L98">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    public void clear()
+    {
+<span class="fc" id="L105">        registeredRules.clear();</span>
+<span class="fc" id="L106">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    public List&lt;Rule&gt; match( String namespaceURI, String pattern, String name, Attributes attributes )
+    {
+        //
+        // not a particularly quick implementation
+        // regex is probably going to be slower than string equality
+        // so probably should have a set of strings
+        // and test each only once
+        //
+        // XXX FIX ME - Time And Optimize
+        //
+<span class="fc" id="L121">        ArrayList&lt;Rule&gt; rules = new ArrayList&lt;Rule&gt;( registeredRules.size() );</span>
+<span class="fc bfc" id="L122" title="All 2 branches covered.">        for ( RegisteredRule rr : registeredRules )</span>
+        {
+<span class="fc bfc" id="L124" title="All 2 branches covered.">            if ( matcher.match( pattern, rr.pattern ) )</span>
+            {
+<span class="fc" id="L126">                rules.add( rr.rule );</span>
+            }
+<span class="fc" id="L128">        }</span>
+<span class="fc" id="L129">        return rules;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public List&lt;Rule&gt; rules()
+    {
+<span class="fc" id="L137">        ArrayList&lt;Rule&gt; rules = new ArrayList&lt;Rule&gt;( registeredRules.size() );</span>
+<span class="fc bfc" id="L138" title="All 2 branches covered.">        for ( RegisteredRule rr : registeredRules )</span>
+        {
+<span class="fc" id="L140">            rules.add( rr.rule );</span>
+<span class="fc" id="L141">        }</span>
+<span class="fc" id="L142">        return rules;</span>
+    }
+
+    /** Used to associate rules with paths in the rules list */
+    private static class RegisteredRule
+    {
+        String pattern;
+
+        Rule rule;
+
+        RegisteredRule( String pattern, Rule rule )
+<span class="fc" id="L153">        {</span>
+<span class="fc" id="L154">            this.pattern = pattern;</span>
+<span class="fc" id="L155">            this.rule = rule;</span>
+<span class="fc" id="L156">        }</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

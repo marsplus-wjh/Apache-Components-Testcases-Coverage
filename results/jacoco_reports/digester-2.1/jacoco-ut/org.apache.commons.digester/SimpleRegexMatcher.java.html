@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>SimpleRegexMatcher.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester</a> &gt; <span class="el_source">SimpleRegexMatcher.java</span></div><h1>SimpleRegexMatcher.java</h1><pre class="source lang-java linenums">/* $Id$
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.digester;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+/**
+ * &lt;p&gt;Simple regex pattern matching algorithm.&lt;/p&gt;
+ * 
+ * &lt;p&gt;This uses just two wildcards:
+ * &lt;ul&gt;
+ *  &lt;li&gt;&lt;code&gt;*&lt;/code&gt; matches any sequence of none, one or more characters
+ *  &lt;li&gt;&lt;code&gt;?&lt;/code&gt; matches any one character 
+ * &lt;/ul&gt;
+ * Escaping these wildcards is not supported .&lt;/p&gt;
+ *
+ * @since 1.5
+ */
+
+<span class="fc" id="L37">public class SimpleRegexMatcher extends RegexMatcher {</span>
+    
+    // --------------------------------------------------------- Fields
+    
+    /** Default log (class wide) */
+<span class="fc" id="L42">    private static final Log baseLog = LogFactory.getLog(SimpleRegexMatcher.class);</span>
+    
+    /** Custom log (can be set per object) */
+<span class="fc" id="L45">    private Log log = baseLog;</span>
+    
+    // --------------------------------------------------------- Properties
+    
+    /** 
+     * Gets the &lt;code&gt;Log&lt;/code&gt; implementation.
+     */
+    public Log getLog() {
+<span class="nc" id="L53">        return log;</span>
+    }
+    
+    /**
+     * Sets the current &lt;code&gt;Log&lt;/code&gt; implementation used by this class.
+     */
+    public void setLog(Log log) {
+<span class="nc" id="L60">        this.log = log;</span>
+<span class="nc" id="L61">    }</span>
+    
+    // --------------------------------------------------------- Public Methods
+    
+    /** 
+     * Matches using simple regex algorithm.
+     * 
+     *
+     * @param basePattern the standard digester path representing the element
+     * @param regexPattern the regex pattern the path will be tested against
+     * @return true if the given pattern matches the given path
+     */
+    @Override
+    public boolean match(String basePattern, String regexPattern) {
+        // check for nulls
+<span class="pc bpc" id="L76" title="2 of 4 branches missed.">        if (basePattern == null || regexPattern == null) {</span>
+<span class="nc" id="L77">            return false;</span>
+        }
+<span class="fc" id="L79">        return match(basePattern, regexPattern, 0, 0);</span>
+    }
+    
+    // --------------------------------------------------------- Implementations Methods
+    
+    /**
+     * Implementation of regex matching algorithm.
+     * This calls itself recursively.
+     */
+    private boolean match(String basePattern, String regexPattern, int baseAt, int regexAt) {
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">        if (log.isTraceEnabled()) {</span>
+<span class="nc" id="L90">            log.trace(&quot;Base: &quot; + basePattern);</span>
+<span class="nc" id="L91">            log.trace(&quot;Regex: &quot; + regexPattern);</span>
+<span class="nc" id="L92">            log.trace(&quot;Base@&quot; + baseAt);</span>
+<span class="nc" id="L93">            log.trace(&quot;Regex@&quot; + regexAt);</span>
+        }
+        
+        // check bounds
+<span class="fc bfc" id="L97" title="All 2 branches covered.">        if (regexAt &gt;= regexPattern.length()) {</span>
+            // maybe we've got a match
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">            if (baseAt &gt;= basePattern.length()) {</span>
+                // ok!
+<span class="fc" id="L101">                return true;</span>
+            }
+            // run out early
+<span class="nc" id="L104">            return false;</span>
+            
+        } else {
+<span class="fc bfc" id="L107" title="All 2 branches covered.">            if (baseAt &gt;= basePattern.length()) {</span>
+                // run out early
+<span class="fc" id="L109">                return false;</span>
+            }
+        }
+        
+        // ok both within bounds
+<span class="fc" id="L114">        char regexCurrent = regexPattern.charAt(regexAt);</span>
+<span class="fc bfc" id="L115" title="All 3 branches covered.">        switch (regexCurrent) {</span>
+            case '*':
+                // this is the tricky case
+                // check for terminal 
+<span class="fc bfc" id="L119" title="All 2 branches covered.">                if (++regexAt &gt;= regexPattern.length()) {</span>
+                    // this matches anything let - so return true
+<span class="fc" id="L121">                    return true;</span>
+                }
+                // go through every subsequent apperance of the next character
+                // and so if the rest of the regex matches
+<span class="fc" id="L125">                char nextRegex = regexPattern.charAt(regexAt);</span>
+<span class="pc bpc" id="L126" title="1 of 2 branches missed.">                if (log.isTraceEnabled()) {</span>
+<span class="nc" id="L127">                    log.trace(&quot;Searching for next '&quot; + nextRegex + &quot;' char&quot;);</span>
+                }
+<span class="fc" id="L129">                int nextMatch = basePattern.indexOf(nextRegex, baseAt);</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">                while (nextMatch != -1) {</span>
+<span class="pc bpc" id="L131" title="1 of 2 branches missed.">                    if (log.isTraceEnabled()) {</span>
+<span class="nc" id="L132">                        log.trace(&quot;Trying '*' match@&quot; + nextMatch);</span>
+                    }
+<span class="fc bfc" id="L134" title="All 2 branches covered.">                    if (match(basePattern, regexPattern, nextMatch, regexAt)) {</span>
+<span class="fc" id="L135">                        return true;</span>
+                    }
+<span class="fc" id="L137">                    nextMatch = basePattern.indexOf(nextRegex, nextMatch + 1);</span>
+                }
+<span class="fc" id="L139">                log.trace(&quot;No matches found.&quot;);</span>
+<span class="fc" id="L140">                return false;</span>
+                
+            case '?':
+                // this matches anything
+<span class="fc" id="L144">                return match(basePattern, regexPattern, ++baseAt, ++regexAt);</span>
+            
+            default:
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">                if (log.isTraceEnabled()) {</span>
+<span class="nc" id="L148">                    log.trace(&quot;Camparing &quot; + regexCurrent + &quot; to &quot; + basePattern.charAt(baseAt));</span>
+                }
+<span class="fc bfc" id="L150" title="All 2 branches covered.">                if (regexCurrent == basePattern.charAt(baseAt)) {</span>
+                    // still got more to go
+<span class="fc" id="L152">                    return match(basePattern, regexPattern, ++baseAt, ++regexAt);</span>
+                }
+<span class="fc" id="L154">                return false;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

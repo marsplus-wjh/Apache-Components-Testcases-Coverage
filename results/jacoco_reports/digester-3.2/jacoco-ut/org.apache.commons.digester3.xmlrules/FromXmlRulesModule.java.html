@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FromXmlRulesModule.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester3.xmlrules</a> &gt; <span class="el_source">FromXmlRulesModule.java</span></div><h1>FromXmlRulesModule.java</h1><pre class="source lang-java linenums">package org.apache.commons.digester3.xmlrules;
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import static java.util.Collections.unmodifiableSet;
+import static org.apache.commons.digester3.binder.DigesterLoader.newLoader;
+
+import java.io.File;
+import java.io.InputStream;
+import java.io.Reader;
+import java.io.StringReader;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.apache.commons.digester3.Digester;
+import org.apache.commons.digester3.binder.AbstractRulesModule;
+import org.xml.sax.InputSource;
+
+/**
+ * {@link org.apache.commons.digester3.binder.RulesModule} implementation that allows loading rules from
+ * XML files.
+ *
+ * @since 3.0
+ */
+<span class="fc" id="L47">public abstract class FromXmlRulesModule</span>
+    extends AbstractRulesModule
+{
+
+    private static final String DIGESTER_PUBLIC_ID = &quot;-//Apache Commons //DTD digester-rules XML V1.0//EN&quot;;
+
+    private static final String DIGESTER_DTD_PATH = &quot;digester-rules.dtd&quot;;
+
+<span class="fc" id="L55">    private final URL xmlRulesDtdUrl = FromXmlRulesModule.class.getResource( DIGESTER_DTD_PATH );</span>
+
+<span class="fc" id="L57">    private final List&lt;InputSource&gt; inputSource = new ArrayList&lt;InputSource&gt;();</span>
+
+<span class="fc" id="L59">    private final Set&lt;String&gt; systemIds = new HashSet&lt;String&gt;();</span>
+
+    private String rootPath;
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void configure()
+    {
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">        if ( !inputSource.isEmpty() )</span>
+        {
+<span class="nc" id="L71">            throw new IllegalStateException( &quot;Re-entry is not allowed.&quot; );</span>
+        }
+
+        try
+        {
+<span class="fc" id="L76">            loadRules();</span>
+
+<span class="fc" id="L78">            XmlRulesModule xmlRulesModule = new XmlRulesModule( new NameSpaceURIRulesBinder( rulesBinder() ),</span>
+<span class="fc" id="L79">                                                                getSystemIds(), rootPath );</span>
+<span class="fc" id="L80">            Digester digester = newLoader( xmlRulesModule )</span>
+<span class="fc" id="L81">                    .register( DIGESTER_PUBLIC_ID, xmlRulesDtdUrl.toString() )</span>
+<span class="fc" id="L82">                    .setXIncludeAware( true )</span>
+<span class="fc" id="L83">                    .setValidating( true )</span>
+<span class="fc" id="L84">                    .newDigester();</span>
+
+<span class="fc bfc" id="L86" title="All 2 branches covered.">            for ( InputSource source : inputSource )</span>
+            {
+                try
+                {
+<span class="fc" id="L90">                    digester.parse( source );</span>
+                }
+<span class="nc" id="L92">                catch ( Exception e )</span>
+                {
+<span class="nc" id="L94">                    addError( &quot;Impossible to load XML defined in the InputSource '%s': %s&quot;, source.getSystemId(),</span>
+<span class="nc" id="L95">                              e.getMessage() );</span>
+<span class="fc" id="L96">                }</span>
+<span class="fc" id="L97">            }</span>
+        }
+        finally
+        {
+<span class="pc" id="L101">            inputSource.clear();</span>
+<span class="pc" id="L102">        }</span>
+<span class="fc" id="L103">    }</span>
+
+    /**
+     *
+     */
+    protected abstract void loadRules();
+
+    /**
+     * Reads the XML rules from the given {@code org.xml.sax.InputSource}.
+     *
+     * @param inputSource The {@code org.xml.sax.InputSource} where reading the XML rules from.
+     */
+    protected final void loadXMLRules( InputSource inputSource )
+    {
+<span class="pc bpc" id="L117" title="1 of 2 branches missed.">        if ( inputSource == null )</span>
+        {
+<span class="nc" id="L119">            throw new IllegalArgumentException( &quot;Argument 'inputSource' must be not null&quot; );</span>
+        }
+
+<span class="fc" id="L122">        this.inputSource.add( inputSource );</span>
+
+<span class="fc" id="L124">        String systemId = inputSource.getSystemId();</span>
+<span class="pc bpc" id="L125" title="1 of 4 branches missed.">        if ( systemId != null &amp;&amp; !systemIds.add( systemId ) )</span>
+        {
+<span class="nc" id="L127">            addError( &quot;XML rules file '%s' already bound&quot;, systemId );</span>
+        }
+<span class="fc" id="L129">    }</span>
+
+    /**
+     * Opens a new {@code org.xml.sax.InputSource} given a {@code java.io.InputStream}.
+     *
+     * @param input The {@code java.io.InputStream} where reading the XML rules from.
+     */
+    protected final void loadXMLRules( InputStream input )
+    {
+<span class="pc bpc" id="L138" title="1 of 2 branches missed.">        if ( input == null )</span>
+        {
+<span class="nc" id="L140">            throw new IllegalArgumentException( &quot;Argument 'input' must be not null&quot; );</span>
+        }
+
+<span class="fc" id="L143">        loadXMLRules( new InputSource( input ) );</span>
+<span class="fc" id="L144">    }</span>
+
+    /**
+     * Opens a new {@code org.xml.sax.InputSource} given a {@code java.io.Reader}.
+     *
+     * @param reader The {@code java.io.Reader} where reading the XML rules from.
+     */
+    protected final void loadXMLRules( Reader reader )
+    {
+<span class="pc bpc" id="L153" title="1 of 2 branches missed.">        if ( reader == null )</span>
+        {
+<span class="nc" id="L155">            throw new IllegalArgumentException( &quot;Argument 'input' must be not null&quot; );</span>
+        }
+
+<span class="fc" id="L158">        loadXMLRules( new InputSource( reader ) );</span>
+<span class="fc" id="L159">    }</span>
+
+    /**
+     * Opens a new {@code org.xml.sax.InputSource} given a {@code java.io.File}.
+     *
+     * @param file The {@code java.io.File} where reading the XML rules from.
+     */
+    protected final void loadXMLRules( File file )
+    {
+<span class="nc bnc" id="L168" title="All 2 branches missed.">        if ( file == null )</span>
+        {
+<span class="nc" id="L170">            throw new IllegalArgumentException( &quot;Argument 'input' must be not null&quot; );</span>
+        }
+
+        try
+        {
+<span class="nc" id="L175">            loadXMLRules( file.toURI().toURL() );</span>
+        }
+<span class="nc" id="L177">        catch ( MalformedURLException e )</span>
+        {
+<span class="nc" id="L179">            rulesBinder().addError( e );</span>
+<span class="nc" id="L180">        }</span>
+<span class="nc" id="L181">    }</span>
+
+    /**
+     * Opens a new {@code org.xml.sax.InputSource} given a URI in String representation.
+     *
+     * @param uri The URI in String representation where reading the XML rules from.
+     */
+    protected final void loadXMLRules( String uri )
+    {
+<span class="nc bnc" id="L190" title="All 2 branches missed.">        if ( uri == null )</span>
+        {
+<span class="nc" id="L192">            throw new IllegalArgumentException( &quot;Argument 'uri' must be not null&quot; );</span>
+        }
+
+        try
+        {
+<span class="nc" id="L197">            loadXMLRules( new URL( uri ) );</span>
+        }
+<span class="nc" id="L199">        catch ( MalformedURLException e )</span>
+        {
+<span class="nc" id="L201">            rulesBinder().addError( e );</span>
+<span class="nc" id="L202">        }</span>
+<span class="nc" id="L203">    }</span>
+
+    /**
+     * Opens a new {@code org.xml.sax.InputSource} given a {@code java.net.URL}.
+     *
+     * @param url The {@code java.net.URL} where reading the XML rules from.
+     */
+    protected final void loadXMLRules( URL url )
+    {
+<span class="pc bpc" id="L212" title="1 of 2 branches missed.">        if ( url == null )</span>
+        {
+<span class="nc" id="L214">            throw new IllegalArgumentException( &quot;Argument 'url' must be not null&quot; );</span>
+        }
+
+        try
+        {
+<span class="fc" id="L219">            URLConnection connection = url.openConnection();</span>
+<span class="fc" id="L220">            connection.setUseCaches( false );</span>
+<span class="fc" id="L221">            InputStream stream = connection.getInputStream();</span>
+<span class="fc" id="L222">            InputSource source = new InputSource( stream );</span>
+<span class="fc" id="L223">            source.setSystemId( url.toExternalForm() );</span>
+
+<span class="fc" id="L225">            loadXMLRules( source );</span>
+        }
+<span class="nc" id="L227">        catch ( Exception e )</span>
+        {
+<span class="nc" id="L229">            rulesBinder().addError( e );</span>
+<span class="fc" id="L230">        }</span>
+<span class="fc" id="L231">    }</span>
+
+    /**
+     * Opens a new {@code org.xml.sax.InputSource} given an XML document in textual form.
+     *
+     * @param xmlText The XML document in textual form where reading the XML rules from.
+     */
+    protected final void loadXMLRulesFromText( String xmlText )
+    {
+<span class="pc bpc" id="L240" title="1 of 2 branches missed.">        if ( xmlText == null )</span>
+        {
+<span class="nc" id="L242">            throw new IllegalArgumentException( &quot;Argument 'xmlText' must be not null&quot; );</span>
+        }
+
+<span class="fc" id="L245">        loadXMLRules( new StringReader( xmlText ) );</span>
+<span class="fc" id="L246">    }</span>
+
+    /**
+     * Set the root path (will be used when composing modules).
+     *
+     * @param rootPath The root path
+     */
+    protected final void useRootPath( String rootPath )
+    {
+<span class="fc" id="L255">        this.rootPath = rootPath;</span>
+<span class="fc" id="L256">    }</span>
+
+    /**
+     * Returns the XML source SystemIds load by this module.
+     *
+     * @return The XML source SystemIds load by this module
+     */
+    public final Set&lt;String&gt; getSystemIds()
+    {
+<span class="fc" id="L265">        return unmodifiableSet( systemIds );</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

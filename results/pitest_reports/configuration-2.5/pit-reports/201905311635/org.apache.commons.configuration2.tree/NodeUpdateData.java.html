@@ -1,0 +1,2564 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="../style.css">
+</head>
+<body>
+
+
+<h1>NodeUpdateData.java</h1>
+
+<table class="src">
+
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_1'/>
+1
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_1'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>/*</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_2'/>
+2
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_2'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * Licensed to the Apache Software Foundation (ASF) under one or more</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_3'/>
+3
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_3'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * contributor license agreements.  See the NOTICE file distributed with</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_4'/>
+4
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_4'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * this work for additional information regarding copyright ownership.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_5'/>
+5
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_5'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * The ASF licenses this file to You under the Apache License, Version 2.0</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_6'/>
+6
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_6'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * (the &#34;License&#34;); you may not use this file except in compliance with</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_7'/>
+7
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_7'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * the License.  You may obtain a copy of the License at</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_8'/>
+8
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_8'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> *</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_9'/>
+9
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_9'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> *     http://www.apache.org/licenses/LICENSE-2.0</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_10'/>
+10
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_10'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> *</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_11'/>
+11
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_11'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * Unless required by applicable law or agreed to in writing, software</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_12'/>
+12
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_12'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * distributed under the License is distributed on an &#34;AS IS&#34; BASIS,</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_13'/>
+13
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_13'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_14'/>
+14
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_14'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * See the License for the specific language governing permissions and</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_15'/>
+15
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_15'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * limitations under the License.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_16'/>
+16
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_16'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> */</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_17'/>
+17
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_17'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>package org.apache.commons.configuration2.tree;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_18'/>
+18
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_18'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_19'/>
+19
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_19'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>import java.util.ArrayList;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_20'/>
+20
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_20'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>import java.util.Collection;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_21'/>
+21
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_21'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>import java.util.Collections;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_22'/>
+22
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_22'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>import java.util.HashMap;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_23'/>
+23
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_23'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>import java.util.Map;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_24'/>
+24
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_24'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_25'/>
+25
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_25'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>/**</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_26'/>
+26
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_26'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * &#60;p&#62;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_27'/>
+27
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_27'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * A simple data class used by node models to store parameters of an update</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_28'/>
+28
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_28'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * operation.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_29'/>
+29
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_29'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * &#60;/p&#62;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_30'/>
+30
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_30'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * &#60;p&#62;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_31'/>
+31
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_31'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * The {@code Configuration} interface provides a method for setting the value</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_32'/>
+32
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_32'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * of a given key. The passed in value can be a single object or a collection of</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_33'/>
+33
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_33'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * values. This makes an update operation rather complicated because a</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_34'/>
+34
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_34'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * collection of query results selected by the passed in key has to be matched</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_35'/>
+35
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_35'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * to another collection of values - and both collections can have different</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_36'/>
+36
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_36'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * sizes. Therefore, an update operation may involve changing of existing nodes,</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_37'/>
+37
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_37'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * adding new nodes (if there are more values than currently existing nodes),</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_38'/>
+38
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_38'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * and removing nodes (if there are more existing nodes than provided values).</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_39'/>
+39
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_39'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * This class collects all this information making it possible to actually</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_40'/>
+40
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_40'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * perform the update based on a passed in instance.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_41'/>
+41
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_41'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * &#60;/p&#62;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_42'/>
+42
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_42'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> *</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_43'/>
+43
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_43'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * @since 2.0</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_44'/>
+44
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_44'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * @param &#60;T&#62; the type of nodes involved in this update operation</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_45'/>
+45
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_45'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> */</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_46'/>
+46
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_46'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>public class NodeUpdateData&#60;T&#62;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_47'/>
+47
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_47'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>{</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_48'/>
+48
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_48'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    /** The map with the query results whose value has to be changed. */</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_49'/>
+49
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_49'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    private final Map&#60;QueryResult&#60;T&#62;, Object&#62; changedValues;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_50'/>
+50
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_50'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_51'/>
+51
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_51'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    /** The collection with the new values to be added. */</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_52'/>
+52
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_52'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    private final Collection&#60;Object&#62; newValues;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_53'/>
+53
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_53'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_54'/>
+54
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_54'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    /** The collection with query results about the nodes to be removed. */</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_55'/>
+55
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_55'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    private final Collection&#60;QueryResult&#60;T&#62;&#62; removedNodes;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_56'/>
+56
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_56'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_57'/>
+57
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_57'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    /** The key of the current update operation. */</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_58'/>
+58
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_58'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    private final String key;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_59'/>
+59
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_59'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_60'/>
+60
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_60'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    /**</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_61'/>
+61
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_61'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * Creates a new instance of {@code NodeUpdateData} and initializes all its</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_62'/>
+62
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_62'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * properties. All passed in collections are optional and can be</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_63'/>
+63
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_63'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * &#60;b&#62;null&#60;/b&#62;.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_64'/>
+64
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_64'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     *</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_65'/>
+65
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_65'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * @param changedValues the map defining the changed values</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_66'/>
+66
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_66'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * @param newValues the collection with the new values</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_67'/>
+67
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_67'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * @param removedNodes the collection with the nodes to be removed</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_68'/>
+68
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_68'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * @param key the key of the update operation</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_69'/>
+69
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_69'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     */</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_70'/>
+70
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_70'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    public NodeUpdateData(final Map&#60;QueryResult&#60;T&#62;, Object&#62; changedValues,</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_71'/>
+71
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_71'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>            final Collection&#60;Object&#62; newValues,</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_72'/>
+72
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_72'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>            final Collection&#60;QueryResult&#60;T&#62;&#62; removedNodes, final String key)</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_73'/>
+73
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_73'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>    {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_74'/>
+74
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_74'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>        this.changedValues = copyMap(changedValues);</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_75'/>
+75
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_75'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>        this.newValues = copyCollection(newValues);</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_76'/>
+76
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_76'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>        this.removedNodes = copyCollection(removedNodes);</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_77'/>
+77
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_77'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>        this.key = key;</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_78'/>
+78
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_78'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>    }</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_79'/>
+79
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_79'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_80'/>
+80
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_80'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    /**</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_81'/>
+81
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_81'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * Returns an unmodifiable map with the values to be changed. The keys of</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_82'/>
+82
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_82'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * the map are the query results for the nodes affected, the values are the</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_83'/>
+83
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_83'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * new values to be assigned to these nodes.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_84'/>
+84
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_84'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     *</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_85'/>
+85
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_85'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * @return the map with values to be changed</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_86'/>
+86
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_86'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     */</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_87'/>
+87
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_87'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    public Map&#60;QueryResult&#60;T&#62;, Object&#62; getChangedValues()</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_88'/>
+88
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_88'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_89'/>
+89
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_89'>1</a>
+<span>
+1. getChangedValues : mutated return of Object value for org/apache/commons/configuration2/tree/NodeUpdateData::getChangedValues to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        return changedValues;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_90'/>
+90
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_90'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    }</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_91'/>
+91
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_91'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_92'/>
+92
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_92'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    /**</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_93'/>
+93
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_93'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * Returns a collection with the values to be newly added. For these values</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_94'/>
+94
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_94'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * new nodes have to be created and added under the key stored in this</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_95'/>
+95
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_95'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * object.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_96'/>
+96
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_96'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     *</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_97'/>
+97
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_97'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * @return the collection with new values</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_98'/>
+98
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_98'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     */</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_99'/>
+99
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_99'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    public Collection&#60;Object&#62; getNewValues()</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_100'/>
+100
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_100'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_101'/>
+101
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_101'>1</a>
+<span>
+1. getNewValues : mutated return of Object value for org/apache/commons/configuration2/tree/NodeUpdateData::getNewValues to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        return newValues;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_102'/>
+102
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_102'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    }</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_103'/>
+103
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_103'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_104'/>
+104
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_104'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    /**</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_105'/>
+105
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_105'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * Adds a collection with the nodes to be removed. These nodes are no longer</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_106'/>
+106
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_106'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * needed and have to be removed from the node model processing this</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_107'/>
+107
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_107'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * request.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_108'/>
+108
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_108'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     *</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_109'/>
+109
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_109'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * @return the collection with nodes to be removed</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_110'/>
+110
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_110'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     */</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_111'/>
+111
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_111'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    public Collection&#60;QueryResult&#60;T&#62;&#62; getRemovedNodes()</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_112'/>
+112
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_112'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_113'/>
+113
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_113'>1</a>
+<span>
+1. getRemovedNodes : mutated return of Object value for org/apache/commons/configuration2/tree/NodeUpdateData::getRemovedNodes to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        return removedNodes;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_114'/>
+114
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_114'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    }</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_115'/>
+115
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_115'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_116'/>
+116
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_116'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    /**</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_117'/>
+117
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_117'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * Returns the key for this update operation.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_118'/>
+118
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_118'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     *</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_119'/>
+119
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_119'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * @return the key for this operation</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_120'/>
+120
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_120'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     */</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_121'/>
+121
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_121'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    public String getKey()</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_122'/>
+122
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_122'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    {</span></pre></td></tr>
+
+
+<tr>
+<td class='uncovered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_123'/>
+123
+</td>
+<td class='survived'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_123'>1</a>
+<span>
+1. getKey : mutated return of Object value for org/apache/commons/configuration2/tree/NodeUpdateData::getKey to ( if (x != null) null else throw new RuntimeException ) &rarr; NO_COVERAGE<br/>
+
+</span>
+</span>
+</td>
+<td class='uncovered'><pre><span  class='survived'>        return key;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_124'/>
+124
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_124'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    }</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_125'/>
+125
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_125'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_126'/>
+126
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_126'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    /**</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_127'/>
+127
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_127'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * Creates an unmodifiable defensive copy of the passed in map which may be</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_128'/>
+128
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_128'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * null.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_129'/>
+129
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_129'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     *</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_130'/>
+130
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_130'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * @param map the map to be copied</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_131'/>
+131
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_131'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * @param &#60;K&#62; the type of the keys involved</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_132'/>
+132
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_132'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * @param &#60;V&#62; the type of the values involved</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_133'/>
+133
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_133'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * @return the unmodifiable copy</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_134'/>
+134
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_134'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     */</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_135'/>
+135
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_135'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    private static &#60;K, V&#62; Map&#60;K, V&#62; copyMap(final Map&#60;? extends K, ? extends V&#62; map)</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_136'/>
+136
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_136'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_137'/>
+137
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_137'>1</a>
+<span>
+1. copyMap : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        if (map == null)</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_138'/>
+138
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_138'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_139'/>
+139
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_139'>1</a>
+<span>
+1. copyMap : mutated return of Object value for org/apache/commons/configuration2/tree/NodeUpdateData::copyMap to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            return Collections.emptyMap();</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_140'/>
+140
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_140'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        }</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_141'/>
+141
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_141'>1</a>
+<span>
+1. copyMap : mutated return of Object value for org/apache/commons/configuration2/tree/NodeUpdateData::copyMap to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        return Collections.unmodifiableMap(new HashMap&#60;&#62;(map));</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_142'/>
+142
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_142'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    }</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_143'/>
+143
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_143'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_144'/>
+144
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_144'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    /**</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_145'/>
+145
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_145'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * Creates an unmodifiable defensive copy of the passed in collection with</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_146'/>
+146
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_146'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * may be null.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_147'/>
+147
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_147'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     *</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_148'/>
+148
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_148'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * @param col the collection to be copied</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_149'/>
+149
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_149'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * @param &#60;T&#62; the element type of the collection</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_150'/>
+150
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_150'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * @return the unmodifiable copy</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_151'/>
+151
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_151'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     */</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_152'/>
+152
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_152'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    private static &#60;T&#62; Collection&#60;T&#62; copyCollection(final Collection&#60;? extends T&#62; col)</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_153'/>
+153
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_153'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_154'/>
+154
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_154'>1</a>
+<span>
+1. copyCollection : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        if (col == null)</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_155'/>
+155
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_155'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_156'/>
+156
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_156'>1</a>
+<span>
+1. copyCollection : mutated return of Object value for org/apache/commons/configuration2/tree/NodeUpdateData::copyCollection to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            return Collections.emptySet();</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_157'/>
+157
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_157'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        }</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_158'/>
+158
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_158'>1</a>
+<span>
+1. copyCollection : mutated return of Object value for org/apache/commons/configuration2/tree/NodeUpdateData::copyCollection to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        return Collections.unmodifiableCollection(new ArrayList&#60;&#62;(col));</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_159'/>
+159
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_159'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    }</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@2ed423a8_160'/>
+160
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_160'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>}</span></pre></td></tr>
+
+
+
+<tr><td></td><td></td><td><h2>Mutations</h2></td></tr>
+
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@2ed423a8_89'>89</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_89'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>getChangedValues<br/><b>Killed by : </b>org.apache.commons.configuration2.tree.TestNodeUpdateData.testInitChangedValuesDefensiveCopy(org.apache.commons.configuration2.tree.TestNodeUpdateData)</span></span> mutated return of Object value for org/apache/commons/configuration2/tree/NodeUpdateData::getChangedValues to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@2ed423a8_101'>101</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_101'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>getNewValues<br/><b>Killed by : </b>org.apache.commons.configuration2.tree.TestNodeUpdateData.testGetNewValuesModify(org.apache.commons.configuration2.tree.TestNodeUpdateData)</span></span> mutated return of Object value for org/apache/commons/configuration2/tree/NodeUpdateData::getNewValues to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@2ed423a8_113'>113</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_113'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>getRemovedNodes<br/><b>Killed by : </b>org.apache.commons.configuration2.tree.TestNodeUpdateData.testGetRemovedNodesModify(org.apache.commons.configuration2.tree.TestNodeUpdateData)</span></span> mutated return of Object value for org/apache/commons/configuration2/tree/NodeUpdateData::getRemovedNodes to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@2ed423a8_123'>123</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_123'/> 
+
+<p class='NO_COVERAGE'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>getKey<br/><b>Killed by : </b>none</span></span> mutated return of Object value for org/apache/commons/configuration2/tree/NodeUpdateData::getKey to ( if (x != null) null else throw new RuntimeException ) &rarr; NO_COVERAGE</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@2ed423a8_137'>137</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_137'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>copyMap<br/><b>Killed by : </b>org.apache.commons.configuration2.tree.TestNodeUpdateData.testGetNewValuesModify(org.apache.commons.configuration2.tree.TestNodeUpdateData)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@2ed423a8_139'>139</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_139'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>copyMap<br/><b>Killed by : </b>org.apache.commons.configuration2.tree.TestNodeUpdateData.testInitNoData(org.apache.commons.configuration2.tree.TestNodeUpdateData)</span></span> mutated return of Object value for org/apache/commons/configuration2/tree/NodeUpdateData::copyMap to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@2ed423a8_141'>141</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_141'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>copyMap<br/><b>Killed by : </b>org.apache.commons.configuration2.tree.TestNodeUpdateData.testInitChangedValuesDefensiveCopy(org.apache.commons.configuration2.tree.TestNodeUpdateData)</span></span> mutated return of Object value for org/apache/commons/configuration2/tree/NodeUpdateData::copyMap to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@2ed423a8_154'>154</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_154'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>copyCollection<br/><b>Killed by : </b>org.apache.commons.configuration2.tree.TestNodeUpdateData.testGetNewValuesModify(org.apache.commons.configuration2.tree.TestNodeUpdateData)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@2ed423a8_156'>156</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_156'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>copyCollection<br/><b>Killed by : </b>org.apache.commons.configuration2.tree.TestNodeUpdateData.testInitNoData(org.apache.commons.configuration2.tree.TestNodeUpdateData)</span></span> mutated return of Object value for org/apache/commons/configuration2/tree/NodeUpdateData::copyCollection to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@2ed423a8_158'>158</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@2ed423a8_158'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>copyCollection<br/><b>Killed by : </b>org.apache.commons.configuration2.tree.TestNodeUpdateData.testGetNewValuesModify(org.apache.commons.configuration2.tree.TestNodeUpdateData)</span></span> mutated return of Object value for org/apache/commons/configuration2/tree/NodeUpdateData::copyCollection to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED</p> 
+</td>
+</tr>
+
+</table>
+
+
+<h2>Active mutators</h2>
+<ul>
+<li class='mutator'>INCREMENTS_MUTATOR</li>
+<li class='mutator'>VOID_METHOD_CALL_MUTATOR</li>
+<li class='mutator'>RETURN_VALS_MUTATOR</li>
+<li class='mutator'>MATH_MUTATOR</li>
+<li class='mutator'>NEGATE_CONDITIONALS_MUTATOR</li>
+<li class='mutator'>INVERT_NEGS_MUTATOR</li>
+<li class='mutator'>CONDITIONALS_BOUNDARY_MUTATOR</li>
+
+</ul>
+
+<h2>Tests examined</h2>
+<ul>
+<li>org.apache.commons.configuration2.TestAbstractHierarchicalConfiguration.testClear(org.apache.commons.configuration2.TestAbstractHierarchicalConfiguration) (8 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testGetDescriptorSecond(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (3 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testGetSimpleInt(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (8 ms)</li><li>org.apache.commons.configuration2.event.TestHierarchicalConfigurationEvents.testSetPropertyEvent(org.apache.commons.configuration2.event.TestHierarchicalConfigurationEvents) (1 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testNestedPropeties(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (3 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestReloadingCombinedConfigurationBuilder.testInitWithParameters(org.apache.commons.configuration2.builder.combined.TestReloadingCombinedConfigurationBuilder) (13 ms)</li><li>org.apache.commons.configuration2.TestHierarchicalConfiguration.testConfigurationAtClearAndDetach(org.apache.commons.configuration2.TestHierarchicalConfiguration) (1 ms)</li><li>org.apache.commons.configuration2.TestSubnodeConfiguration.testConfiguarationAtNoUpdates(org.apache.commons.configuration2.TestSubnodeConfiguration) (1 ms)</li><li>org.apache.commons.configuration2.TestEqualBehaviour.testSettingExisting(org.apache.commons.configuration2.TestEqualBehaviour) (5 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testBasePathForChildConfigurations(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (2 ms)</li><li>org.apache.commons.configuration2.TestPropertiesSequence.testMappingInSameOrder(org.apache.commons.configuration2.TestPropertiesSequence) (8 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testConfigurationBuilderProviderInheritBasicProperties(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (22 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testGetNonIndexedProperties(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (3 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testGetDescriptorShort(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (2 ms)</li><li>org.apache.commons.configuration2.TestHierarchicalConfiguration.testConfigurationsAtWithUpdates(org.apache.commons.configuration2.TestHierarchicalConfiguration) (0 ms)</li><li>org.apache.commons.configuration2.TestAbstractHierarchicalConfiguration.testInterpolationMultipleLevels(org.apache.commons.configuration2.TestAbstractHierarchicalConfiguration) (3 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testSetSimpleBoolean(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (2 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testSetSimpleString(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (10 ms)</li><li>org.apache.commons.configuration2.tree.TestInMemoryNodeModel.testSetPropertyNoChanges(org.apache.commons.configuration2.tree.TestInMemoryNodeModel) (0 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testGetNamedBuilderUnknown(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (37 ms)</li><li>org.apache.commons.configuration2.TestXMLConfiguration.testSetPropertyListWithDelimiterParsingDisabled(org.apache.commons.configuration2.TestXMLConfiguration) (14 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testSetArrayValue(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (3 ms)</li><li>org.apache.commons.configuration2.TestXMLConfiguration.testAutoSaveWithSubSubnodeConfig(org.apache.commons.configuration2.TestXMLConfiguration) (24 ms)</li><li>org.apache.commons.configuration2.builder.fluent.TestConfigurations.testCombinedBuilderFromFile(org.apache.commons.configuration2.builder.fluent.TestConfigurations) (21 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testSetConfigurationBasePath(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (3 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testGetChildBuilders(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (26 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testSuppressChildBuilderPropertyInheritance(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (13 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testLoadOptional(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (36 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testGetSimpleShort(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (5 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testGetDescriptorLong(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (5 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testSetNonIndexedProperties(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (9 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testDefaultBasePathInParameters(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (15 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testConfigurationBuilderProviderInheritEventListeners(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (17 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testINIConfiguration(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (41 ms)</li><li>org.apache.commons.configuration2.TestXMLConfiguration.testAutoSaveWithSubnodeConfig(org.apache.commons.configuration2.TestXMLConfiguration) (22 ms)</li><li>org.apache.commons.configuration2.TestEqualBehaviour.testAddingUnset(org.apache.commons.configuration2.TestEqualBehaviour) (7 ms)</li><li>org.apache.commons.configuration2.TestAbstractHierarchicalConfiguration.testSetProperty(org.apache.commons.configuration2.TestAbstractHierarchicalConfiguration) (4 ms)</li><li>org.apache.commons.configuration2.TestXMLConfiguration.testAddNodesAndSave(org.apache.commons.configuration2.TestXMLConfiguration) (34 ms)</li><li>org.apache.commons.configuration2.builder.fluent.TestConfigurations.testCombinedBuilderFromURL(org.apache.commons.configuration2.builder.fluent.TestConfigurations) (23 ms)</li><li>org.apache.commons.configuration2.TestXMLConfiguration.testSetRootAttribute(org.apache.commons.configuration2.TestXMLConfiguration) (31 ms)</li><li>org.apache.commons.configuration2.TestEqualBehaviour.testDeletingExisting(org.apache.commons.configuration2.TestEqualBehaviour) (11 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testConfigurationBuilderProviderInheritBasePath(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (14 ms)</li><li>org.apache.commons.configuration2.TestCombinedConfiguration.testGetSourceMulti(org.apache.commons.configuration2.TestCombinedConfiguration) (2 ms)</li><li>org.apache.commons.configuration2.TestHierarchicalConfiguration.testSubsetNodeWithValue(org.apache.commons.configuration2.TestHierarchicalConfiguration) (1 ms)</li><li>org.apache.commons.configuration2.builder.fluent.TestConfigurations.testCombinedFromFile(org.apache.commons.configuration2.builder.fluent.TestConfigurations) (14 ms)</li><li>org.apache.commons.configuration2.plist.TestXMLPropertyListConfigurationEvents.testSetPropertyEvent(org.apache.commons.configuration2.plist.TestXMLPropertyListConfigurationEvents) (6 ms)</li><li>org.apache.commons.configuration2.TestCombinedConfiguration.testCloneSynchronized(org.apache.commons.configuration2.TestCombinedConfiguration) (12 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testGetSimpleBoolean(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (3 ms)</li><li>org.apache.commons.configuration2.TestCombinedConfiguration.testLockHandlingWithExceptionWhenConstructingRootNode(org.apache.commons.configuration2.TestCombinedConfiguration) (5 ms)</li><li>org.apache.commons.configuration2.TestPropertiesSequence.testConfigurationValuesInSameOrderFromFile(org.apache.commons.configuration2.TestPropertiesSequence) (18 ms)</li><li>org.apache.commons.configuration2.TestCombinedConfiguration.testEscapeListDelimiters(org.apache.commons.configuration2.TestCombinedConfiguration) (2 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestReloadingCombinedConfigurationBuilder.testReloadableDefinitionBuilder(org.apache.commons.configuration2.builder.combined.TestReloadingCombinedConfigurationBuilder) (23 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testGetNamedBuilder(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (16 ms)</li><li>org.apache.commons.configuration2.TestEqualBehaviour.testDeletingNonExisting(org.apache.commons.configuration2.TestEqualBehaviour) (11 ms)</li><li>org.apache.commons.configuration2.plist.TestPropertyListConfigurationEvents.testSetPropertyEventWithDetails(org.apache.commons.configuration2.plist.TestPropertyListConfigurationEvents) (3 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testBasePathForChildConfigurations(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (4 ms)</li><li>org.apache.commons.configuration2.TestXMLConfiguration.testSaveWithValidation(org.apache.commons.configuration2.TestXMLConfiguration) (33 ms)</li><li>org.apache.commons.configuration2.TestDynamicCombinedConfiguration.org.apache.commons.configuration2.TestDynamicCombinedConfiguration (5402 ms)</li><li>org.apache.commons.configuration2.TestCombinedConfiguration.testGetSourceSynchronized(org.apache.commons.configuration2.TestCombinedConfiguration) (6 ms)</li><li>org.apache.commons.configuration2.tree.TestInMemoryNodeModelTrackedNodes.org.apache.commons.configuration2.tree.TestInMemoryNodeModelTrackedNodes (22 ms)</li><li>org.apache.commons.configuration2.TestPropertiesSequence.testConfigurationValuesInSameOrderWithManualAdd(org.apache.commons.configuration2.TestPropertiesSequence) (14 ms)</li><li>org.apache.commons.configuration2.tree.TestNodeUpdateData.testGetChangedValuesModify(org.apache.commons.configuration2.tree.TestNodeUpdateData) (1 ms)</li><li>org.apache.commons.configuration2.event.TestXMLConfigurationEvents.testSetPropertyEventWithDetails(org.apache.commons.configuration2.event.TestXMLConfigurationEvents) (1 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testGetNamedBuilderUnknown(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (15 ms)</li><li>org.apache.commons.configuration2.TestXMLConfiguration.testSaveWithRootAttributes(org.apache.commons.configuration2.TestXMLConfiguration) (14 ms)</li><li>org.apache.commons.configuration2.tree.xpath.TestXPathExpressionEngineInConfig.testSetPropertyNewKey(org.apache.commons.configuration2.tree.xpath.TestXPathExpressionEngineInConfig) (8 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testGetSimpleLong(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (7 ms)</li><li>org.apache.commons.configuration2.tree.TestNodeUpdateData.testInitNewValuesDefensiveCopy(org.apache.commons.configuration2.tree.TestNodeUpdateData) (0 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testConfigurationBuilderProviderInheritBasicProperties(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (33 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testSetSimpleDouble(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (8 ms)</li><li>org.apache.commons.configuration2.TestPropertiesConfiguration.testIncludeInSubDir(org.apache.commons.configuration2.TestPropertiesConfiguration) (23 ms)</li><li>org.apache.commons.configuration2.tree.TestOverrideCombiner.testCombineProperties(org.apache.commons.configuration2.tree.TestOverrideCombiner) (2 ms)</li><li>org.apache.commons.configuration2.tree.TestNodeUpdateData.testGetRemovedNodesModify(org.apache.commons.configuration2.tree.TestNodeUpdateData) (0 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testSetMappedValues(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (5 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testInheritProperties(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (18 ms)</li><li>org.apache.commons.configuration2.TestCombinedConfiguration.testGetSourceUnknown(org.apache.commons.configuration2.TestCombinedConfiguration) (8 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testSetSimpleLong(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (3 ms)</li><li>org.apache.commons.configuration2.TestEqualBehaviour.testLoading(org.apache.commons.configuration2.TestEqualBehaviour) (5 ms)</li><li>org.apache.commons.configuration2.TestEqualBehaviour.testAddingSet(org.apache.commons.configuration2.TestEqualBehaviour) (12 ms)</li><li>org.apache.commons.configuration2.TestCombinedConfiguration.testGetSourcesMultiSources(org.apache.commons.configuration2.TestCombinedConfiguration) (3 ms)</li><li>org.apache.commons.configuration2.plist.TestXMLPropertyListConfigurationEvents.testSetPropertyEventWithDetails(org.apache.commons.configuration2.plist.TestXMLPropertyListConfigurationEvents) (3 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testEnvironmentProperties(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (22 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testChildBuildersAreInitializedOnlyOnce(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (33 ms)</li><li>org.apache.commons.configuration2.TestXMLConfiguration.testSetTextRootElement(org.apache.commons.configuration2.TestXMLConfiguration) (22 ms)</li><li>org.apache.commons.configuration2.TestINIConfiguration.testGlobalSectionConnected(org.apache.commons.configuration2.TestINIConfiguration) (7 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testCombinedConfigurationAttributes(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (31 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testSetSimpleShort(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (5 ms)</li><li>org.apache.commons.configuration2.TestHierarchicalConfiguration.testChildConfigurationsAtNoUpdates(org.apache.commons.configuration2.TestHierarchicalConfiguration) (1 ms)</li><li>org.apache.commons.configuration2.TestHierarchicalConfiguration.testConfigurationAtUpdateParentIndependent(org.apache.commons.configuration2.TestHierarchicalConfiguration) (1 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testConfigurationBuilderProvider(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (17 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestConfigurationDeclaration.testConfigurationDeclarationOptionalAttributeInvalid(org.apache.commons.configuration2.builder.combined.TestConfigurationDeclaration) (0 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testGetIndexedNonExisting(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (6 ms)</li><li>org.apache.commons.configuration2.TestCombinedConfiguration.testGetSourceCombined(org.apache.commons.configuration2.TestCombinedConfiguration) (3 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testAddNullPropertyValue(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (3 ms)</li><li>org.apache.commons.configuration2.builder.fluent.TestConfigurations.testCombinedBuilderFromPath(org.apache.commons.configuration2.builder.fluent.TestConfigurations) (18 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testInheritProperties(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (30 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testLoadAdditional(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (18 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testRootNodeInitializedAfterCreation(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (13 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testConcurrentReadAccessWithoutSynchronizer(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (25 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testLoadConfiguration(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (18 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testINIConfiguration(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (27 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testGetDescriptorDouble(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (3 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testMappedRemove(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (8 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testInitChildBuilderParametersDefaultChildProperties(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (28 ms)</li><li>org.apache.commons.configuration2.plist.TestPropertyListConfigurationEvents.testSetPropertyEvent(org.apache.commons.configuration2.plist.TestPropertyListConfigurationEvents) (2 ms)</li><li>org.apache.commons.configuration2.TestXMLConfiguration.testClone(org.apache.commons.configuration2.TestXMLConfiguration) (6 ms)</li><li>org.apache.commons.configuration2.TestXMLConfiguration.testEmptyAttribute(org.apache.commons.configuration2.TestXMLConfiguration) (18 ms)</li><li>org.apache.commons.configuration2.TestXMLConfiguration.testSave(org.apache.commons.configuration2.TestXMLConfiguration) (25 ms)</li><li>org.apache.commons.configuration2.TestXMLConfiguration.testSaveWithDelimiterParsingDisabled(org.apache.commons.configuration2.TestXMLConfiguration) (23 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testDefaultBasePathInParameters(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (15 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testDefaultBasePathFromDefinitionBuilder(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (28 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testGetDescriptorInt(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (7 ms)</li><li>org.apache.commons.configuration2.event.TestHierarchicalConfigurationEvents.testSetPropertyEventWithDetails(org.apache.commons.configuration2.event.TestHierarchicalConfigurationEvents) (1 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testGetNamedBuilder(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (22 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testGetMappedValues(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (4 ms)</li><li>org.apache.commons.configuration2.TestINIConfiguration.testSaveClearedSection(org.apache.commons.configuration2.TestINIConfiguration) (3 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testSystemProperties(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (13 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testBuilderNamesManipulate(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (14 ms)</li><li>org.apache.commons.configuration2.tree.TestInMemoryNodeModel.testSetPropertyChangedValues(org.apache.commons.configuration2.tree.TestInMemoryNodeModel) (2 ms)</li><li>org.apache.commons.configuration2.TestEqualBehaviour.testSettingNonExisting(org.apache.commons.configuration2.TestEqualBehaviour) (6 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testInitChildBuilderParametersDefaultChildProperties(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (29 ms)</li><li>org.apache.commons.configuration2.TestHierarchicalXMLConfiguration.testSaveModified(org.apache.commons.configuration2.TestHierarchicalXMLConfiguration) (19 ms)</li><li>org.apache.commons.configuration2.TestHierarchicalConfiguration.testConfigurationAtUpdateParentConnected(org.apache.commons.configuration2.TestHierarchicalConfiguration) (1 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testGetIndexedString(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (6 ms)</li><li>org.apache.commons.configuration2.TestXMLConfiguration.testSetProperty(org.apache.commons.configuration2.TestXMLConfiguration) (6 ms)</li><li>org.apache.commons.configuration2.tree.TestNodeUpdateData.testInitNoData(org.apache.commons.configuration2.tree.TestNodeUpdateData) (4 ms)</li><li>org.apache.commons.configuration2.tree.xpath.TestXPathExpressionEngineInConfig.testSetPropertyExisting(org.apache.commons.configuration2.tree.xpath.TestXPathExpressionEngineInConfig) (1 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testGetSimpleDouble(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (3 ms)</li><li>org.apache.commons.configuration2.TestAbstractHierarchicalConfiguration.testInterpolationBasic(org.apache.commons.configuration2.TestAbstractHierarchicalConfiguration) (6 ms)</li><li>org.apache.commons.configuration2.TestXMLConfiguration.testSaveDelimiterParsingDisabled(org.apache.commons.configuration2.TestXMLConfiguration) (39 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testConfigurationBuilderProviderInheritBasePath(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (10 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testConcurrentReadAccessWithoutSynchronizer(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (33 ms)</li><li>org.apache.commons.configuration2.tree.TestInMemoryNodeModel.testSetPropertyClearValues(org.apache.commons.configuration2.tree.TestInMemoryNodeModel) (1 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testEnvironmentProperties(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (9 ms)</li><li>org.apache.commons.configuration2.TestConfigurationUtils.testConvertToHierarchicalMultiValues(org.apache.commons.configuration2.TestConfigurationUtils) (1 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testMultiTenentConfigurationReloading(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (5049 ms)</li><li>org.apache.commons.configuration2.TestHierarchicalConfiguration.testChildConfigurationsAtWithUpdates(org.apache.commons.configuration2.TestHierarchicalConfiguration) (1 ms)</li><li>org.apache.commons.configuration2.tree.TestInMemoryNodeModel.testSetPropertyNewValues(org.apache.commons.configuration2.tree.TestInMemoryNodeModel) (1 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testBuilderNames(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (97 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testCombinedConfigurationNoAdditional(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (19 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testBuilderNames(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (28 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testCombinedConfigurationAttributes(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (24 ms)</li><li>org.apache.commons.configuration2.TestCombinedConfiguration.testGetSourceNonHierarchical(org.apache.commons.configuration2.TestCombinedConfiguration) (2 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testInterpolationOverMultipleSources(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (38 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testLoadOptional(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (46 ms)</li><li>org.apache.commons.configuration2.TestHierarchicalConfiguration.testConfigurationAtUpdateSubConfigIndependent(org.apache.commons.configuration2.TestHierarchicalConfiguration) (1 ms)</li><li>org.apache.commons.configuration2.TestConfigurationUtils.testConvertToHierarchical(org.apache.commons.configuration2.TestConfigurationUtils) (6 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testJndiConfiguration(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (26 ms)</li><li>org.apache.commons.configuration2.TestHierarchicalConfiguration.testClone(org.apache.commons.configuration2.TestHierarchicalConfiguration) (2 ms)</li><li>org.apache.commons.configuration2.event.TestXMLConfigurationEvents.testSetPropertyEvent(org.apache.commons.configuration2.event.TestXMLConfigurationEvents) (1 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testCombinedConfigurationListNodes(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (21 ms)</li><li>org.apache.commons.configuration2.TestINIConfiguration.testGetSectionConnected(org.apache.commons.configuration2.TestINIConfiguration) (3 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testGetDescriptorArguments(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (8 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testSystemProperties(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (10 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testCombinedConfigurationListNodes(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (22 ms)</li><li>org.apache.commons.configuration2.TestXMLConfiguration.testSetRootNamespace(org.apache.commons.configuration2.TestXMLConfiguration) (30 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testGetSimpleArguments(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (4 ms)</li><li>org.apache.commons.configuration2.TestAbstractHierarchicalConfiguration.testInterpolatedConfiguration(org.apache.commons.configuration2.TestAbstractHierarchicalConfiguration) (647 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testSetSimpleFloat(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (4 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testGetDescriptorFloat(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (3 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testGetIndexedValues(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (5 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testChildBuildersAreInitializedOnlyOnce(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (24 ms)</li><li>org.apache.commons.configuration2.tree.xpath.TestXPathExpressionEngineInConfig.testSetPropertyNewAttribute(org.apache.commons.configuration2.tree.xpath.TestXPathExpressionEngineInConfig) (0 ms)</li><li>org.apache.commons.configuration2.TestSubsetConfiguration.testNested(org.apache.commons.configuration2.TestSubsetConfiguration) (22 ms)</li><li>org.apache.commons.configuration2.TestXMLConfiguration.testCopyRootNameNoDocument(org.apache.commons.configuration2.TestXMLConfiguration) (9 ms)</li><li>org.apache.commons.configuration2.tree.TestNodeUpdateData.testInitRemovedNodesDefensiveCopy(org.apache.commons.configuration2.tree.TestNodeUpdateData) (1 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testGetDescriptorBoolean(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (4 ms)</li><li>org.apache.commons.configuration2.builder.fluent.TestConfigurations.testCombinedFromURL(org.apache.commons.configuration2.builder.fluent.TestConfigurations) (18 ms)</li><li>org.apache.commons.configuration2.TestConfigurationUtils.testConvertToHierarchicalOrderOfProperties(org.apache.commons.configuration2.TestConfigurationUtils) (2 ms)</li><li>org.apache.commons.configuration2.TestXMLConfiguration.testSaveWithEncoding(org.apache.commons.configuration2.TestXMLConfiguration) (7 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testGetChildBuilders(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (23 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testBuilderNamesManipulate(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (15 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestReloadingCombinedConfigurationBuilder.testNestedReloadableSources(org.apache.commons.configuration2.builder.combined.TestReloadingCombinedConfigurationBuilder) (33 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testConfigurationBuilderProvider(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (15 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testCombinedConfigurationNoAdditional(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (22 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testConfigurationBuilderProviderInheritEventListeners(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (47 ms)</li><li>org.apache.commons.configuration2.TestCombinedConfiguration.testGetSourceWithCombinedChildConfiguration(org.apache.commons.configuration2.TestCombinedConfiguration) (4 ms)</li><li>org.apache.commons.configuration2.TestAbstractHierarchicalConfiguration.testCloneInterpolation(org.apache.commons.configuration2.TestAbstractHierarchicalConfiguration) (3 ms)</li><li>org.apache.commons.configuration2.TestHierarchicalConfiguration.testSubsetMultipleNodesWithValues(org.apache.commons.configuration2.TestHierarchicalConfiguration) (1 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testGetNonExistentProperty(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (3 ms)</li><li>org.apache.commons.configuration2.tree.TestNodeUpdateData.testInitChangedValuesDefensiveCopy(org.apache.commons.configuration2.tree.TestNodeUpdateData) (0 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testSetIndexedArguments(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (5 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testInterpolationOverMultipleSources(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (22 ms)</li><li>org.apache.commons.configuration2.tree.TestNodeUpdateData.testGetNewValuesModify(org.apache.commons.configuration2.tree.TestNodeUpdateData) (0 ms)</li><li>org.apache.commons.configuration2.TestCombinedConfiguration.testGetSourcesUnknownKey(org.apache.commons.configuration2.TestCombinedConfiguration) (5 ms)</li><li>org.apache.commons.configuration2.tree.xpath.TestXPathExpressionEngineInConfig.testSetPropertyPartlyExisting(org.apache.commons.configuration2.tree.xpath.TestXPathExpressionEngineInConfig) (1 ms)</li><li>org.apache.commons.configuration2.TestCombinedConfiguration.testGetSourceMultiSources(org.apache.commons.configuration2.TestCombinedConfiguration) (3 ms)</li><li>org.apache.commons.configuration2.TestCombinedConfiguration.testConcurrentAccess(org.apache.commons.configuration2.TestCombinedConfiguration) (851 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testLoadConfiguration(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (12 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testSetIndexedValues(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (7 ms)</li><li>org.apache.commons.configuration2.TestHierarchicalConfiguration.testInterpolatedConfiguration(org.apache.commons.configuration2.TestHierarchicalConfiguration) (2 ms)</li><li>org.apache.commons.configuration2.builder.fluent.TestConfigurations.testCombinedFromPath(org.apache.commons.configuration2.builder.fluent.TestConfigurations) (16 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testGetMappedArguments(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (7 ms)</li><li>org.apache.commons.configuration2.TestConfigurationUtils.testConvertToHierarchicalDelimiters(org.apache.commons.configuration2.TestConfigurationUtils) (0 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testMappedContains(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (3 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testSuppressChildBuilderPropertyInheritance(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (20 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testGetDescriptorString(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (4 ms)</li><li>org.apache.commons.configuration2.TestHierarchicalConfiguration.testInitCopyUpdate(org.apache.commons.configuration2.TestHierarchicalConfiguration) (1 ms)</li><li>org.apache.commons.configuration2.TestINIConfiguration.testWriteValueWithCommentChar(org.apache.commons.configuration2.TestINIConfiguration) (3 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testLoadAdditional(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (13 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testRootNodeInitializedAfterCreation(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (18 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testGetIndexedArguments(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (2 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder.testMultiTenentConfigurationReloading(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilder) (5062 ms)</li><li>org.apache.commons.configuration2.TestCombinedConfiguration.testSubConfigurationWithUpdates(org.apache.commons.configuration2.TestCombinedConfiguration) (6 ms)</li><li>org.apache.commons.configuration2.TestHierarchicalConfiguration.testConfigurationAtUpdateSubConfigConnected(org.apache.commons.configuration2.TestHierarchicalConfiguration) (1 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testJndiConfiguration(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (27 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testGetSimpleFloat(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (3 ms)</li><li>org.apache.commons.configuration2.TestCombinedConfiguration.testGetSourceHierarchical(org.apache.commons.configuration2.TestCombinedConfiguration) (2 ms)</li><li>org.apache.commons.configuration2.TestXMLConfiguration.testEmptyElements(org.apache.commons.configuration2.TestXMLConfiguration) (16 ms)</li><li>org.apache.commons.configuration2.TestSubnodeConfiguration.testSetProperty(org.apache.commons.configuration2.TestSubnodeConfiguration) (2 ms)</li><li>org.apache.commons.configuration2.TestHierarchicalConfiguration.testConfigurationsAtNoUpdate(org.apache.commons.configuration2.TestHierarchicalConfiguration) (0 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testSetSimpleInt(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (3 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testGetDescriptors(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (5 ms)</li><li>org.apache.commons.configuration2.TestXMLConfiguration.testSaveWithValidationFailure(org.apache.commons.configuration2.TestXMLConfiguration) (23 ms)</li><li>org.apache.commons.configuration2.TestXMLConfiguration.testSetAttribute(org.apache.commons.configuration2.TestXMLConfiguration) (6 ms)</li><li>org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig.testGetSimpleString(org.apache.commons.configuration2.beanutils.TestConfigurationDynaBeanXMLConfig) (4 ms)</li><li>org.apache.commons.configuration2.TestXMLConfiguration.testSaveWithNullEncoding(org.apache.commons.configuration2.TestXMLConfiguration) (8 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS.testDefaultBasePathFromDefinitionBuilder(org.apache.commons.configuration2.builder.combined.TestCombinedConfigurationBuilderVFS) (21 ms)</li><li>org.apache.commons.configuration2.TestAbstractHierarchicalConfiguration.testInterpolationLoop(org.apache.commons.configuration2.TestAbstractHierarchicalConfiguration) (1 ms)</li><li>org.apache.commons.configuration2.TestCombinedConfiguration.testConversionExpressionEngine(org.apache.commons.configuration2.TestCombinedConfiguration) (2 ms)</li><li>org.apache.commons.configuration2.TestConfigurationUtils.testConvertToHierarchicalEngine(org.apache.commons.configuration2.TestConfigurationUtils) (0 ms)</li><li>org.apache.commons.configuration2.builder.combined.TestConfigurationDeclaration.testConfigurationDeclarationGetAttributes(org.apache.commons.configuration2.builder.combined.TestConfigurationDeclaration) (2 ms)</li>
+</ul>
+
+<br/>
+
+Report generated by <a href='http://pitest.org'>PIT</a> 1.4.3
+
+</body>
+</html>

@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>Rule.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester</a> &gt; <span class="el_source">Rule.java</span></div><h1>Rule.java</h1><pre class="source lang-java linenums">/* $Id$
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */ 
+
+
+package org.apache.commons.digester;
+
+
+import org.xml.sax.Attributes;
+
+
+/**
+ * Concrete implementations of this class implement actions to be taken when
+ * a corresponding nested pattern of XML elements has been matched.
+ * &lt;p&gt;
+ * Writing a custom Rule is considered perfectly normal when using Digester,
+ * and is encouraged whenever the default set of Rule classes don't meet your
+ * requirements; the digester framework can help process xml even when the
+ * built-in rules aren't quite what is needed. Creating a custom Rule is
+ * just as easy as subclassing javax.servlet.http.HttpServlet for webapps,
+ * or javax.swing.Action for GUI applications.
+ * &lt;p&gt;
+ * If a rule wishes to manipulate a digester stack (the default object stack,
+ * a named stack, or the parameter stack) then it should only ever push
+ * objects in the rule's begin method and always pop exactly the same
+ * number of objects off the stack during the rule's end method. Of course
+ * peeking at the objects on the stacks can be done from anywhere.
+ * &lt;p&gt;
+ * Rule objects should be stateless, ie they should not update any instance
+ * member during the parsing process. A rule instance that changes state
+ * will encounter problems if invoked in a &quot;nested&quot; manner; this can happen
+ * if the same instance is added to digester multiple times or if a 
+ * wildcard pattern is used which can match both an element and a child of the
+ * same element. The digester object stack and named stacks should be used to
+ * store any state that a rule requires, making the rule class safe under all
+ * possible uses.
+ */
+
+public abstract class Rule {
+
+
+    // ----------------------------------------------------------- Constructors
+
+
+    /**
+     * Constructor sets the associated Digester.
+     *
+     * @param digester The digester with which this rule is associated
+     * @deprecated The digester instance is now set in the {@link Digester#addRule} method. Use {@link #Rule()} instead.
+     */
+    public Rule(Digester digester) {
+
+<span class="nc" id="L67">        super();</span>
+<span class="nc" id="L68">        setDigester(digester);</span>
+
+<span class="nc" id="L70">    }</span>
+    
+    /**
+     * &lt;p&gt;Base constructor.
+     * Now the digester will be set when the rule is added.&lt;/p&gt;
+     */
+<span class="fc" id="L76">    public Rule() {}</span>
+
+
+    // ----------------------------------------------------- Instance Variables
+
+
+    /**
+     * The Digester with which this Rule is associated.
+     */
+<span class="pc" id="L85">    protected Digester digester = null;</span>
+
+
+    /**
+     * The namespace URI for which this Rule is relevant, if any.
+     */
+<span class="pc" id="L91">    protected String namespaceURI = null;</span>
+
+
+    // ------------------------------------------------------------- Properties
+
+
+    /**
+     * Return the Digester with which this Rule is associated.
+     */
+    public Digester getDigester() {
+
+<span class="fc" id="L102">        return (this.digester);</span>
+
+    }
+    
+    /**
+     * Set the &lt;code&gt;Digester&lt;/code&gt; with which this &lt;code&gt;Rule&lt;/code&gt; is associated.
+     */
+    public void setDigester(Digester digester) {
+        
+<span class="fc" id="L111">        this.digester = digester;</span>
+        
+<span class="fc" id="L113">    }</span>
+
+    /**
+     * Return the namespace URI for which this Rule is relevant, if any.
+     */
+    public String getNamespaceURI() {
+
+<span class="fc" id="L120">        return (this.namespaceURI);</span>
+
+    }
+
+
+    /**
+     * Set the namespace URI for which this Rule is relevant, if any.
+     *
+     * @param namespaceURI Namespace URI for which this Rule is relevant,
+     *  or &lt;code&gt;null&lt;/code&gt; to match independent of namespace.
+     */
+    public void setNamespaceURI(String namespaceURI) {
+
+<span class="fc" id="L133">        this.namespaceURI = namespaceURI;</span>
+
+<span class="fc" id="L135">    }</span>
+
+
+    // --------------------------------------------------------- Public Methods
+
+
+    /**
+     * This method is called when the beginning of a matching XML element
+     * is encountered.
+     *
+     * @param attributes The attribute list of this element
+     * @deprecated Use the {@link #begin(String,String,Attributes) begin}
+     *   method with &lt;code&gt;namespace&lt;/code&gt; and &lt;code&gt;name&lt;/code&gt;
+     *   parameters instead.
+     */
+    public void begin(Attributes attributes) throws Exception {
+
+        ;  // The default implementation does nothing
+
+<span class="fc" id="L154">    }</span>
+
+
+    /**
+     * This method is called when the beginning of a matching XML element
+     * is encountered. The default implementation delegates to the deprecated
+     * method {@link #begin(Attributes) begin} without the 
+     * &lt;code&gt;namespace&lt;/code&gt; and &lt;code&gt;name&lt;/code&gt; parameters, to retain 
+     * backwards compatibility.
+     *
+     * @param namespace the namespace URI of the matching element, or an 
+     *   empty string if the parser is not namespace aware or the element has
+     *   no namespace
+     * @param name the local name if the parser is namespace aware, or just 
+     *   the element name otherwise
+     * @param attributes The attribute list of this element
+     * @since Digester 1.4
+     */
+    public void begin(String namespace, String name, Attributes attributes)
+        throws Exception {
+
+<span class="fc" id="L175">        begin(attributes);</span>
+
+<span class="fc" id="L177">    }</span>
+
+
+    /**
+     * This method is called when the body of a matching XML element
+     * is encountered.  If the element has no body, this method is
+     * called with an empty string as the body text.
+     *
+     * @param text The text of the body of this element
+     * @deprecated Use the {@link #body(String,String,String) body} method
+     *   with &lt;code&gt;namespace&lt;/code&gt; and &lt;code&gt;name&lt;/code&gt; parameters
+     *   instead.
+     */
+    public void body(String text) throws Exception {
+
+        ;  // The default implementation does nothing
+
+<span class="fc" id="L194">    }</span>
+
+
+    /**
+     * This method is called when the body of a matching XML element is 
+     * encountered.  If the element has no body, this method is 
+     * called with an empty string as the body text.
+     * &lt;p&gt;
+     * The default implementation delegates to the deprecated method 
+     * {@link #body(String) body} without the &lt;code&gt;namespace&lt;/code&gt; and
+     * &lt;code&gt;name&lt;/code&gt; parameters, to retain backwards compatibility.
+     *
+     * @param namespace the namespace URI of the matching element, or an 
+     *   empty string if the parser is not namespace aware or the element has
+     *   no namespace
+     * @param name the local name if the parser is namespace aware, or just 
+     *   the element name otherwise
+     * @param text The text of the body of this element
+     * @since Digester 1.4
+     */
+    public void body(String namespace, String name, String text)
+        throws Exception {
+
+<span class="fc" id="L217">        body(text);</span>
+
+<span class="fc" id="L219">    }</span>
+
+
+    /**
+     * This method is called when the end of a matching XML element
+     * is encountered.
+     * 
+     * @deprecated Use the {@link #end(String,String) end} method with 
+     *   &lt;code&gt;namespace&lt;/code&gt; and &lt;code&gt;name&lt;/code&gt; parameters instead.
+     */
+    public void end() throws Exception {
+
+        ;  // The default implementation does nothing
+
+<span class="fc" id="L233">    }</span>
+
+
+    /**
+     * This method is called when the end of a matching XML element
+     * is encountered. The default implementation delegates to the deprecated
+     * method {@link #end end} without the 
+     * &lt;code&gt;namespace&lt;/code&gt; and &lt;code&gt;name&lt;/code&gt; parameters, to retain 
+     * backwards compatibility.
+     *
+     * @param namespace the namespace URI of the matching element, or an 
+     *   empty string if the parser is not namespace aware or the element has
+     *   no namespace
+     * @param name the local name if the parser is namespace aware, or just 
+     *   the element name otherwise
+     * @since Digester 1.4
+     */
+    public void end(String namespace, String name)
+        throws Exception {
+
+<span class="fc" id="L253">        end();</span>
+
+<span class="fc" id="L255">    }</span>
+
+
+    /**
+     * This method is called after all parsing methods have been
+     * called, to allow Rules to remove temporary data.
+     */
+    public void finish() throws Exception {
+
+        ;  // The default implementation does nothing
+
+<span class="fc" id="L266">    }</span>
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

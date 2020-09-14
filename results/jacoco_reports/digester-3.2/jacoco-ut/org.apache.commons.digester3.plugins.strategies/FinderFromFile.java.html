@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FinderFromFile.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester3.plugins.strategies</a> &gt; <span class="el_source">FinderFromFile.java</span></div><h1>FinderFromFile.java</h1><pre class="source lang-java linenums">package org.apache.commons.digester3.plugins.strategies;
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
+import org.apache.commons.digester3.Digester;
+import org.apache.commons.digester3.plugins.PluginException;
+import org.apache.commons.digester3.plugins.RuleFinder;
+import org.apache.commons.digester3.plugins.RuleLoader;
+
+/**
+ * A rule-finding algorithm which expects the user to specify an absolute or relative path in the plugin declaration.
+ * &lt;p&gt;
+ * The file is expected to contain Digester rules in xmlrules format.
+ * 
+ * @since 1.6
+ */
+public class FinderFromFile
+    extends RuleFinder
+{
+
+    /**
+     * The default XML attribute that needs to be present on a plugin declaration in order to specify the file to
+     * load rules from.
+     */
+    private static final String DFLT_FILENAME_ATTR = &quot;file&quot;;
+
+    /** See {@link #findLoader}. */
+    private final String filenameAttr;
+
+    /** See {@link #findLoader}. */
+    public FinderFromFile()
+    {
+<span class="fc" id="L55">        this( DFLT_FILENAME_ATTR );</span>
+<span class="fc" id="L56">    }</span>
+
+    /**
+     * See {@link #findLoader}.
+     *
+     * @param filenameAttr the XML attribute that needs to be present on a plugin declaration in order to specify the
+     *        file to load rules from.
+     */
+    public FinderFromFile( String filenameAttr )
+<span class="fc" id="L65">    {</span>
+<span class="fc" id="L66">        this.filenameAttr = filenameAttr;</span>
+<span class="fc" id="L67">    }</span>
+
+    /**
+     * If there exists a property with the name specified in the constructor, then load that file, run it through the
+     * xmlrules module and return an object encapsulating those rules.
+     * &lt;p&gt;
+     * If there is no matching property provided, then just return null.
+     * &lt;p&gt;
+     * The returned object (when non-null) will add the selected rules to the digester whenever its addRules method is
+     * invoked.
+     *
+     * @param d The digester instance where locating plugin classes
+     * @param pluginClass The plugin Java class
+     * @param p The properties object that holds any xml attributes the user may have specified on the plugin
+     *          declaration in order to indicate how to locate the plugin rules.
+     * @return a source of digester rules for the specified plugin class.
+     * @throws PluginException if the algorithm finds a source of rules, but there is something invalid
+     *         about that source.
+     */
+    @Override
+    public RuleLoader findLoader( Digester d, Class&lt;?&gt; pluginClass, Properties p )
+        throws PluginException
+    {
+
+<span class="fc" id="L91">        String rulesFileName = p.getProperty( filenameAttr );</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">        if ( rulesFileName == null )</span>
+        {
+            // nope, user hasn't requested dynamic rules to be loaded
+            // from a specific file.
+<span class="fc" id="L96">            return null;</span>
+        }
+
+<span class="fc" id="L99">        InputStream is = null;</span>
+        try
+        {
+<span class="fc" id="L102">            is = new FileInputStream( rulesFileName );</span>
+        }
+<span class="nc" id="L104">        catch ( IOException ioe )</span>
+        {
+<span class="nc" id="L106">            throw new PluginException( &quot;Unable to process file [&quot; + rulesFileName + &quot;]&quot;, ioe );</span>
+<span class="fc" id="L107">        }</span>
+
+        try
+        {
+<span class="fc" id="L111">            RuleLoader loader = new LoaderFromStream( is );</span>
+<span class="fc" id="L112">            return loader;</span>
+        }
+<span class="nc" id="L114">        catch ( Exception e )</span>
+        {
+<span class="nc" id="L116">            throw new PluginException( &quot;Unable to load xmlrules from file [&quot; + rulesFileName + &quot;]&quot;, e );</span>
+        }
+        finally
+        {
+<span class="nc" id="L120">            try</span>
+            {
+<span class="pc" id="L122">                is.close();</span>
+            }
+<span class="nc" id="L124">            catch ( IOException ioe )</span>
+            {
+<span class="nc" id="L126">                throw new PluginException( &quot;Unable to close stream for file [&quot; + rulesFileName + &quot;]&quot;, ioe );</span>
+<span class="pc" id="L127">            }</span>
+<span class="nc" id="L128">        }</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

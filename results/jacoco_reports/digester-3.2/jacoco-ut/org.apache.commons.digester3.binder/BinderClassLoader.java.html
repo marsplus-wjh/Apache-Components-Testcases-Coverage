@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BinderClassLoader.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester3.binder</a> &gt; <span class="el_source">BinderClassLoader.java</span></div><h1>BinderClassLoader.java</h1><pre class="source lang-java linenums">package org.apache.commons.digester3.binder;
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import static java.lang.System.getSecurityManager;
+import static java.security.AccessController.doPrivileged;
+
+import java.security.PrivilegedAction;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+final class BinderClassLoader
+    extends ClassLoader
+{
+
+    private static final Map&lt;String, Class&lt;?&gt;&gt; PRIMITIVE_TYPES;
+    static
+    {
+<span class="fc" id="L37">        HashMap&lt;String, Class&lt;?&gt;&gt; primitiveTypes = new HashMap&lt;String, Class&lt;?&gt;&gt;();</span>
+<span class="fc" id="L38">        primitiveTypes.put( &quot;boolean&quot;, boolean.class );</span>
+<span class="fc" id="L39">        primitiveTypes.put( &quot;byte&quot;, byte.class );</span>
+<span class="fc" id="L40">        primitiveTypes.put( &quot;short&quot;, short.class );</span>
+<span class="fc" id="L41">        primitiveTypes.put( &quot;int&quot;, int.class );</span>
+<span class="fc" id="L42">        primitiveTypes.put( &quot;char&quot;, char.class );</span>
+<span class="fc" id="L43">        primitiveTypes.put( &quot;long&quot;, long.class );</span>
+<span class="fc" id="L44">        primitiveTypes.put( &quot;float&quot;, float.class );</span>
+<span class="fc" id="L45">        primitiveTypes.put( &quot;double&quot;, double.class );</span>
+<span class="fc" id="L46">        PRIMITIVE_TYPES = Collections.unmodifiableMap( primitiveTypes );</span>
+<span class="fc" id="L47">    }</span>
+
+    public static BinderClassLoader createBinderClassLoader( final ClassLoader adaptedClassLoader )
+    {
+<span class="fc" id="L51">        PrivilegedAction&lt;BinderClassLoader&gt; action = new PrivilegedAction&lt;BinderClassLoader&gt;()</span>
+<span class="fc" id="L52">        {</span>
+
+            public BinderClassLoader run()
+            {
+<span class="fc" id="L56">                return new BinderClassLoader( adaptedClassLoader );</span>
+            }
+
+        };
+
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">        if ( getSecurityManager() != null )</span>
+        {
+<span class="nc" id="L63">            return doPrivileged( action );</span>
+        }
+<span class="fc" id="L65">        return action.run();</span>
+    }
+
+    private final ClassLoader adaptedClassLoader;
+
+    private BinderClassLoader( ClassLoader adaptedClassLoader )
+<span class="fc" id="L71">    {</span>
+<span class="fc" id="L72">        this.adaptedClassLoader = adaptedClassLoader;</span>
+<span class="fc" id="L73">    }</span>
+
+    public ClassLoader getAdaptedClassLoader()
+    {
+<span class="fc" id="L77">        return adaptedClassLoader;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected synchronized Class&lt;?&gt; loadClass( String name, boolean resolve )
+        throws ClassNotFoundException
+    {
+<span class="fc bfc" id="L87" title="All 2 branches covered.">        if ( PRIMITIVE_TYPES.containsKey( name ) )</span>
+        {
+<span class="fc" id="L89">            return PRIMITIVE_TYPES.get( name );</span>
+        }
+<span class="fc" id="L91">        return adaptedClassLoader.loadClass( name );</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

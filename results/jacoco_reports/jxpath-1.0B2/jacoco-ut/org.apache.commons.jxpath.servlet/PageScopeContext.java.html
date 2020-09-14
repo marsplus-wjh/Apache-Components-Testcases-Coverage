@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>PageScopeContext.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.servlet</a> &gt; <span class="el_source">PageScopeContext.java</span></div><h1>PageScopeContext.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.servlet;
+
+import java.util.Enumeration;
+
+import javax.servlet.jsp.PageContext;
+
+/**
+ * A lightweight wrapper for PageContext that restricts access
+ * to attributes of the &quot;page&quot; scope.  This object is needed so that
+ * XPath &quot;foo&quot; would lookup the attribute &quot;foo&quot; in all scopes, while
+ * &quot;$page/foo&quot; would only look in the &quot;page&quot; scope.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision$ $Date$
+ */
+public class PageScopeContext {
+    private PageContext pageContext;
+
+    /**
+     * Create a new PageScopeContext.
+     * @param pageContext base
+     */
+<span class="nc" id="L39">    public PageScopeContext(PageContext pageContext) {</span>
+<span class="nc" id="L40">        this.pageContext = pageContext;</span>
+<span class="nc" id="L41">    }</span>
+
+    /**
+     * Returns attributes of the pageContext declared in the &quot;page&quot; scope.
+     * @return Enumeration of attribute names
+     */
+    public Enumeration getAttributeNames() {
+<span class="nc" id="L48">        return pageContext.getAttributeNamesInScope(PageContext.PAGE_SCOPE);</span>
+    }
+
+    /**
+     * Get the value of the specified attribute.
+     * @param attribute name
+     * @return Object
+     */
+    public Object getAttribute(String attribute) {
+<span class="nc" id="L57">        return pageContext.getAttribute(attribute, PageContext.PAGE_SCOPE);</span>
+    }
+
+    /**
+     * Set the specified attribute.
+     * @param attribute to set
+     * @param value to set
+     */
+    public void setAttribute(String attribute, Object value) {
+<span class="nc" id="L66">        pageContext.setAttribute(attribute, value, PageContext.PAGE_SCOPE);</span>
+<span class="nc" id="L67">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

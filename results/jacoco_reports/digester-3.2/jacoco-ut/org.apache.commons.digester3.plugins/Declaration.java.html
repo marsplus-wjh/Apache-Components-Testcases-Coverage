@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Declaration.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester3.plugins</a> &gt; <span class="el_source">Declaration.java</span></div><h1>Declaration.java</h1><pre class="source lang-java linenums">package org.apache.commons.digester3.plugins;
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import java.util.Properties;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.digester3.Digester;
+
+/**
+ * Represents a Class that can be instantiated by a PluginCreateRule, plus info on how to load custom digester rules for
+ * mapping xml into that plugged-in class.
+ * 
+ * @since 1.6
+ */
+public class Declaration
+{
+
+    /** The class of the object to be instantiated. */
+    private Class&lt;?&gt; pluginClass;
+
+    /** The name of the class of the object to be instantiated. */
+    private String pluginClassName;
+
+    /** See {@link #setId}. */
+    private String id;
+
+    /** See {@link #setProperties}. */
+<span class="pc" id="L46">    private Properties properties = new Properties();</span>
+
+    /** See {@link #init}. */
+<span class="pc" id="L49">    private boolean initialized = false;</span>
+
+    /**
+     * Class which is responsible for dynamically loading this plugin's rules on demand.
+     */
+<span class="pc" id="L54">    private RuleLoader ruleLoader = null;</span>
+
+    // ---------------------- constructors ----------------------------------
+
+    /**
+     * Constructor.
+     *
+     * @param pluginClassName The name of the class of the object to be instantiated (will be load in the init method)
+     */
+    public Declaration( String pluginClassName )
+<span class="fc" id="L64">    {</span>
+        // We can't load the pluginClass at this time, because we don't
+        // have a digester instance yet to load it through. So just
+        // save the name away, and we'll load the Class object in the
+        // init method.
+<span class="fc" id="L69">        this.pluginClassName = pluginClassName;</span>
+<span class="fc" id="L70">    }</span>
+
+    /**
+     * Constructor.
+     *
+     * @param pluginClass The class of the object to be instantiated (will be load in the init method)
+     */
+    public Declaration( Class&lt;?&gt; pluginClass )
+<span class="fc" id="L78">    {</span>
+<span class="fc" id="L79">        this.pluginClass = pluginClass;</span>
+<span class="fc" id="L80">        this.pluginClassName = pluginClass.getName();</span>
+<span class="fc" id="L81">    }</span>
+
+    /**
+     * Create an instance where a fully-initialised ruleLoader instance is provided by the caller instead of having the
+     * PluginManager &quot;discover&quot; an appropriate one.
+     *
+     * @param pluginClass The class of the object to be instantiated (will be load in the init method)
+     * @param ruleLoader Class which is responsible for dynamically loading this plugin's rules on demand
+     */
+    public Declaration( Class&lt;?&gt; pluginClass, RuleLoader ruleLoader )
+<span class="nc" id="L91">    {</span>
+<span class="nc" id="L92">        this.pluginClass = pluginClass;</span>
+<span class="nc" id="L93">        this.pluginClassName = pluginClass.getName();</span>
+<span class="nc" id="L94">        this.ruleLoader = ruleLoader;</span>
+<span class="nc" id="L95">    }</span>
+
+    // ---------------------- properties -----------------------------------
+
+    /**
+     * The id that the user associated with a particular plugin declaration in the input xml. This id is later used in
+     * the input xml to refer back to the original declaration.
+     * &lt;p&gt;
+     * For plugins declared &quot;in-line&quot;, the id is null.
+     *
+     * @param id The id that the user associated with a particular plugin declaration in the input xml
+     */
+    public void setId( String id )
+    {
+<span class="fc" id="L109">        this.id = id;</span>
+<span class="fc" id="L110">    }</span>
+
+    /**
+     * Return the id associated with this declaration. For plugins declared &quot;inline&quot;, null will be returned.
+     * 
+     * @return The id value. May be null.
+     */
+    public String getId()
+    {
+<span class="fc" id="L119">        return id;</span>
+    }
+
+    /**
+     * Copy all (key,value) pairs in the param into the properties member of this object.
+     * &lt;p&gt;
+     * The declaration properties cannot be explicit member variables, because the set of useful properties a user can
+     * provide on a declaration depends on what RuleFinder classes are available - and extra RuleFinders can be added by
+     * the user. So here we keep a map of the settings, and let the RuleFinder objects look for whatever properties they
+     * consider significant.
+     * &lt;p&gt;
+     * The &quot;id&quot; and &quot;class&quot; properties are treated differently.
+     *
+     * @param p The properties have to be copied into the properties member of this object
+     */
+    public void setProperties( Properties p )
+    {
+<span class="fc" id="L136">        properties.putAll( p );</span>
+<span class="fc" id="L137">    }</span>
+
+    /**
+     * Return plugin class associated with this declaration.
+     * 
+     * @return The pluginClass.
+     */
+    public Class&lt;?&gt; getPluginClass()
+    {
+<span class="fc" id="L146">        return pluginClass;</span>
+    }
+
+    // ---------------------- methods -----------------------------------
+
+    /**
+     * Must be called exactly once, and must be called before any call to the configure method.
+     *
+     * @param digester The Digester instance where plugin has to be plugged
+     * @param pm The plugin manager reference
+     * @throws PluginException if any error occurs while loading the rules
+     */
+    public void init( Digester digester, PluginManager pm )
+        throws PluginException
+    {
+<span class="fc" id="L161">        Log log = digester.getLogger();</span>
+<span class="fc" id="L162">        boolean debug = log.isDebugEnabled();</span>
+<span class="pc bpc" id="L163" title="1 of 2 branches missed.">        if ( debug )</span>
+        {
+<span class="nc" id="L165">            log.debug( &quot;init being called!&quot; );</span>
+        }
+
+<span class="pc bpc" id="L168" title="1 of 2 branches missed.">        if ( initialized )</span>
+        {
+<span class="nc" id="L170">            throw new PluginAssertionFailure( &quot;Init called multiple times.&quot; );</span>
+        }
+
+<span class="pc bpc" id="L173" title="1 of 4 branches missed.">        if ( ( pluginClass == null ) &amp;&amp; ( pluginClassName != null ) )</span>
+        {
+            try
+            {
+                // load the plugin class object
+<span class="fc" id="L178">                pluginClass = digester.getClassLoader().loadClass( pluginClassName );</span>
+            }
+<span class="nc" id="L180">            catch ( ClassNotFoundException cnfe )</span>
+            {
+<span class="nc" id="L182">                throw new PluginException( &quot;Unable to load class &quot; + pluginClassName, cnfe );</span>
+<span class="fc" id="L183">            }</span>
+        }
+
+<span class="pc bpc" id="L186" title="1 of 2 branches missed.">        if ( ruleLoader == null )</span>
+        {
+            // the caller didn't provide a ruleLoader to the constructor,
+            // so get the plugin manager to &quot;discover&quot; one.
+<span class="fc" id="L190">            log.debug( &quot;Searching for ruleloader...&quot; );</span>
+<span class="fc" id="L191">            ruleLoader = pm.findLoader( digester, id, pluginClass, properties );</span>
+        }
+        else
+        {
+<span class="nc" id="L195">            log.debug( &quot;This declaration has an explicit ruleLoader.&quot; );</span>
+        }
+
+<span class="pc bpc" id="L198" title="1 of 2 branches missed.">        if ( debug )</span>
+        {
+<span class="nc bnc" id="L200" title="All 2 branches missed.">            if ( ruleLoader == null )</span>
+            {
+<span class="nc" id="L202">                log.debug( &quot;No ruleLoader found for plugin declaration&quot; + &quot; id [&quot; + id + &quot;]&quot; + &quot;, class [&quot;</span>
+<span class="nc" id="L203">                    + pluginClass.getClass().getName() + &quot;].&quot; );</span>
+            }
+            else
+            {
+<span class="nc" id="L207">                log.debug( &quot;RuleLoader of type [&quot; + ruleLoader.getClass().getName()</span>
+                    + &quot;] associated with plugin declaration&quot; + &quot; id [&quot; + id + &quot;]&quot; + &quot;, class [&quot;
+<span class="nc" id="L209">                    + pluginClass.getClass().getName() + &quot;].&quot; );</span>
+            }
+        }
+
+<span class="fc" id="L213">        initialized = true;</span>
+<span class="fc" id="L214">    }</span>
+
+    /**
+     * Attempt to load custom rules for the target class at the specified pattern.
+     * &lt;p&gt;
+     * On return, any custom rules associated with the plugin class have been loaded into the Rules object currently
+     * associated with the specified digester object.
+     *
+     * @param digester The Digester instance where plugin has to be plugged
+     * @param pattern The pattern the custom rules have to be bound
+     * @throws PluginException if any error occurs
+     */
+    public void configure( Digester digester, String pattern )
+        throws PluginException
+    {
+<span class="fc" id="L229">        Log log = digester.getLogger();</span>
+<span class="fc" id="L230">        boolean debug = log.isDebugEnabled();</span>
+<span class="pc bpc" id="L231" title="1 of 2 branches missed.">        if ( debug )</span>
+        {
+<span class="nc" id="L233">            log.debug( &quot;configure being called!&quot; );</span>
+        }
+
+<span class="pc bpc" id="L236" title="1 of 2 branches missed.">        if ( !initialized )</span>
+        {
+<span class="nc" id="L238">            throw new PluginAssertionFailure( &quot;Not initialized.&quot; );</span>
+        }
+
+<span class="pc bpc" id="L241" title="1 of 2 branches missed.">        if ( ruleLoader != null )</span>
+        {
+<span class="fc" id="L243">            ruleLoader.addRules( digester, pattern );</span>
+        }
+<span class="fc" id="L245">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

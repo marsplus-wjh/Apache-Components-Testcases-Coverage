@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PluginDeclarationRule.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester3.plugins</a> &gt; <span class="el_source">PluginDeclarationRule.java</span></div><h1>PluginDeclarationRule.java</h1><pre class="source lang-java linenums">package org.apache.commons.digester3.plugins;
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import java.util.Properties;
+
+import org.apache.commons.digester3.Digester;
+import org.apache.commons.digester3.Rule;
+import org.xml.sax.Attributes;
+
+/**
+ * A Digester rule which allows the user to pre-declare a class which is to be referenced later at a plugin point by a
+ * PluginCreateRule.
+ * &lt;p&gt;
+ * Normally, a PluginDeclarationRule is added to a Digester instance with the pattern &quot;{root}/plugin&quot; or &quot;* /plugin&quot;
+ * where {root} is the name of the root tag in the input document.
+ * 
+ * @since 1.6
+ */
+public class PluginDeclarationRule
+    extends Rule
+{
+
+    // ------------------- constructors ---------------------------------------
+
+    /** constructor */
+    public PluginDeclarationRule()
+    {
+<span class="fc" id="L46">        super();</span>
+<span class="fc" id="L47">    }</span>
+
+    // ------------------- methods --------------------------------------------
+
+    /**
+     * Invoked upon reading a tag defining a plugin declaration. The tag must have the following mandatory attributes:
+     * &lt;ul&gt;
+     * &lt;li&gt;id&lt;/li&gt;
+     * &lt;li&gt;class&lt;/li&gt;
+     * &lt;/ul&gt;
+     * 
+     * @param namespace The xml namespace in which the xml element which triggered this rule resides.
+     * @param name The name of the xml element which triggered this rule.
+     * @param attributes The set of attributes on the xml element which triggered this rule.
+     * @exception Exception if any error occurs
+     */
+    @Override
+    public void begin( String namespace, String name, Attributes attributes )
+        throws Exception
+    {
+<span class="fc" id="L67">        int nAttrs = attributes.getLength();</span>
+<span class="fc" id="L68">        Properties props = new Properties();</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">        for ( int i = 0; i &lt; nAttrs; ++i )</span>
+        {
+<span class="fc" id="L71">            String key = attributes.getLocalName( i );</span>
+<span class="pc bpc" id="L72" title="2 of 4 branches missed.">            if ( ( key == null ) || ( key.length() == 0 ) )</span>
+            {
+<span class="nc" id="L74">                key = attributes.getQName( i );</span>
+            }
+<span class="fc" id="L76">            String value = attributes.getValue( i );</span>
+<span class="fc" id="L77">            props.setProperty( key, value );</span>
+        }
+
+        try
+        {
+<span class="fc" id="L82">            declarePlugin( getDigester(), props );</span>
+        }
+<span class="nc" id="L84">        catch ( PluginInvalidInputException ex )</span>
+        {
+<span class="nc" id="L86">            throw new PluginInvalidInputException( &quot;Error on element [&quot; + getDigester().getMatch() + &quot;]: &quot;</span>
+<span class="nc" id="L87">                + ex.getMessage() );</span>
+<span class="fc" id="L88">        }</span>
+<span class="fc" id="L89">    }</span>
+
+    /**
+     * Helper method to declare a plugin inside the given Digester.
+     *
+     * @param digester The Digester instance to declare plugin
+     * @param props the properties where extracting plugin attributes
+     * @throws PluginException if any error occurs while declaring the plugin
+     */
+    public static void declarePlugin( Digester digester, Properties props )
+        throws PluginException
+    {
+<span class="fc" id="L101">        String id = props.getProperty( &quot;id&quot; );</span>
+<span class="fc" id="L102">        String pluginClassName = props.getProperty( &quot;class&quot; );</span>
+
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">        if ( id == null )</span>
+        {
+<span class="nc" id="L106">            throw new PluginInvalidInputException( &quot;mandatory attribute id not present on plugin declaration&quot; );</span>
+        }
+
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">        if ( pluginClassName == null )</span>
+        {
+<span class="nc" id="L111">            throw new PluginInvalidInputException( &quot;mandatory attribute class not present on plugin declaration&quot; );</span>
+        }
+
+<span class="fc" id="L114">        Declaration newDecl = new Declaration( pluginClassName );</span>
+<span class="fc" id="L115">        newDecl.setId( id );</span>
+<span class="fc" id="L116">        newDecl.setProperties( props );</span>
+
+<span class="fc" id="L118">        PluginRules rc = (PluginRules) digester.getRules();</span>
+<span class="fc" id="L119">        PluginManager pm = rc.getPluginManager();</span>
+
+<span class="fc" id="L121">        newDecl.init( digester, pm );</span>
+<span class="fc" id="L122">        pm.addDeclaration( newDecl );</span>
+
+        // Note that it is perfectly safe to redeclare a plugin, because
+        // the declaration doesn't add any rules to digester; all it does
+        // is create a RuleLoader instance whch is *capable* of adding the
+        // rules to the digester.
+<span class="fc" id="L128">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

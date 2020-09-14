@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FactoryCreate.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester3.annotations.rules</a> &gt; <span class="el_source">FactoryCreate.java</span></div><h1>FactoryCreate.java</h1><pre class="source lang-java linenums">package org.apache.commons.digester3.annotations.rules;
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+import org.apache.commons.digester3.AbstractObjectCreationFactory;
+import org.apache.commons.digester3.FactoryCreateRule;
+import org.apache.commons.digester3.annotations.DigesterRule;
+import org.apache.commons.digester3.annotations.DigesterRuleList;
+import org.apache.commons.digester3.annotations.handlers.FactoryCreateHandler;
+import org.xml.sax.Attributes;
+
+/**
+ * Classes annotated with {@code FactoryCreate} will be bound with {@code FactoryCreateRule} digester rule.
+ * 
+ * @see org.apache.commons.digester3.Digester#addFactoryCreate(String,org.apache.commons.digester3.ObjectCreationFactory,boolean)
+ * @since 2.1
+ */
+@Documented
+@Retention( RetentionPolicy.RUNTIME )
+@Target( ElementType.TYPE )
+@CreationRule
+@DigesterRule( reflectsRule = FactoryCreateRule.class, handledBy = FactoryCreateHandler.class )
+public @interface FactoryCreate
+{
+
+    /**
+     * The Java class of the object creation factory class.
+     */
+    Class&lt;? extends AbstractObjectCreationFactory&lt;?&gt;&gt; factoryClass() default DefaultObjectCreationFactory.class;
+
+    /**
+     * Allows specify the attribute containing an override class name if it is present.
+     *
+     * @since 3.0
+     */
+    String attributeName() default &quot;&quot;;
+
+    /**
+     * The element matching pattern.
+     */
+    String pattern();
+
+    /**
+     * The namespace URI for which this Rule is relevant, if any.
+     *
+     * @since 3.0
+     */
+    String namespaceURI() default &quot;&quot;;
+
+    /**
+     * When true any exceptions thrown during object creation will be ignored.
+     */
+    boolean ignoreCreateExceptions() default false;
+
+    /**
+     * Defines several {@code @FactoryCreate} annotations on the same element.
+     * 
+     * @see FactoryCreate
+     */
+    @Documented
+    @Retention( RetentionPolicy.RUNTIME )
+    @Target( ElementType.TYPE )
+    @DigesterRuleList
+    @interface List
+    {
+        FactoryCreate[] value();
+    }
+
+    /**
+     * Dummy ObjectCreationFactory type - only for annotation value type purposes.
+     */
+<span class="nc" id="L95">    public static final class DefaultObjectCreationFactory</span>
+        extends AbstractObjectCreationFactory&lt;Object&gt;
+    {
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public Object createObject( Attributes attributes )
+            throws Exception
+        {
+            // do nothing
+<span class="nc" id="L107">            return null;</span>
+        }
+
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

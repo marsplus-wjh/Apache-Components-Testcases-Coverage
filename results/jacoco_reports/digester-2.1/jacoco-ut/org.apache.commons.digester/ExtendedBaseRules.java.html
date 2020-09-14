@@ -1,0 +1,485 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>ExtendedBaseRules.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester</a> &gt; <span class="el_source">ExtendedBaseRules.java</span></div><h1>ExtendedBaseRules.java</h1><pre class="source lang-java linenums">/* $Id$
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+package org.apache.commons.digester;
+
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+
+/**
+ * &lt;p&gt;Extension of {@link RulesBase} for complex schema.&lt;/p&gt;
+ *
+ * &lt;p&gt;This is an extension of the basic pattern matching scheme
+ * intended to improve support for mapping complex xml-schema.
+ * It is intended to be a minimal extension of the standard rules
+ * big enough to support complex schema but without the full generality
+ * offered by more exotic matching pattern rules.&lt;/p&gt;
+ *
+ * &lt;h4&gt;When should you use this rather than the original?&lt;/h4&gt;
+ *
+ * &lt;p&gt;
+ * This pattern-matching engine is complex and slower than the basic
+ * default RulesBase class, but offers more functionality:
+ * &lt;ul&gt;
+ * &lt;li&gt;Universal patterns allow patterns to be specified which will match
+ *  regardless of whether there are &quot;better matching&quot; patterns available.&lt;/li&gt;
+ * &lt;li&gt;Parent-match patterns (eg &quot;a/b/?&quot;) allow matching for all direct
+ *  children of a specified element.&lt;/li&gt;
+ * &lt;li&gt;Ancestor-match patterns (eg &quot;a/b/*&quot;) allow matching all elements
+ *  nested within a specified element to any nesting depth.&lt;/li&gt;
+ * &lt;li&gt;Completely-wild patterns (&quot;*&quot; or &quot;!*&quot;) allow matching all elements.&lt;/li&gt;
+ * &lt;/ul&gt;
+ * &lt;/p&gt;
+ *
+ * &lt;h4&gt;Universal Match Patterns&lt;/h4&gt;
+ * 
+ * &lt;p&gt;The default RulesBase pattern-matching engine always attempts to find
+ * the &quot;best matching pattern&quot;, and will ignore rules associated with other
+ * patterns that match but are not &quot;as good&quot;. As an example, if the pattern
+ * &quot;a/b/c&quot; is associated with rules 1 and 2, and &quot;*&amp;#47;c&quot; is associated with
+ * rules 3 and 4 then element &quot;a/b/c&quot; will cause only rules 1 and 2 to execute.
+ * Rules 3 and 4 do have matching patterns, but because the patterns are shorter
+ * and include wildcard characters they are regarded as being &quot;not as good&quot; as
+ * a direct match. In general, exact patterns are better than wildcard patterns,
+ * and among multiple patterns with wildcards, the longest is preferred.
+ * See the RulesBase class for more information.&lt;/p&gt;
+ *
+ * &lt;p&gt;This feature of preferring &quot;better&quot; patterns can be a powerful tool.
+ * However it also means that patterns can interact in unexpected ways.&lt;/p&gt;
+ *
+ * &lt;p&gt;When using the ExtendedBaseRules, any pattern prefixed with '!' bypasses 
+ * the &quot;best match&quot; feature. Even if there is an exact match or a longer 
+ * wildcard match, patterns prefixed by '!' will still be tested to see if 
+ * they match, and if so their associated Rule objects will be included in
+ * the set of rules to be executed in the normal manner.&lt;/p&gt;
+ *
+ * &lt;ul&gt;
+ * &lt;li&gt;Pattern &lt;code&gt;&quot;!*&amp;#47;a/b&quot;&lt;/code&gt; matches whenever an 'b' element
+ *     is inside an 'a'.&lt;/li&gt;
+ * &lt;li&gt;Pattern &lt;code&gt;&quot;!a/b/?&quot;&lt;/code&gt; matches any child of a parent
+ *     matching &lt;code&gt;&quot;a/b&quot;&lt;/code&gt; (see &quot;Parent Match Patterns&quot;).&lt;/li&gt;
+ * &lt;li&gt;Pattern &lt;code&gt;&quot;!*&amp;#47;a/b/?&quot;&lt;/code&gt; matches any child of a parent
+ *     matching &lt;code&gt;&quot;!*&amp;#47;a/b&quot;&lt;/code&gt; (see &quot;Parent Match Patterns&quot;).&lt;/li&gt;
+ * &lt;li&gt;Pattern &lt;code&gt;&quot;!a/b/*&quot;&lt;/code&gt; matches any element whose path
+ *     starts with &quot;a&quot; then &quot;b&quot; (see &quot;Ancestor Match Patterns&quot;).&lt;/li&gt;
+ * &lt;li&gt;Pattern &lt;code&gt;&quot;!*&amp;#47;a/b/*&quot;&lt;/code&gt; matches any elements whose path
+ *     contains 'a/b' (see &quot;Ancestor Match Patterns&quot;).&lt;/li&gt;
+ * &lt;/ul&gt;
+ *
+ * &lt;h4&gt;Parent Match Patterns&lt;/h4&gt;
+ *
+ * &lt;p&gt;
+ * These will match direct child elements of a particular parent element.
+ * &lt;ul&gt;
+ * &lt;li&gt;
+ *  &lt;code&gt;&quot;a/b/c/?&quot;&lt;/code&gt; matches any child whose parent matches
+ *  &lt;code&gt;&quot;a/b/c&quot;&lt;/code&gt;.  Exact parent rules take precedence over Ancestor
+ *  Match patterns.
+ * &lt;/li&gt;
+ * &lt;li&gt;
+ *  &lt;code&gt;&quot;*&amp;#47;a/b/c/?&quot;&lt;/code&gt; matches any child whose parent matches
+ *  &lt;code&gt;&quot;*&amp;#47;a/b/c&quot;&lt;/code&gt;.  The longest matching still applies to parent
+ *  matches but the length excludes the '?', which effectively means
+ *  that standard wildcard matches with the same level of depth are
+ *  chosen in preference.
+ * &lt;/li&gt;
+ * &lt;/ul&gt;
+ * &lt;/p&gt;
+ *
+ * &lt;h4&gt;Ancestor Match Patterns&lt;/h4&gt;
+ *
+ * &lt;p&gt;
+ * These will match elements whose parentage includes a particular sequence
+ * of elements.
+ * &lt;ul&gt;
+ * &lt;li&gt;
+ *  &lt;code&gt;&quot;a/b/*&quot;&lt;/code&gt; matches any element whose path starts with
+ *  'a' then 'b'. Exact parent and parent match rules take precedence. 
+ *  The longest ancestor match will take precedence.
+ * &lt;/li&gt;
+ * &lt;li&gt;
+ *  &lt;code&gt;&quot;*&amp;#47;a/b/*&quot;&lt;/code&gt; matches any elements whose path contains
+ *  an element 'a' followed by an element 'b'. The longest matching still 
+ *  applies but the length excludes the '*' at the end.
+ * &lt;/li&gt;
+ * &lt;/ul&gt;
+ * &lt;/p&gt;
+ *
+ * &lt;h4&gt;Completely Wild Patterns&lt;/h4&gt;
+ *
+ * &lt;p&gt;Pattern &lt;code&gt;&quot;*&quot;&lt;/code&gt; matches every pattern that isn't matched by
+ * any other basic rule.&lt;/p&gt;
+ *
+ * &lt;p&gt;Pattern &lt;code&gt;&quot;!*&quot;&lt;/code&gt; matches every pattern.&lt;/p&gt;
+ *
+ * &lt;h4&gt;Using The Extended Rules&lt;/h4&gt;
+ *
+ * &lt;p&gt;By default, a Digester instance uses a {@link RulesBase} instance as
+ * its pattern matching engine. To use an ExtendedBaseRules instance, call
+ * the Digester.setRules method before adding any Rule objects to the digester
+ * instance:
+ * &lt;pre&gt;
+ *     Digester digester = new Digester();
+ *     digester.setRules( new ExtendedBaseRules() );
+ * &lt;/pre&gt;&lt;/p&gt;
+ *
+ * &lt;p&gt;The most important thing to remember when using the extended rules is 
+ * that universal and non-universal patterns are completely independent.
+ * Universal patterns are never affected by the addition of new patterns
+ * or the removal of existing ones. Non-universal patterns are never affected
+ * by the addition of new &lt;em&gt;universal&lt;/em&gt; patterns or the removal of 
+ * existing &lt;em&gt;universal&lt;/em&gt; patterns. As in the basic matching rules, 
+ * non-universal (basic) patterns &lt;strong&gt;can&lt;/strong&gt; be affected by the 
+ * addition of new &lt;em&gt;non-universal&lt;/em&gt; patterns or the removal of existing 
+ * &lt;em&gt;non-universal&lt;/em&gt; patterns, because only rules associated with the
+ * &quot;best matching&quot; pattern for each xml element are executed.
+ *
+ * &lt;p&gt; This means that you can use universal patterns to build up the simple 
+ * parts of your structure - for example defining universal creation and 
+ * property setting rules. More sophisticated and complex mapping will require 
+ * non-universal patterns and this might mean that some of the universal rules 
+ * will need to be replaced by a series of special cases using non-universal 
+ * rules. But by using universal rules as your backbone, these additions 
+ * should not break your existing rules.&lt;/p&gt;
+ */
+
+
+<span class="fc" id="L170">public class ExtendedBaseRules extends RulesBase {</span>
+
+
+    // ----------------------------------------------------- Instance Variables
+
+    /**
+     * Counts the entry number for the rules.
+     */
+<span class="fc" id="L178">    private int counter = 0;</span>
+
+
+    /**
+     * The decision algorithm used (unfortunately) doesn't preserve the entry
+     * order.
+     * This map is used by a comparator which orders the list of matches
+     * before it's returned.
+     * This map stores the entry number keyed by the rule.
+     */
+<span class="fc" id="L188">    private Map&lt;Rule, Integer&gt; order = new HashMap&lt;Rule, Integer&gt;();</span>
+
+
+    // --------------------------------------------------------- Public Methods
+
+
+    /**
+     * Register a new Rule instance matching the specified pattern.
+     *
+     * @param pattern Nesting pattern to be matched for this Rule
+     * @param rule Rule instance to be registered
+     */
+    @Override
+    public void add(String pattern, Rule rule) {
+<span class="fc" id="L202">        super.add(pattern, rule);</span>
+<span class="fc" id="L203">        counter++;</span>
+<span class="fc" id="L204">        order.put(rule, counter);</span>
+<span class="fc" id="L205">    }</span>
+
+
+    /**
+     * Return a List of all registered Rule instances that match the specified
+     * nesting pattern, or a zero-length List if there are no matches.  If more
+     * than one Rule instance matches, they &lt;strong&gt;must&lt;/strong&gt; be returned
+     * in the order originally registered through the &lt;code&gt;add()&lt;/code&gt;
+     * method.
+     *
+     * @param pattern Nesting pattern to be matched
+     */
+    @Override
+    public List&lt;Rule&gt; match(String namespace, String pattern) {
+        // calculate the pattern of the parent
+        // (if the element has one)
+<span class="fc" id="L221">        String parentPattern = &quot;&quot;;</span>
+<span class="fc" id="L222">        int lastIndex = pattern.lastIndexOf('/');</span>
+
+<span class="fc" id="L224">        boolean hasParent = true;</span>
+<span class="fc bfc" id="L225" title="All 2 branches covered.">        if (lastIndex == -1) {</span>
+            // element has no parent
+<span class="fc" id="L227">            hasParent = false;</span>
+
+        } else {
+            // calculate the pattern of the parent
+<span class="fc" id="L231">            parentPattern = pattern.substring(0, lastIndex);</span>
+
+        }
+
+
+        // we keep the list of universal matches separate
+<span class="fc" id="L237">        List&lt;Rule&gt; universalList = new ArrayList&lt;Rule&gt;(counter);</span>
+
+        // Universal all wildards ('!*')
+        // These are always matched so always add them
+<span class="fc" id="L241">        List&lt;Rule&gt; tempList = this.cache.get(&quot;!*&quot;);</span>
+<span class="fc bfc" id="L242" title="All 2 branches covered.">        if (tempList != null) {</span>
+<span class="fc" id="L243">            universalList.addAll(tempList);</span>
+        }
+
+        // Universal exact parent match
+        // need to get this now since only wildcards are considered later
+<span class="fc" id="L248">        tempList = this.cache.get(&quot;!&quot; + parentPattern + &quot;/?&quot;);</span>
+<span class="fc bfc" id="L249" title="All 2 branches covered.">        if (tempList != null) {</span>
+<span class="fc" id="L250">            universalList.addAll(tempList);</span>
+        }
+
+
+        // base behaviour means that if we certain matches, we don't continue
+        // but we just have a single combined loop and so we have to set
+        // a variable
+<span class="fc" id="L257">        boolean ignoreBasicMatches = false;</span>
+
+
+        // see if we have an exact basic pattern match
+<span class="fc" id="L261">        List&lt;Rule&gt; rulesList = this.cache.get(pattern);</span>
+<span class="fc bfc" id="L262" title="All 2 branches covered.">        if (rulesList != null) {</span>
+            // we have a match!
+            // so ignore all basic matches from now on
+<span class="fc" id="L265">            ignoreBasicMatches = true;</span>
+
+        } else {
+
+            // see if we have an exact child match
+<span class="fc bfc" id="L270" title="All 2 branches covered.">            if (hasParent) {</span>
+                // matching children takes preference
+<span class="fc" id="L272">                rulesList = this.cache.get(parentPattern + &quot;/?&quot;);</span>
+<span class="fc bfc" id="L273" title="All 2 branches covered.">                if (rulesList != null) {</span>
+                    // we have a match!
+                    // so ignore all basic matches from now on
+<span class="fc" id="L276">                    ignoreBasicMatches = true;</span>
+                    
+                } else {
+                    // we don't have a match yet - so try exact ancester
+                    //
+<span class="fc" id="L281">                    rulesList = findExactAncesterMatch(pattern);</span>
+<span class="fc bfc" id="L282" title="All 2 branches covered.">                    if (rulesList != null) {</span>
+                        // we have a match!
+                        // so ignore all basic matches from now on
+<span class="fc" id="L285">                        ignoreBasicMatches = true;</span>
+                    }
+                }
+            }
+        }
+
+
+        // OK - we're ready for the big loop!
+        // Unlike the basic rules case,
+        // we have to go through for all those universal rules in all cases.
+
+        // Find the longest key, ie more discriminant
+<span class="fc" id="L297">        String longKey = &quot;&quot;;</span>
+<span class="fc" id="L298">        int longKeyLength = 0;</span>
+        
+<span class="fc bfc" id="L300" title="All 2 branches covered.">        for (String key : this.cache.keySet()) {</span>
+
+            // find out if it's a univeral pattern
+            // set a flag
+<span class="fc" id="L304">            boolean isUniversal = key.startsWith(&quot;!&quot;);</span>
+<span class="fc bfc" id="L305" title="All 2 branches covered.">            if (isUniversal) {</span>
+                // and find the underlying key
+<span class="fc" id="L307">                key = key.substring(1, key.length());</span>
+            }
+
+                    
+            // don't need to check exact matches
+<span class="fc" id="L312">            boolean wildcardMatchStart = key.startsWith(&quot;*/&quot;);</span>
+<span class="fc" id="L313">            boolean wildcardMatchEnd = key.endsWith(&quot;/*&quot;);</span>
+<span class="fc bfc" id="L314" title="All 6 branches covered.">            if (wildcardMatchStart || (isUniversal &amp;&amp; wildcardMatchEnd)) {</span>
+
+<span class="fc" id="L316">                boolean parentMatched = false;</span>
+<span class="fc" id="L317">                boolean basicMatched = false;</span>
+<span class="fc" id="L318">                boolean ancesterMatched = false;</span>
+                
+<span class="fc" id="L320">                boolean parentMatchEnd = key.endsWith(&quot;/?&quot;);</span>
+<span class="fc bfc" id="L321" title="All 2 branches covered.">                if (parentMatchEnd) {</span>
+                    // try for a parent match
+<span class="fc" id="L323">                    parentMatched = parentMatch(key, pattern, parentPattern);</span>
+
+<span class="fc bfc" id="L325" title="All 2 branches covered.">                } else if (wildcardMatchEnd) {</span>
+                    // check for ancester match
+<span class="fc bfc" id="L327" title="All 2 branches covered.">                    if (wildcardMatchStart) {</span>
+<span class="fc" id="L328">                        String patternBody = key.substring(2, key.length() - 2);</span>
+<span class="fc bfc" id="L329" title="All 2 branches covered.">                        if (pattern.endsWith(patternBody)) {</span>
+<span class="fc" id="L330">                            ancesterMatched = true;</span>
+                        } else {
+<span class="fc bfc" id="L332" title="All 2 branches covered.">                            ancesterMatched = (pattern.indexOf(patternBody + &quot;/&quot;) &gt; -1);</span>
+                        }
+<span class="fc" id="L334">                    } else {</span>
+<span class="fc" id="L335">                        String bodyPattern = key.substring(0, key.length() - 2);</span>
+<span class="fc bfc" id="L336" title="All 2 branches covered.">                        if (pattern.startsWith(bodyPattern))</span>
+                        {
+<span class="fc bfc" id="L338" title="All 2 branches covered.">                            if (pattern.length() == bodyPattern.length()) {</span>
+                                // exact match
+<span class="fc" id="L340">                                ancesterMatched = true;</span>
+                            } else {
+<span class="fc bfc" id="L342" title="All 2 branches covered.">                                ancesterMatched = ( pattern.charAt(bodyPattern.length()) == '/' );</span>
+                            }
+                        } else {
+<span class="fc" id="L345">                            ancesterMatched = false;  </span>
+                        } 
+<span class="fc" id="L347">                    }               </span>
+                } else {
+                    // try for a base match
+<span class="fc" id="L350">                    basicMatched = basicMatch(key, pattern);</span>
+                }
+
+<span class="fc bfc" id="L353" title="All 6 branches covered.">                if (parentMatched || basicMatched || ancesterMatched) {</span>
+<span class="fc bfc" id="L354" title="All 2 branches covered.">                    if (isUniversal) {</span>
+                        // universal rules go straight in
+                        // (no longest matching rule)
+<span class="fc" id="L357">                        tempList = this.cache.get(&quot;!&quot; + key);</span>
+<span class="pc bpc" id="L358" title="1 of 2 branches missed.">                        if (tempList != null) {</span>
+<span class="fc" id="L359">                            universalList.addAll(tempList);</span>
+                        }
+
+                    } else {
+<span class="fc bfc" id="L363" title="All 2 branches covered.">                        if (!ignoreBasicMatches) {</span>
+                            // ensure that all parent matches are SHORTER
+                            // than rules with same level of matching.
+                            //
+                            // the calculations below don't work for universal
+                            // matching, but we don't care because in that case
+                            // this if-stmt is not entered.
+<span class="fc" id="L370">                            int keyLength = key.length();</span>
+<span class="pc bpc" id="L371" title="1 of 2 branches missed.">                            if (wildcardMatchStart) {</span>
+<span class="fc" id="L372">                                --keyLength;</span>
+                            }
+<span class="fc bfc" id="L374" title="All 2 branches covered.">                            if (wildcardMatchEnd) {</span>
+<span class="fc" id="L375">                                --keyLength;</span>
+<span class="fc bfc" id="L376" title="All 2 branches covered.">                            } else if (parentMatchEnd) {</span>
+<span class="fc" id="L377">                                --keyLength;</span>
+                            }
+
+<span class="fc bfc" id="L380" title="All 2 branches covered.">                            if (keyLength &gt; longKeyLength) {</span>
+<span class="fc" id="L381">                                rulesList = this.cache.get(key);</span>
+<span class="fc" id="L382">                                longKey = key;</span>
+<span class="fc" id="L383">                                longKeyLength = keyLength;</span>
+                            }
+                        }
+                    }
+                }
+            }
+<span class="fc" id="L389">        }</span>
+
+
+        // '*' works in practice as a default matching
+        // (this is because anything is a deeper match!)
+<span class="fc bfc" id="L394" title="All 2 branches covered.">        if (rulesList == null) {</span>
+<span class="fc" id="L395">            rulesList = this.cache.get(&quot;*&quot;);</span>
+        }
+
+        // if we've matched a basic pattern, then add to the universal list
+<span class="fc bfc" id="L399" title="All 2 branches covered.">        if (rulesList != null) {</span>
+<span class="fc" id="L400">            universalList.addAll(rulesList);</span>
+        }
+
+
+        // don't filter if namespace is null
+<span class="fc bfc" id="L405" title="All 2 branches covered.">        if (namespace != null) {</span>
+            // remove invalid namespaces
+<span class="fc" id="L407">            Iterator&lt;Rule&gt; it = universalList.iterator();</span>
+<span class="fc bfc" id="L408" title="All 2 branches covered.">            while (it.hasNext()) {</span>
+<span class="fc" id="L409">                Rule rule = it.next();</span>
+<span class="fc" id="L410">                String ns_uri = rule.getNamespaceURI();</span>
+<span class="fc bfc" id="L411" title="All 4 branches covered.">                if (ns_uri != null &amp;&amp; !ns_uri.equals(namespace)) {</span>
+<span class="fc" id="L412">                    it.remove();</span>
+                }
+<span class="fc" id="L414">            }</span>
+        }
+
+
+        // need to make sure that the collection is sort in the order
+        // of addition.  We use a custom comparator for this
+<span class="fc" id="L420">        Collections.sort(</span>
+                universalList,
+<span class="fc" id="L422">                new Comparator&lt;Rule&gt;() {</span>
+
+                    public int compare(Rule r1, Rule r2) throws ClassCastException {
+                        // Get the entry order from the map
+<span class="fc" id="L426">                        Integer i1 = order.get(r1);</span>
+<span class="fc" id="L427">                        Integer i2 = order.get(r2);</span>
+
+                        // and use that to perform the comparison
+<span class="pc bpc" id="L430" title="1 of 2 branches missed.">                        if (i1 == null) {</span>
+<span class="nc bnc" id="L431" title="All 2 branches missed.">                            if (i2 == null) {</span>
+
+<span class="nc" id="L433">                                return 0;</span>
+
+                            } else {
+
+<span class="nc" id="L437">                                return -1;</span>
+
+                            }
+<span class="pc bpc" id="L440" title="1 of 2 branches missed.">                        } else if (i2 == null) {</span>
+<span class="nc" id="L441">                            return 1;</span>
+                        }
+
+<span class="fc" id="L444">                        return (i1.intValue() - i2.intValue());</span>
+                    }
+                });
+
+<span class="fc" id="L448">        return universalList;</span>
+    }
+
+    /**
+     * Matching parent.
+     */
+    private boolean parentMatch(String key, String pattern, String parentPattern) {
+<span class="fc" id="L455">        return parentPattern.endsWith(key.substring(1, key.length() - 2));</span>
+    }
+
+    /**
+     * Standard match.
+     * Matches the end of the pattern to the key.
+     */
+    private boolean basicMatch(String key, String pattern) {
+<span class="fc bfc" id="L463" title="All 2 branches covered.">        return (pattern.equals(key.substring(2)) ||</span>
+<span class="fc bfc" id="L464" title="All 2 branches covered.">                pattern.endsWith(key.substring(1)));</span>
+    }
+    
+    /**
+     * Finds an exact ancester match for given pattern
+     */
+    private List&lt;Rule&gt; findExactAncesterMatch(String parentPattern) {
+<span class="fc" id="L471">        List&lt;Rule&gt; matchingRules = null;</span>
+<span class="fc" id="L472">        int lastIndex = parentPattern.length();</span>
+<span class="fc bfc" id="L473" title="All 2 branches covered.">        while (lastIndex-- &gt; 0) {</span>
+<span class="fc" id="L474">            lastIndex = parentPattern.lastIndexOf('/', lastIndex);</span>
+<span class="fc bfc" id="L475" title="All 2 branches covered.">            if (lastIndex &gt; 0) {</span>
+<span class="fc" id="L476">                matchingRules = this.cache.get(parentPattern.substring(0, lastIndex) + &quot;/*&quot;);</span>
+<span class="fc bfc" id="L477" title="All 2 branches covered.">                if (matchingRules != null) {</span>
+<span class="fc" id="L478">                    return matchingRules;</span>
+                }
+            }
+        }
+<span class="fc" id="L482">        return null;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

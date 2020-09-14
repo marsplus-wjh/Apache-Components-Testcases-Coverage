@@ -1,0 +1,510 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>FactoryCreateRule.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester</a> &gt; <span class="el_source">FactoryCreateRule.java</span></div><h1>FactoryCreateRule.java</h1><pre class="source lang-java linenums">/* $Id$
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+package org.apache.commons.digester;
+
+import java.util.Stack;
+
+import org.xml.sax.Attributes;
+
+
+/**
+ * &lt;p&gt;Rule implementation that uses an {@link ObjectCreationFactory} to create
+ * a new object which it pushes onto the object stack.  When the element is
+ * complete, the object will be popped.&lt;/p&gt;
+ *
+ * &lt;p&gt;This rule is intended in situations where the element's attributes are
+ * needed before the object can be created.  A common senario is for the
+ * ObjectCreationFactory implementation to use the attributes  as parameters
+ * in a call to either a factory method or to a non-empty constructor.
+ */
+
+public class FactoryCreateRule extends Rule {
+
+    // ----------------------------------------------------------- Fields
+    
+    /** Should exceptions thrown by the factory be ignored? */
+    private boolean ignoreCreateExceptions;
+    /** Stock to manage */
+    private Stack&lt;Boolean&gt; exceptionIgnoredStack;
+
+    // ----------------------------------------------------------- Constructors
+
+
+    /**
+     * Construct a factory create rule that will use the specified
+     * class name to create an {@link ObjectCreationFactory} which will
+     * then be used to create an object and push it on the stack.
+     *
+     * @param digester The associated Digester
+     * @param className Java class name of the object creation factory class
+     *
+     * @deprecated The digester instance is now set in the {@link Digester#addRule} method. 
+     * Use {@link #FactoryCreateRule(String className)} instead.
+     */
+    @Deprecated
+    public FactoryCreateRule(Digester digester, String className) {
+
+<span class="nc" id="L64">        this(className);</span>
+
+<span class="nc" id="L66">    }</span>
+
+
+    /**
+     * Construct a factory create rule that will use the specified
+     * class to create an {@link ObjectCreationFactory} which will
+     * then be used to create an object and push it on the stack.
+     *
+     * @param digester The associated Digester
+     * @param clazz Java class name of the object creation factory class
+     *
+     * @deprecated The digester instance is now set in the {@link Digester#addRule} method. 
+     * Use {@link #FactoryCreateRule(Class clazz)} instead.
+     */
+    @Deprecated
+    public FactoryCreateRule(Digester digester, Class&lt;?&gt; clazz) {
+
+<span class="nc" id="L83">        this(clazz);</span>
+
+<span class="nc" id="L85">    }</span>
+
+
+    /**
+     * Construct a factory create rule that will use the specified
+     * class name (possibly overridden by the specified attribute if present)
+     * to create an {@link ObjectCreationFactory}, which will then be used
+     * to instantiate an object instance and push it onto the stack.
+     *
+     * @param digester The associated Digester
+     * @param className Default Java class name of the factory class
+     * @param attributeName Attribute name which, if present, contains an
+     *  override of the class name of the object creation factory to create.
+     *
+     * @deprecated The digester instance is now set in the {@link Digester#addRule} method. 
+     * Use {@link #FactoryCreateRule(String className, String attributeName)} instead.
+     */
+    @Deprecated
+    public FactoryCreateRule(Digester digester,
+                             String className, String attributeName) {
+
+<span class="nc" id="L106">        this(className, attributeName);</span>
+
+<span class="nc" id="L108">    }</span>
+
+
+    /**
+     * Construct a factory create rule that will use the specified
+     * class (possibly overridden by the specified attribute if present)
+     * to create an {@link ObjectCreationFactory}, which will then be used
+     * to instantiate an object instance and push it onto the stack.
+     *
+     * @param digester The associated Digester
+     * @param clazz Default Java class name of the factory class
+     * @param attributeName Attribute name which, if present, contains an
+     *  override of the class name of the object creation factory to create.
+     *
+     * @deprecated The digester instance is now set in the {@link Digester#addRule} method. 
+     * Use {@link #FactoryCreateRule(Class clazz, String attributeName)} instead.
+     */
+    @Deprecated
+    public FactoryCreateRule(Digester digester,
+                             Class&lt;?&gt; clazz, String attributeName) {
+
+<span class="nc" id="L129">        this(clazz, attributeName);</span>
+
+<span class="nc" id="L131">    }</span>
+
+
+    /**
+     * Construct a factory create rule using the given, already instantiated,
+     * {@link ObjectCreationFactory}.
+     *
+     * @param digester The associated Digester
+     * @param creationFactory called on to create the object.
+     *
+     * @deprecated The digester instance is now set in the {@link Digester#addRule} method. 
+     * Use {@link #FactoryCreateRule(ObjectCreationFactory creationFactory)} instead.
+     */
+    @Deprecated
+    public FactoryCreateRule(Digester digester,
+                             ObjectCreationFactory creationFactory) {
+
+<span class="nc" id="L148">        this(creationFactory);</span>
+
+<span class="nc" id="L150">    }    </span>
+
+    /**
+     * &lt;p&gt;Construct a factory create rule that will use the specified
+     * class name to create an {@link ObjectCreationFactory} which will
+     * then be used to create an object and push it on the stack.&lt;/p&gt;
+     *
+     * &lt;p&gt;Exceptions thrown during the object creation process will be propagated.&lt;/p&gt;
+     *
+     * @param className Java class name of the object creation factory class
+     */
+    public FactoryCreateRule(String className) {
+
+<span class="nc" id="L163">        this(className, false);</span>
+
+<span class="nc" id="L165">    }</span>
+
+
+    /**
+     * &lt;p&gt;Construct a factory create rule that will use the specified
+     * class to create an {@link ObjectCreationFactory} which will
+     * then be used to create an object and push it on the stack.&lt;/p&gt;
+     *
+     * &lt;p&gt;Exceptions thrown during the object creation process will be propagated.&lt;/p&gt;
+     *
+     * @param clazz Java class name of the object creation factory class
+     */
+    public FactoryCreateRule(Class&lt;?&gt; clazz) {
+
+<span class="nc" id="L179">        this(clazz, false);</span>
+
+<span class="nc" id="L181">    }</span>
+
+
+    /**
+     * &lt;p&gt;Construct a factory create rule that will use the specified
+     * class name (possibly overridden by the specified attribute if present)
+     * to create an {@link ObjectCreationFactory}, which will then be used
+     * to instantiate an object instance and push it onto the stack.&lt;/p&gt;
+     *
+     * &lt;p&gt;Exceptions thrown during the object creation process will be propagated.&lt;/p&gt;
+     *
+     * @param className Default Java class name of the factory class
+     * @param attributeName Attribute name which, if present, contains an
+     *  override of the class name of the object creation factory to create.
+     */
+    public FactoryCreateRule(String className, String attributeName) {
+
+<span class="nc" id="L198">        this(className, attributeName, false);</span>
+
+<span class="nc" id="L200">    }</span>
+
+
+    /**
+     * &lt;p&gt;Construct a factory create rule that will use the specified
+     * class (possibly overridden by the specified attribute if present)
+     * to create an {@link ObjectCreationFactory}, which will then be used
+     * to instantiate an object instance and push it onto the stack.&lt;/p&gt;
+     *
+     * &lt;p&gt;Exceptions thrown during the object creation process will be propagated.&lt;/p&gt;
+     *
+     * @param clazz Default Java class name of the factory class
+     * @param attributeName Attribute name which, if present, contains an
+     *  override of the class name of the object creation factory to create.
+     */
+    public FactoryCreateRule(Class&lt;?&gt; clazz, String attributeName) {
+
+<span class="nc" id="L217">        this(clazz, attributeName, false);</span>
+
+<span class="nc" id="L219">    }</span>
+
+
+    /**
+     * &lt;p&gt;Construct a factory create rule using the given, already instantiated,
+     * {@link ObjectCreationFactory}.&lt;/p&gt;
+     *
+     * &lt;p&gt;Exceptions thrown during the object creation process will be propagated.&lt;/p&gt;
+     *
+     * @param creationFactory called on to create the object.
+     */
+    public FactoryCreateRule(ObjectCreationFactory creationFactory) {
+
+<span class="nc" id="L232">        this(creationFactory, false);</span>
+
+<span class="nc" id="L234">    }</span>
+    
+    /**
+     * Construct a factory create rule that will use the specified
+     * class name to create an {@link ObjectCreationFactory} which will
+     * then be used to create an object and push it on the stack.
+     *
+     * @param className Java class name of the object creation factory class
+     * @param ignoreCreateExceptions if true, exceptions thrown by the object
+     *  creation factory
+     * will be ignored.
+     */
+    public FactoryCreateRule(String className, boolean ignoreCreateExceptions) {
+
+<span class="fc" id="L248">        this(className, null, ignoreCreateExceptions);</span>
+
+<span class="fc" id="L250">    }</span>
+
+
+    /**
+     * Construct a factory create rule that will use the specified
+     * class to create an {@link ObjectCreationFactory} which will
+     * then be used to create an object and push it on the stack.
+     *
+     * @param clazz Java class name of the object creation factory class
+     * @param ignoreCreateExceptions if true, exceptions thrown by the
+     *  object creation factory
+     * will be ignored.
+     */
+    public FactoryCreateRule(Class&lt;?&gt; clazz, boolean ignoreCreateExceptions) {
+
+<span class="fc" id="L265">        this(clazz, null, ignoreCreateExceptions);</span>
+
+<span class="fc" id="L267">    }</span>
+
+
+    /**
+     * Construct a factory create rule that will use the specified
+     * class name (possibly overridden by the specified attribute if present)
+     * to create an {@link ObjectCreationFactory}, which will then be used
+     * to instantiate an object instance and push it onto the stack.
+     *
+     * @param className Default Java class name of the factory class
+     * @param attributeName Attribute name which, if present, contains an
+     *  override of the class name of the object creation factory to create.
+     * @param ignoreCreateExceptions if true, exceptions thrown by the object
+     *  creation factory will be ignored.
+     */
+    public FactoryCreateRule(
+                                String className, 
+                                String attributeName,
+<span class="fc" id="L285">                                boolean ignoreCreateExceptions) {</span>
+
+<span class="fc" id="L287">        this.className = className;</span>
+<span class="fc" id="L288">        this.attributeName = attributeName;</span>
+<span class="fc" id="L289">        this.ignoreCreateExceptions = ignoreCreateExceptions;</span>
+
+<span class="fc" id="L291">    }</span>
+
+
+    /**
+     * Construct a factory create rule that will use the specified
+     * class (possibly overridden by the specified attribute if present)
+     * to create an {@link ObjectCreationFactory}, which will then be used
+     * to instantiate an object instance and push it onto the stack.
+     *
+     * @param clazz Default Java class name of the factory class
+     * @param attributeName Attribute name which, if present, contains an
+     *  override of the class name of the object creation factory to create.
+     * @param ignoreCreateExceptions if true, exceptions thrown by the object
+     *  creation factory will be ignored.
+     */
+    public FactoryCreateRule(
+                                Class&lt;?&gt; clazz, 
+                                String attributeName,
+                                boolean ignoreCreateExceptions) {
+
+<span class="fc" id="L311">        this(clazz.getName(), attributeName, ignoreCreateExceptions);</span>
+
+<span class="fc" id="L313">    }</span>
+
+
+    /**
+     * Construct a factory create rule using the given, already instantiated,
+     * {@link ObjectCreationFactory}.
+     *
+     * @param creationFactory called on to create the object.
+     * @param ignoreCreateExceptions if true, exceptions thrown by the object
+     *  creation factory will be ignored.
+     */
+    public FactoryCreateRule(
+                            ObjectCreationFactory creationFactory, 
+<span class="fc" id="L326">                            boolean ignoreCreateExceptions) {</span>
+
+<span class="fc" id="L328">        this.creationFactory = creationFactory;</span>
+<span class="fc" id="L329">        this.ignoreCreateExceptions = ignoreCreateExceptions;</span>
+<span class="fc" id="L330">    }</span>
+
+    // ----------------------------------------------------- Instance Variables
+
+
+    /**
+     * The attribute containing an override class name if it is present.
+     */
+<span class="fc" id="L338">    protected String attributeName = null;</span>
+
+
+    /**
+     * The Java class name of the ObjectCreationFactory to be created.
+     * This class must have a no-arguments constructor.
+     */
+<span class="fc" id="L345">    protected String className = null;</span>
+
+
+    /**
+     * The object creation factory we will use to instantiate objects
+     * as required based on the attributes specified in the matched XML
+     * element.
+     */
+<span class="fc" id="L353">    protected ObjectCreationFactory creationFactory = null;</span>
+
+
+    // --------------------------------------------------------- Public Methods
+
+
+    /**
+     * Process the beginning of this element.
+     *
+     * @param attributes The attribute list of this element
+     */
+    @Override
+    public void begin(String namespace, String name, Attributes attributes) throws Exception {
+        
+<span class="fc bfc" id="L367" title="All 2 branches covered.">        if (ignoreCreateExceptions) {</span>
+        
+<span class="pc bpc" id="L369" title="1 of 2 branches missed.">            if (exceptionIgnoredStack == null) {</span>
+<span class="fc" id="L370">                exceptionIgnoredStack = new Stack&lt;Boolean&gt;();</span>
+            }
+            
+            try {
+<span class="fc" id="L374">                Object instance = getFactory(attributes).createObject(attributes);</span>
+                
+<span class="pc bpc" id="L376" title="1 of 2 branches missed.">                if (digester.log.isDebugEnabled()) {</span>
+<span class="nc bnc" id="L377" title="All 2 branches missed.">                    digester.log.debug(&quot;[FactoryCreateRule]{&quot; + digester.match +</span>
+                            &quot;} New &quot; + (instance == null ? &quot;null object&quot; :
+<span class="nc" id="L379">                            instance.getClass().getName()));</span>
+                }
+<span class="fc" id="L381">                digester.push(instance);</span>
+<span class="fc" id="L382">                exceptionIgnoredStack.push(Boolean.FALSE);</span>
+                
+<span class="fc" id="L384">            } catch (Exception e) {</span>
+                // log message and error
+<span class="pc bpc" id="L386" title="1 of 2 branches missed.">                if (digester.log.isInfoEnabled()) {</span>
+<span class="nc" id="L387">                    digester.log.info(&quot;[FactoryCreateRule] Create exception ignored: &quot; +</span>
+<span class="nc bnc" id="L388" title="All 2 branches missed.">                        ((e.getMessage() == null) ? e.getClass().getName() : e.getMessage()));</span>
+<span class="nc bnc" id="L389" title="All 2 branches missed.">                    if (digester.log.isDebugEnabled()) {</span>
+<span class="nc" id="L390">                        digester.log.debug(&quot;[FactoryCreateRule] Ignored exception:&quot;, e);</span>
+                    }
+                }
+<span class="fc" id="L393">                exceptionIgnoredStack.push(Boolean.TRUE);</span>
+<span class="fc" id="L394">            }</span>
+            
+        } else {
+<span class="fc" id="L397">            Object instance = getFactory(attributes).createObject(attributes);</span>
+            
+<span class="pc bpc" id="L399" title="1 of 2 branches missed.">            if (digester.log.isDebugEnabled()) {</span>
+<span class="nc bnc" id="L400" title="All 2 branches missed.">                digester.log.debug(&quot;[FactoryCreateRule]{&quot; + digester.match +</span>
+                        &quot;} New &quot; + (instance == null ? &quot;null object&quot; :
+<span class="nc" id="L402">                        instance.getClass().getName()));</span>
+            }
+<span class="fc" id="L404">            digester.push(instance);</span>
+        }
+<span class="fc" id="L406">    }</span>
+
+
+    /**
+     * Process the end of this element.
+     */
+    @Override
+    public void end(String namespace, String name) throws Exception {
+        
+        // check if object was created 
+        // this only happens if an exception was thrown and we're ignoring them
+<span class="pc bpc" id="L417" title="1 of 4 branches missed.">        if (</span>
+                ignoreCreateExceptions &amp;&amp;
+                exceptionIgnoredStack != null &amp;&amp;
+<span class="pc bpc" id="L420" title="1 of 2 branches missed.">                !(exceptionIgnoredStack.empty())) {</span>
+                
+<span class="fc bfc" id="L422" title="All 2 branches covered.">            if (exceptionIgnoredStack.pop().booleanValue()) {</span>
+                // creation exception was ignored
+                // nothing was put onto the stack
+<span class="pc bpc" id="L425" title="1 of 2 branches missed.">                if (digester.log.isTraceEnabled()) {</span>
+<span class="nc" id="L426">                    digester.log.trace(&quot;[FactoryCreateRule] No creation so no push so no pop&quot;);</span>
+                }
+<span class="fc" id="L428">                return;</span>
+            }
+        } 
+
+<span class="fc" id="L432">        Object top = digester.pop();</span>
+<span class="pc bpc" id="L433" title="1 of 2 branches missed.">        if (digester.log.isDebugEnabled()) {</span>
+<span class="nc" id="L434">            digester.log.debug(&quot;[FactoryCreateRule]{&quot; + digester.match +</span>
+<span class="nc" id="L435">                    &quot;} Pop &quot; + top.getClass().getName());</span>
+        }
+
+<span class="fc" id="L438">    }</span>
+
+
+    /**
+     * Clean up after parsing is complete.
+     */
+    @Override
+    public void finish() throws Exception {
+
+<span class="fc bfc" id="L447" title="All 2 branches covered.">        if (attributeName != null) {</span>
+<span class="fc" id="L448">            creationFactory = null;</span>
+        }
+
+<span class="fc" id="L451">    }</span>
+
+
+    /**
+     * Render a printable version of this Rule.
+     */
+    @Override
+    public String toString() {
+
+<span class="nc" id="L460">        StringBuffer sb = new StringBuffer(&quot;FactoryCreateRule[&quot;);</span>
+<span class="nc" id="L461">        sb.append(&quot;className=&quot;);</span>
+<span class="nc" id="L462">        sb.append(className);</span>
+<span class="nc" id="L463">        sb.append(&quot;, attributeName=&quot;);</span>
+<span class="nc" id="L464">        sb.append(attributeName);</span>
+<span class="nc bnc" id="L465" title="All 2 branches missed.">        if (creationFactory != null) {</span>
+<span class="nc" id="L466">            sb.append(&quot;, creationFactory=&quot;);</span>
+<span class="nc" id="L467">            sb.append(creationFactory);</span>
+        }
+<span class="nc" id="L469">        sb.append(&quot;]&quot;);</span>
+<span class="nc" id="L470">        return (sb.toString());</span>
+
+    }
+
+
+    // ------------------------------------------------------ Protected Methods
+
+
+    /**
+     * Return an instance of our associated object creation factory,
+     * creating one if necessary.
+     *
+     * @param attributes Attributes passed to our factory creation element
+     *
+     * @exception Exception if any error occurs
+     */
+    protected ObjectCreationFactory getFactory(Attributes attributes)
+            throws Exception {
+
+<span class="fc bfc" id="L489" title="All 2 branches covered.">        if (creationFactory == null) {</span>
+<span class="fc" id="L490">            String realClassName = className;</span>
+<span class="fc bfc" id="L491" title="All 2 branches covered.">            if (attributeName != null) {</span>
+<span class="fc" id="L492">                String value = attributes.getValue(attributeName);</span>
+<span class="fc bfc" id="L493" title="All 2 branches covered.">                if (value != null) {</span>
+<span class="fc" id="L494">                    realClassName = value;</span>
+                }
+            }
+<span class="pc bpc" id="L497" title="1 of 2 branches missed.">            if (digester.log.isDebugEnabled()) {</span>
+<span class="nc" id="L498">                digester.log.debug(&quot;[FactoryCreateRule]{&quot; + digester.match +</span>
+                        &quot;} New factory &quot; + realClassName);
+            }
+<span class="fc" id="L501">            Class&lt;?&gt; clazz = digester.getClassLoader().loadClass(realClassName);</span>
+<span class="fc" id="L502">            creationFactory = (ObjectCreationFactory)</span>
+<span class="fc" id="L503">                    clazz.newInstance();</span>
+<span class="fc" id="L504">            creationFactory.setDigester(digester);</span>
+        }
+<span class="fc" id="L506">        return (creationFactory);</span>
+
+    }    
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

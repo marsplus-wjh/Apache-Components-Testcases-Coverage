@@ -1,0 +1,680 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>CallMethodRule.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester</a> &gt; <span class="el_source">CallMethodRule.java</span></div><h1>CallMethodRule.java</h1><pre class="source lang-java linenums">/* $Id$
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */ 
+
+
+package org.apache.commons.digester;
+
+
+import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.beanutils.MethodUtils;
+import org.xml.sax.Attributes;
+
+
+/**
+ * &lt;p&gt;Rule implementation that calls a method on an object on the stack
+ * (normally the top/parent object), passing arguments collected from 
+ * subsequent &lt;code&gt;CallParamRule&lt;/code&gt; rules or from the body of this
+ * element. &lt;/p&gt;
+ *
+ * &lt;p&gt;By using {@link #CallMethodRule(String methodName)} 
+ * a method call can be made to a method which accepts no
+ * arguments.&lt;/p&gt;
+ *
+ * &lt;p&gt;Incompatible method parameter types are converted 
+ * using &lt;code&gt;org.apache.commons.beanutils.ConvertUtils&lt;/code&gt;.
+ * &lt;/p&gt;
+ *
+ * &lt;p&gt;This rule now uses {@link MethodUtils#invokeMethod} by default.
+ * This increases the kinds of methods successfully and allows primitives
+ * to be matched by passing in wrapper classes.
+ * There are rare cases when {@link MethodUtils#invokeExactMethod} 
+ * (the old default) is required.
+ * This method is much stricter in it's reflection.
+ * Setting the &lt;code&gt;UseExactMatch&lt;/code&gt; to true reverts to the use of this 
+ * method.&lt;/p&gt;
+ *
+ * &lt;p&gt;Note that the target method is invoked when the  &lt;i&gt;end&lt;/i&gt; of
+ * the tag the CallMethodRule fired on is encountered, &lt;i&gt;not&lt;/i&gt; when the
+ * last parameter becomes available. This implies that rules which fire on
+ * tags nested within the one associated with the CallMethodRule will 
+ * fire before the CallMethodRule invokes the target method. This behaviour is
+ * not configurable. &lt;/p&gt;
+ *
+ * &lt;p&gt;Note also that if a CallMethodRule is expecting exactly one parameter
+ * and that parameter is not available (eg CallParamRule is used with an
+ * attribute name but the attribute does not exist) then the method will
+ * not be invoked. If a CallMethodRule is expecting more than one parameter,
+ * then it is always invoked, regardless of whether the parameters were
+ * available or not; missing parameters are converted to the appropriate target
+ * type by calling ConvertUtils.convert. Note that the default ConvertUtils
+ * converters for the String type returns a null when passed a null, meaning
+ * that CallMethodRule will passed null for all String parameters for which
+ * there is no parameter info available from the XML. However parameters of
+ * type Float and Integer will be passed a real object containing a zero value
+ * as that is the output of the default ConvertUtils converters for those
+ * types when passed a null. You can register custom converters to change
+ * this behaviour; see the beautils library documentation for more info.&lt;/p&gt;
+ *
+ * &lt;p&gt;Note that when a constructor is used with paramCount=0, indicating that
+ * the body of the element is to be passed to the target method, an empty 
+ * element will cause an &lt;i&gt;empty string&lt;/i&gt; to be passed to the target method,
+ * not null. And if automatic type conversion is being applied (ie if the 
+ * target function takes something other than a string as a parameter) then 
+ * the conversion will fail if the converter class does not accept an empty 
+ * string as valid input.&lt;/p&gt;
+ * 
+ * &lt;p&gt;CallMethodRule has a design flaw which can cause it to fail under
+ * certain rule configurations. All CallMethodRule instances share a single
+ * parameter stack, and all CallParamRule instances simply store their data
+ * into the parameter-info structure that is on the top of the stack. This
+ * means that two CallMethodRule instances cannot be associated with the
+ * same pattern without getting scrambled parameter data. This same issue
+ * also applies when a CallMethodRule matches some element X, a different 
+ * CallMethodRule matches a child element Y and some of the CallParamRules 
+ * associated with the first CallMethodRule match element Y or one of its 
+ * child elements. This issue has been present since the very first release
+ * of Digester. Note, however, that this configuration of CallMethodRule
+ * instances is not commonly required.&lt;/p&gt;
+ */
+
+public class CallMethodRule extends Rule {
+
+    // ----------------------------------------------------------- Constructors
+
+    /**
+     * Construct a &quot;call method&quot; rule with the specified method name.  The
+     * parameter types (if any) default to java.lang.String.
+     *
+     * @param digester The associated Digester
+     * @param methodName Method name of the parent method to call
+     * @param paramCount The number of parameters to collect, or
+     *  zero for a single argument from the body of this element.
+     *
+     *
+     * @deprecated The digester instance is now set in the {@link Digester#addRule} method. 
+     * Use {@link #CallMethodRule(String methodName,int paramCount)} instead.
+     */
+    public CallMethodRule(Digester digester, String methodName,
+                          int paramCount) {
+
+<span class="nc" id="L115">        this(methodName, paramCount);</span>
+
+<span class="nc" id="L117">    }</span>
+
+
+    /**
+     * Construct a &quot;call method&quot; rule with the specified method name.
+     *
+     * @param digester The associated Digester
+     * @param methodName Method name of the parent method to call
+     * @param paramCount The number of parameters to collect, or
+     *  zero for a single argument from the body of ths element
+     * @param paramTypes The Java class names of the arguments
+     *  (if you wish to use a primitive type, specify the corresonding
+     *  Java wrapper class instead, such as &lt;code&gt;java.lang.Boolean&lt;/code&gt;
+     *  for a &lt;code&gt;boolean&lt;/code&gt; parameter)
+     *
+     * @deprecated The digester instance is now set in the {@link Digester#addRule} method. 
+     * Use {@link #CallMethodRule(String methodName,int paramCount, String [] paramTypes)} instead.
+     */
+    public CallMethodRule(Digester digester, String methodName,
+                          int paramCount, String paramTypes[]) {
+
+<span class="nc" id="L138">        this(methodName, paramCount, paramTypes);</span>
+
+<span class="nc" id="L140">    }</span>
+
+
+    /**
+     * Construct a &quot;call method&quot; rule with the specified method name.
+     *
+     * @param digester The associated Digester
+     * @param methodName Method name of the parent method to call
+     * @param paramCount The number of parameters to collect, or
+     *  zero for a single argument from the body of ths element
+     * @param paramTypes The Java classes that represent the
+     *  parameter types of the method arguments
+     *  (if you wish to use a primitive type, specify the corresonding
+     *  Java wrapper class instead, such as &lt;code&gt;java.lang.Boolean.TYPE&lt;/code&gt;
+     *  for a &lt;code&gt;boolean&lt;/code&gt; parameter)
+     *
+     * @deprecated The digester instance is now set in the {@link Digester#addRule} method. 
+     * Use {@link #CallMethodRule(String methodName,int paramCount, Class [] paramTypes)} instead.
+     */
+    public CallMethodRule(Digester digester, String methodName,
+                          int paramCount, Class paramTypes[]) {
+
+<span class="nc" id="L162">        this(methodName, paramCount, paramTypes);</span>
+<span class="nc" id="L163">    }</span>
+
+
+    /**
+     * Construct a &quot;call method&quot; rule with the specified method name.  The
+     * parameter types (if any) default to java.lang.String.
+     *
+     * @param methodName Method name of the parent method to call
+     * @param paramCount The number of parameters to collect, or
+     *  zero for a single argument from the body of this element.
+     */
+    public CallMethodRule(String methodName,
+                          int paramCount) {
+<span class="fc" id="L176">        this(0, methodName, paramCount);</span>
+<span class="fc" id="L177">    }</span>
+
+    /**
+     * Construct a &quot;call method&quot; rule with the specified method name.  The
+     * parameter types (if any) default to java.lang.String.
+     *
+     * @param targetOffset location of the target object. Positive numbers are
+     * relative to the top of the digester object stack. Negative numbers 
+     * are relative to the bottom of the stack. Zero implies the top
+     * object on the stack.
+     * @param methodName Method name of the parent method to call
+     * @param paramCount The number of parameters to collect, or
+     *  zero for a single argument from the body of this element.
+     */
+    public CallMethodRule(int targetOffset,
+                          String methodName,
+<span class="fc" id="L193">                          int paramCount) {</span>
+
+<span class="fc" id="L195">        this.targetOffset = targetOffset;</span>
+<span class="fc" id="L196">        this.methodName = methodName;</span>
+<span class="fc" id="L197">        this.paramCount = paramCount;        </span>
+<span class="fc bfc" id="L198" title="All 2 branches covered.">        if (paramCount == 0) {</span>
+<span class="fc" id="L199">            this.paramTypes = new Class[] { String.class };</span>
+        } else {
+<span class="fc" id="L201">            this.paramTypes = new Class[paramCount];</span>
+<span class="fc bfc" id="L202" title="All 2 branches covered.">            for (int i = 0; i &lt; this.paramTypes.length; i++) {</span>
+<span class="fc" id="L203">                this.paramTypes[i] = String.class;</span>
+            }
+        }
+
+<span class="fc" id="L207">    }</span>
+
+    /**
+     * Construct a &quot;call method&quot; rule with the specified method name.  
+     * The method should accept no parameters.
+     *
+     * @param methodName Method name of the parent method to call
+     */
+    public CallMethodRule(String methodName) {
+    
+<span class="fc" id="L217">        this(0, methodName, 0, (Class[]) null);</span>
+    
+<span class="fc" id="L219">    }</span>
+    
+
+    /**
+     * Construct a &quot;call method&quot; rule with the specified method name.  
+     * The method should accept no parameters.
+     *
+     * @param targetOffset location of the target object. Positive numbers are
+     * relative to the top of the digester object stack. Negative numbers 
+     * are relative to the bottom of the stack. Zero implies the top
+     * object on the stack.
+     * @param methodName Method name of the parent method to call
+     */
+    public CallMethodRule(int targetOffset, String methodName) {
+    
+<span class="fc" id="L234">        this(targetOffset, methodName, 0, (Class[]) null);</span>
+    
+<span class="fc" id="L236">    }</span>
+    
+
+    /**
+     * Construct a &quot;call method&quot; rule with the specified method name and
+     * parameter types. If &lt;code&gt;paramCount&lt;/code&gt; is set to zero the rule
+     * will use the body of this element as the single argument of the
+     * method, unless &lt;code&gt;paramTypes&lt;/code&gt; is null or empty, in this
+     * case the rule will call the specified method with no arguments.
+     *
+     * @param methodName Method name of the parent method to call
+     * @param paramCount The number of parameters to collect, or
+     *  zero for a single argument from the body of ths element
+     * @param paramTypes The Java class names of the arguments
+     *  (if you wish to use a primitive type, specify the corresonding
+     *  Java wrapper class instead, such as &lt;code&gt;java.lang.Boolean&lt;/code&gt;
+     *  for a &lt;code&gt;boolean&lt;/code&gt; parameter)
+     */
+    public CallMethodRule(
+                            String methodName,
+                            int paramCount, 
+                            String paramTypes[]) {
+<span class="fc" id="L258">        this(0, methodName, paramCount, paramTypes);</span>
+<span class="fc" id="L259">    }</span>
+
+    /**
+     * Construct a &quot;call method&quot; rule with the specified method name and
+     * parameter types. If &lt;code&gt;paramCount&lt;/code&gt; is set to zero the rule
+     * will use the body of this element as the single argument of the
+     * method, unless &lt;code&gt;paramTypes&lt;/code&gt; is null or empty, in this
+     * case the rule will call the specified method with no arguments.
+     *
+     * @param targetOffset location of the target object. Positive numbers are
+     * relative to the top of the digester object stack. Negative numbers 
+     * are relative to the bottom of the stack. Zero implies the top
+     * object on the stack.
+     * @param methodName Method name of the parent method to call
+     * @param paramCount The number of parameters to collect, or
+     *  zero for a single argument from the body of ths element
+     * @param paramTypes The Java class names of the arguments
+     *  (if you wish to use a primitive type, specify the corresonding
+     *  Java wrapper class instead, such as &lt;code&gt;java.lang.Boolean&lt;/code&gt;
+     *  for a &lt;code&gt;boolean&lt;/code&gt; parameter)
+     */
+    public CallMethodRule(  int targetOffset,
+                            String methodName,
+                            int paramCount, 
+<span class="fc" id="L283">                            String paramTypes[]) {</span>
+
+<span class="fc" id="L285">        this.targetOffset = targetOffset;</span>
+<span class="fc" id="L286">        this.methodName = methodName;</span>
+<span class="fc" id="L287">        this.paramCount = paramCount;</span>
+<span class="fc bfc" id="L288" title="All 2 branches covered.">        if (paramTypes == null) {</span>
+<span class="fc" id="L289">            this.paramTypes = new Class[paramCount];</span>
+<span class="pc bpc" id="L290" title="1 of 2 branches missed.">            for (int i = 0; i &lt; this.paramTypes.length; i++) {</span>
+<span class="nc" id="L291">                this.paramTypes[i] = String.class;</span>
+            }
+        } else {
+            // copy the parameter class names into an array
+            // the classes will be loaded when the digester is set 
+<span class="fc" id="L296">            this.paramClassNames = new String[paramTypes.length];</span>
+<span class="fc bfc" id="L297" title="All 2 branches covered.">            for (int i = 0; i &lt; this.paramClassNames.length; i++) {</span>
+<span class="fc" id="L298">                this.paramClassNames[i] = paramTypes[i];</span>
+            }
+        }
+
+<span class="fc" id="L302">    }</span>
+
+
+    /**
+     * Construct a &quot;call method&quot; rule with the specified method name and
+     * parameter types. If &lt;code&gt;paramCount&lt;/code&gt; is set to zero the rule
+     * will use the body of this element as the single argument of the
+     * method, unless &lt;code&gt;paramTypes&lt;/code&gt; is null or empty, in this
+     * case the rule will call the specified method with no arguments.
+     *
+     * @param methodName Method name of the parent method to call
+     * @param paramCount The number of parameters to collect, or
+     *  zero for a single argument from the body of ths element
+     * @param paramTypes The Java classes that represent the
+     *  parameter types of the method arguments
+     *  (if you wish to use a primitive type, specify the corresonding
+     *  Java wrapper class instead, such as &lt;code&gt;java.lang.Boolean.TYPE&lt;/code&gt;
+     *  for a &lt;code&gt;boolean&lt;/code&gt; parameter)
+     */
+    public CallMethodRule(
+                            String methodName,
+                            int paramCount, 
+                            Class paramTypes[]) {
+<span class="fc" id="L325">        this(0, methodName, paramCount, paramTypes);</span>
+<span class="fc" id="L326">    }</span>
+
+    /**
+     * Construct a &quot;call method&quot; rule with the specified method name and
+     * parameter types. If &lt;code&gt;paramCount&lt;/code&gt; is set to zero the rule
+     * will use the body of this element as the single argument of the
+     * method, unless &lt;code&gt;paramTypes&lt;/code&gt; is null or empty, in this
+     * case the rule will call the specified method with no arguments.
+     *
+     * @param targetOffset location of the target object. Positive numbers are
+     * relative to the top of the digester object stack. Negative numbers 
+     * are relative to the bottom of the stack. Zero implies the top
+     * object on the stack.
+     * @param methodName Method name of the parent method to call
+     * @param paramCount The number of parameters to collect, or
+     *  zero for a single argument from the body of ths element
+     * @param paramTypes The Java classes that represent the
+     *  parameter types of the method arguments
+     *  (if you wish to use a primitive type, specify the corresonding
+     *  Java wrapper class instead, such as &lt;code&gt;java.lang.Boolean.TYPE&lt;/code&gt;
+     *  for a &lt;code&gt;boolean&lt;/code&gt; parameter)
+     */
+    public CallMethodRule(  int targetOffset,
+                            String methodName,
+                            int paramCount, 
+<span class="fc" id="L351">                            Class paramTypes[]) {</span>
+
+<span class="fc" id="L353">        this.targetOffset = targetOffset;</span>
+<span class="fc" id="L354">        this.methodName = methodName;</span>
+<span class="fc" id="L355">        this.paramCount = paramCount;</span>
+<span class="fc bfc" id="L356" title="All 2 branches covered.">        if (paramTypes == null) {</span>
+<span class="fc" id="L357">            this.paramTypes = new Class[paramCount];</span>
+<span class="pc bpc" id="L358" title="1 of 2 branches missed.">            for (int i = 0; i &lt; this.paramTypes.length; i++) {</span>
+<span class="nc" id="L359">                this.paramTypes[i] = String.class;</span>
+            }
+        } else {
+<span class="fc" id="L362">            this.paramTypes = new Class[paramTypes.length];</span>
+<span class="fc bfc" id="L363" title="All 2 branches covered.">            for (int i = 0; i &lt; this.paramTypes.length; i++) {</span>
+<span class="fc" id="L364">                this.paramTypes[i] = paramTypes[i];</span>
+            }
+        }
+
+<span class="fc" id="L368">    }</span>
+
+
+    // ----------------------------------------------------- Instance Variables
+
+
+    /**
+     * The body text collected from this element.
+     */
+<span class="fc" id="L377">    protected String bodyText = null;</span>
+
+
+    /** 
+     * location of the target object for the call, relative to the
+     * top of the digester object stack. The default value of zero
+     * means the target object is the one on top of the stack.
+     */
+<span class="fc" id="L385">    private int targetOffset = 0;</span>
+
+    /**
+     * The method name to call on the parent object.
+     */
+<span class="fc" id="L390">    protected String methodName = null;</span>
+
+
+    /**
+     * The number of parameters to collect from &lt;code&gt;MethodParam&lt;/code&gt; rules.
+     * If this value is zero, a single parameter will be collected from the
+     * body of this element.
+     */
+<span class="fc" id="L398">    protected int paramCount = 0;</span>
+
+
+    /**
+     * The parameter types of the parameters to be collected.
+     */
+<span class="fc" id="L404">    protected Class paramTypes[] = null;</span>
+
+    /**
+     * The names of the classes of the parameters to be collected.
+     * This attribute allows creation of the classes to be postponed until the digester is set.
+     */
+<span class="fc" id="L410">    private String paramClassNames[] = null;</span>
+    
+    /**
+     * Should &lt;code&gt;MethodUtils.invokeExactMethod&lt;/code&gt; be used for reflection.
+     */
+<span class="fc" id="L415">    protected boolean useExactMatch = false;</span>
+    
+    // --------------------------------------------------------- Public Methods
+    
+    /**
+     * Should &lt;code&gt;MethodUtils.invokeExactMethod&lt;/code&gt;
+     * be used for the reflection.
+     */
+    public boolean getUseExactMatch() {
+<span class="nc" id="L424">        return useExactMatch;</span>
+    }
+    
+    /**
+     * Set whether &lt;code&gt;MethodUtils.invokeExactMethod&lt;/code&gt;
+     * should be used for the reflection.
+     */    
+    public void setUseExactMatch(boolean useExactMatch)
+    { 
+<span class="nc" id="L433">        this.useExactMatch = useExactMatch;</span>
+<span class="nc" id="L434">    }</span>
+
+    /**
+     * Set the associated digester.
+     * If needed, this class loads the parameter classes from their names.
+     */
+    public void setDigester(Digester digester)
+    {
+        // call superclass
+<span class="fc" id="L443">        super.setDigester(digester);</span>
+        // if necessary, load parameter classes
+<span class="fc bfc" id="L445" title="All 2 branches covered.">        if (this.paramClassNames != null) {</span>
+<span class="fc" id="L446">            this.paramTypes = new Class[paramClassNames.length];</span>
+<span class="fc bfc" id="L447" title="All 2 branches covered.">            for (int i = 0; i &lt; this.paramClassNames.length; i++) {</span>
+                try {
+<span class="fc" id="L449">                    this.paramTypes[i] =</span>
+<span class="fc" id="L450">                            digester.getClassLoader().loadClass(this.paramClassNames[i]);</span>
+<span class="nc" id="L451">                } catch (ClassNotFoundException e) {</span>
+                    // use the digester log
+<span class="nc" id="L453">                    digester.getLogger().error(&quot;(CallMethodRule) Cannot load class &quot; + this.paramClassNames[i], e);</span>
+<span class="nc" id="L454">                    this.paramTypes[i] = null; // Will cause NPE later</span>
+<span class="fc" id="L455">                }</span>
+            }
+        }
+<span class="fc" id="L458">    }</span>
+
+    /**
+     * Process the start of this element.
+     *
+     * @param attributes The attribute list for this element
+     */
+    public void begin(Attributes attributes) throws Exception {
+
+        // Push an array to capture the parameter values if necessary
+<span class="fc bfc" id="L468" title="All 2 branches covered.">        if (paramCount &gt; 0) {</span>
+<span class="fc" id="L469">            Object parameters[] = new Object[paramCount];</span>
+<span class="fc bfc" id="L470" title="All 2 branches covered.">            for (int i = 0; i &lt; parameters.length; i++) {</span>
+<span class="fc" id="L471">                parameters[i] = null;</span>
+            }
+<span class="fc" id="L473">            digester.pushParams(parameters);</span>
+        }
+
+<span class="fc" id="L476">    }</span>
+
+
+    /**
+     * Process the body text of this element.
+     *
+     * @param bodyText The body text of this element
+     */
+    public void body(String bodyText) throws Exception {
+
+<span class="fc bfc" id="L486" title="All 2 branches covered.">        if (paramCount == 0) {</span>
+<span class="fc" id="L487">            this.bodyText = bodyText.trim();</span>
+        }
+
+<span class="fc" id="L490">    }</span>
+
+
+    /**
+     * Process the end of this element.
+     */
+    public void end() throws Exception {
+
+        // Retrieve or construct the parameter values array
+<span class="fc" id="L499">        Object parameters[] = null;</span>
+<span class="fc bfc" id="L500" title="All 2 branches covered.">        if (paramCount &gt; 0) {</span>
+
+<span class="fc" id="L502">            parameters = (Object[]) digester.popParams();</span>
+            
+<span class="pc bpc" id="L504" title="1 of 2 branches missed.">            if (digester.log.isTraceEnabled()) {</span>
+<span class="nc bnc" id="L505" title="All 2 branches missed.">                for (int i=0,size=parameters.length;i&lt;size;i++) {</span>
+<span class="nc" id="L506">                    digester.log.trace(&quot;[CallMethodRule](&quot; + i + &quot;)&quot; + parameters[i]) ;</span>
+                }
+            }
+            
+            // In the case where the target method takes a single parameter
+            // and that parameter does not exist (the CallParamRule never
+            // executed or the CallParamRule was intended to set the parameter
+            // from an attribute but the attribute wasn't present etc) then
+            // skip the method call.
+            //
+            // This is useful when a class has a &quot;default&quot; value that should
+            // only be overridden if data is present in the XML. I don't
+            // know why this should only apply to methods taking *one*
+            // parameter, but it always has been so we can't change it now.
+<span class="fc bfc" id="L520" title="All 4 branches covered.">            if (paramCount == 1 &amp;&amp; parameters[0] == null) {</span>
+<span class="fc" id="L521">                return;</span>
+            }
+
+<span class="pc bpc" id="L524" title="1 of 4 branches missed.">        } else if (paramTypes != null &amp;&amp; paramTypes.length != 0) {</span>
+            // Having paramCount == 0 and paramTypes.length == 1 indicates
+            // that we have the special case where the target method has one
+            // parameter being the body text of the current element.
+
+            // There is no body text included in the source XML file,
+            // so skip the method call
+<span class="pc bpc" id="L531" title="1 of 2 branches missed.">            if (bodyText == null) {</span>
+<span class="nc" id="L532">                return;</span>
+            }
+
+<span class="fc" id="L535">            parameters = new Object[1];</span>
+<span class="fc" id="L536">            parameters[0] = bodyText;</span>
+<span class="pc bpc" id="L537" title="1 of 2 branches missed.">            if (paramTypes.length == 0) {</span>
+<span class="nc" id="L538">                paramTypes = new Class[1];</span>
+<span class="nc" id="L539">                paramTypes[0] = String.class;</span>
+            }
+
+        } else {
+            // When paramCount is zero and paramTypes.length is zero it
+            // means that we truly are calling a method with no parameters.
+            // Nothing special needs to be done here.
+            ;
+        }
+
+        // Construct the parameter values array we will need
+        // We only do the conversion if the param value is a String and
+        // the specified paramType is not String. 
+<span class="fc" id="L552">        Object paramValues[] = new Object[paramTypes.length];</span>
+<span class="fc bfc" id="L553" title="All 2 branches covered.">        for (int i = 0; i &lt; paramTypes.length; i++) {</span>
+            // convert nulls and convert stringy parameters 
+            // for non-stringy param types
+<span class="fc bfc" id="L556" title="All 4 branches covered.">            if(</span>
+                parameters[i] == null ||
+                 (parameters[i] instanceof String &amp;&amp; 
+<span class="fc bfc" id="L559" title="All 2 branches covered.">                   !String.class.isAssignableFrom(paramTypes[i]))) {</span>
+                
+<span class="fc" id="L561">                paramValues[i] =</span>
+<span class="fc" id="L562">                        ConvertUtils.convert((String) parameters[i], paramTypes[i]);</span>
+            } else {
+<span class="fc" id="L564">                paramValues[i] = parameters[i];</span>
+            }
+        }
+
+        // Determine the target object for the method call
+        Object target;
+<span class="fc bfc" id="L570" title="All 2 branches covered.">        if (targetOffset &gt;= 0) {</span>
+<span class="fc" id="L571">            target = digester.peek(targetOffset);</span>
+        } else {
+<span class="fc" id="L573">            target = digester.peek( digester.getCount() + targetOffset );</span>
+        }
+        
+<span class="fc bfc" id="L576" title="All 2 branches covered.">        if (target == null) {</span>
+<span class="fc" id="L577">            StringBuffer sb = new StringBuffer();</span>
+<span class="fc" id="L578">            sb.append(&quot;[CallMethodRule]{&quot;);</span>
+<span class="fc" id="L579">            sb.append(digester.match);</span>
+<span class="fc" id="L580">            sb.append(&quot;} Call target is null (&quot;);</span>
+<span class="fc" id="L581">            sb.append(&quot;targetOffset=&quot;);</span>
+<span class="fc" id="L582">            sb.append(targetOffset);</span>
+<span class="fc" id="L583">            sb.append(&quot;,stackdepth=&quot;);</span>
+<span class="fc" id="L584">            sb.append(digester.getCount());</span>
+<span class="fc" id="L585">            sb.append(&quot;)&quot;);</span>
+<span class="fc" id="L586">            throw new org.xml.sax.SAXException(sb.toString());</span>
+        }
+        
+        // Invoke the required method on the top object
+<span class="pc bpc" id="L590" title="1 of 2 branches missed.">        if (digester.log.isDebugEnabled()) {</span>
+<span class="fc" id="L591">            StringBuffer sb = new StringBuffer(&quot;[CallMethodRule]{&quot;);</span>
+<span class="fc" id="L592">            sb.append(digester.match);</span>
+<span class="fc" id="L593">            sb.append(&quot;} Call &quot;);</span>
+<span class="fc" id="L594">            sb.append(target.getClass().getName());</span>
+<span class="fc" id="L595">            sb.append(&quot;.&quot;);</span>
+<span class="fc" id="L596">            sb.append(methodName);</span>
+<span class="fc" id="L597">            sb.append(&quot;(&quot;);</span>
+<span class="fc bfc" id="L598" title="All 2 branches covered.">            for (int i = 0; i &lt; paramValues.length; i++) {</span>
+<span class="fc bfc" id="L599" title="All 2 branches covered.">                if (i &gt; 0) {</span>
+<span class="fc" id="L600">                    sb.append(&quot;,&quot;);</span>
+                }
+<span class="fc bfc" id="L602" title="All 2 branches covered.">                if (paramValues[i] == null) {</span>
+<span class="fc" id="L603">                    sb.append(&quot;null&quot;);</span>
+                } else {
+<span class="fc" id="L605">                    sb.append(paramValues[i].toString());</span>
+                }
+<span class="fc" id="L607">                sb.append(&quot;/&quot;);</span>
+<span class="pc bpc" id="L608" title="1 of 2 branches missed.">                if (paramTypes[i] == null) {</span>
+<span class="nc" id="L609">                    sb.append(&quot;null&quot;);</span>
+                } else {
+<span class="fc" id="L611">                    sb.append(paramTypes[i].getName());</span>
+                }
+            }
+<span class="fc" id="L614">            sb.append(&quot;)&quot;);</span>
+<span class="fc" id="L615">            digester.log.debug(sb.toString());</span>
+        }
+        
+<span class="fc" id="L618">        Object result = null;</span>
+<span class="pc bpc" id="L619" title="1 of 2 branches missed.">        if (useExactMatch) {</span>
+            // invoke using exact match
+<span class="nc" id="L621">            result = MethodUtils.invokeExactMethod(target, methodName,</span>
+                paramValues, paramTypes);
+                
+        } else {
+            // invoke using fuzzier match
+<span class="fc" id="L626">            result = MethodUtils.invokeMethod(target, methodName,</span>
+                paramValues, paramTypes);            
+        }
+        
+<span class="fc" id="L630">        processMethodCallResult(result);</span>
+<span class="fc" id="L631">    }</span>
+
+
+    /**
+     * Clean up after parsing is complete.
+     */
+    public void finish() throws Exception {
+
+<span class="fc" id="L639">        bodyText = null;</span>
+
+<span class="fc" id="L641">    }</span>
+
+    /**
+     * Subclasses may override this method to perform additional processing of the 
+     * invoked method's result.
+     *
+     * @param result the Object returned by the method invoked, possibly null
+     */
+    protected void processMethodCallResult(Object result) {
+        // do nothing
+<span class="fc" id="L651">    }</span>
+
+    /**
+     * Render a printable version of this Rule.
+     */
+    public String toString() {
+
+<span class="fc" id="L658">        StringBuffer sb = new StringBuffer(&quot;CallMethodRule[&quot;);</span>
+<span class="fc" id="L659">        sb.append(&quot;methodName=&quot;);</span>
+<span class="fc" id="L660">        sb.append(methodName);</span>
+<span class="fc" id="L661">        sb.append(&quot;, paramCount=&quot;);</span>
+<span class="fc" id="L662">        sb.append(paramCount);</span>
+<span class="fc" id="L663">        sb.append(&quot;, paramTypes={&quot;);</span>
+<span class="fc bfc" id="L664" title="All 2 branches covered.">        if (paramTypes != null) {</span>
+<span class="fc bfc" id="L665" title="All 2 branches covered.">            for (int i = 0; i &lt; paramTypes.length; i++) {</span>
+<span class="fc bfc" id="L666" title="All 2 branches covered.">                if (i &gt; 0) {</span>
+<span class="fc" id="L667">                    sb.append(&quot;, &quot;);</span>
+                }
+<span class="fc" id="L669">                sb.append(paramTypes[i].getName());</span>
+            }
+        }
+<span class="fc" id="L672">        sb.append(&quot;}&quot;);</span>
+<span class="fc" id="L673">        sb.append(&quot;]&quot;);</span>
+<span class="fc" id="L674">        return (sb.toString());</span>
+
+    }
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

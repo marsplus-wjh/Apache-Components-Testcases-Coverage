@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MultiVariableExpander.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester3.substitution</a> &gt; <span class="el_source">MultiVariableExpander.java</span></div><h1>MultiVariableExpander.java</h1><pre class="source lang-java linenums">package org.apache.commons.digester3.substitution;
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import java.util.Map;
+import java.util.ArrayList;
+
+/**
+ * &lt;p&gt;
+ * Expands variable references from multiple sources.
+ * &lt;/p&gt;
+ * 
+ * @since 1.6
+ */
+<span class="fc" id="L32">public class MultiVariableExpander</span>
+    implements VariableExpander
+{
+
+<span class="fc" id="L36">    private int nEntries = 0;</span>
+
+<span class="fc" id="L38">    private final ArrayList&lt;String&gt; markers = new ArrayList&lt;String&gt;( 2 );</span>
+
+<span class="fc" id="L40">    private final ArrayList&lt;Map&lt;String, Object&gt;&gt; sources = new ArrayList&lt;Map&lt;String, Object&gt;&gt;( 2 );</span>
+
+    /**
+     * Add a new variables source, identified by the input marker
+     *
+     * @param marker The input variables marker
+     * @param source The variables source
+     */
+    public void addSource( String marker, Map&lt;String, Object&gt; source )
+    {
+<span class="fc" id="L50">        ++nEntries;</span>
+<span class="fc" id="L51">        markers.add( marker );</span>
+<span class="fc" id="L52">        sources.add( source );</span>
+<span class="fc" id="L53">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    public String expand( String param )
+    {
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        for ( int i = 0; i &lt; nEntries; ++i )</span>
+        {
+<span class="fc" id="L62">            param = expand( param, markers.get( i ), sources.get( i ) );</span>
+        }
+<span class="fc" id="L64">        return param;</span>
+    }
+
+    /**
+     * Replace any occurrences within the string of the form &quot;marker{key}&quot; with the value from source[key].
+     * &lt;p&gt;
+     * Commonly, the variable marker is &quot;$&quot;, in which case variables are indicated by ${key} in the string.
+     * &lt;p&gt;
+     * Returns the string after performing all substitutions.
+     * &lt;p&gt;
+     * If no substitutions were made, the input string object is returned (not a copy).
+     *
+     * @param str The input string containing placeholders
+     * @param marker The input variables marker
+     * @param source The variables source
+     * @return The input string where variables have been expanded by replacing values found in source
+     */
+    public String expand( String str, String marker, Map&lt;String, Object&gt; source )
+    {
+<span class="fc" id="L83">        String startMark = marker + &quot;{&quot;;</span>
+<span class="fc" id="L84">        int markLen = startMark.length();</span>
+
+<span class="fc" id="L86">        int index = 0;</span>
+        for ( ;; )
+        {
+<span class="fc" id="L89">            index = str.indexOf( startMark, index );</span>
+<span class="fc bfc" id="L90" title="All 2 branches covered.">            if ( index == -1 )</span>
+            {
+<span class="fc" id="L92">                return str;</span>
+            }
+
+<span class="fc" id="L95">            int startIndex = index + markLen;</span>
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">            if ( startIndex &gt; str.length() )</span>
+            {
+<span class="nc" id="L98">                throw new IllegalArgumentException( &quot;var expression starts at end of string&quot; );</span>
+            }
+
+<span class="fc" id="L101">            int endIndex = str.indexOf( &quot;}&quot;, index + markLen );</span>
+<span class="pc bpc" id="L102" title="1 of 2 branches missed.">            if ( endIndex == -1 )</span>
+            {
+<span class="nc" id="L104">                throw new IllegalArgumentException( &quot;var expression starts but does not end&quot; );</span>
+            }
+
+<span class="fc" id="L107">            String key = str.substring( index + markLen, endIndex );</span>
+<span class="fc" id="L108">            Object value = source.get( key );</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">            if ( value == null )</span>
+            {
+<span class="fc" id="L111">                throw new IllegalArgumentException( &quot;parameter [&quot; + key + &quot;] is not defined.&quot; );</span>
+            }
+<span class="fc" id="L113">            String varValue = value.toString();</span>
+
+<span class="fc" id="L115">            str = str.substring( 0, index ) + varValue + str.substring( endIndex + 1 );</span>
+<span class="fc" id="L116">            index += varValue.length();</span>
+<span class="fc" id="L117">        }</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

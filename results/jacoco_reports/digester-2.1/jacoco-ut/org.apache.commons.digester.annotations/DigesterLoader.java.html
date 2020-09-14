@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>DigesterLoader.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester.annotations</a> &gt; <span class="el_source">DigesterLoader.java</span></div><h1>DigesterLoader.java</h1><pre class="source lang-java linenums">/* $Id$
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.digester.annotations;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+
+import org.apache.commons.digester.Digester;
+import org.apache.commons.digester.Rule;
+import org.apache.commons.digester.RuleSet;
+import org.apache.commons.digester.annotations.handlers.DefaultLoaderHandler;
+import org.apache.commons.digester.annotations.internal.RuleSetCache;
+import org.apache.commons.digester.annotations.reflect.MethodArgument;
+import org.apache.commons.digester.annotations.spi.AnnotationRuleProviderFactory;
+import org.apache.commons.digester.annotations.spi.DigesterLoaderHandlerFactory;
+import org.apache.commons.digester.annotations.utils.AnnotationUtils;
+
+/**
+ * This class manages the creation of Digester instances analyzing target classes
+ * annotated with digester annotations.
+ *
+ * @since 2.1
+ */
+public final class DigesterLoader {
+
+    /**
+     * In-memory LRU cache that stores already analyzed classes and relative
+     * {@link RuleSet}.
+     */
+<span class="fc" id="L47">    private final RuleSetCache cachedRuleSet = new RuleSetCache();</span>
+
+    private final AnnotationRuleProviderFactory annotationRuleProviderFactory;
+
+    private final DigesterLoaderHandlerFactory digesterLoaderHandlerFactory;
+
+    /**
+     * Creates a new {@link DigesterLoader} instance.
+     *
+     * @param annotationRuleProviderFactory
+     * @param digesterLoaderHandlerFactory
+     */
+    protected DigesterLoader(AnnotationRuleProviderFactory annotationRuleProviderFactory,
+<span class="fc" id="L60">            DigesterLoaderHandlerFactory digesterLoaderHandlerFactory) {</span>
+<span class="fc" id="L61">        this.annotationRuleProviderFactory = annotationRuleProviderFactory;</span>
+<span class="fc" id="L62">        this.digesterLoaderHandlerFactory = digesterLoaderHandlerFactory;</span>
+<span class="fc" id="L63">    }</span>
+
+    protected AnnotationRuleProviderFactory getAnnotationRuleProviderFactory() {
+<span class="fc" id="L66">        return annotationRuleProviderFactory;</span>
+    }
+
+    protected DigesterLoaderHandlerFactory getDigesterLoaderHandlerFactory() {
+<span class="nc" id="L70">        return digesterLoaderHandlerFactory;</span>
+    }
+
+    /**
+     * Creates a new digester which rules are defined by analyzing the digester
+     * annotations in the target class.
+     *
+     * @param target the class has to be analyzed.
+     * @return a new Digester instance.
+     */
+    public Digester createDigester(final Class&lt;?&gt; target) {
+<span class="fc" id="L81">        Digester digester = new Digester();</span>
+<span class="fc" id="L82">        digester.setClassLoader(target.getClassLoader());</span>
+<span class="fc" id="L83">        addRules(target, digester);</span>
+<span class="fc" id="L84">        return digester;</span>
+    }
+
+    /**
+     * Add rules to an already created Digester instance, analyzing the digester
+     * annotations in the target class.
+     *
+     * @param target the class has to be analyzed.
+     * @param digester the Digester instance reference.
+     */
+    public void addRules(final Class&lt;?&gt; target, final Digester digester) {
+<span class="fc" id="L95">        RuleSet ruleSet = getRuleSet(target);</span>
+<span class="fc" id="L96">        ruleSet.addRuleInstances(digester);</span>
+<span class="fc" id="L97">    }</span>
+
+    /**
+     * Builds a new {@link RuleSet} analyzing the digester annotations in the
+     * target class.
+     *
+     * It avoids iterate the annotations analysis for already analyzed classes,
+     * using an in-memory LRU cache.
+     *
+     * @param target the class has to be analyzed.
+     * @return a new {@link RuleSet}.
+     */
+    public RuleSet getRuleSet(final Class&lt;?&gt; target) {
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">        if (this.cachedRuleSet.containsKey(target)) {</span>
+<span class="nc" id="L111">            return this.cachedRuleSet.get(target);</span>
+        }
+
+<span class="fc" id="L114">        FromAnnotationsRuleSet ruleSet = new FromAnnotationsRuleSet(this);</span>
+<span class="fc" id="L115">        addRulesTo(target, ruleSet);</span>
+<span class="fc" id="L116">        this.cachedRuleSet.put(target, ruleSet);</span>
+
+<span class="fc" id="L118">        return ruleSet;</span>
+    }
+
+    /**
+     * Analyzes the target class and adds the {@link AnnotationRuleProvider}s to
+     * the existing {@link FromAnnotationsRuleSet}.
+     *
+     * @param target the class has to be analyzed.
+     * @param ruleSet the RuleSet where adding the providers.
+     */
+    public void addRulesTo(final Class&lt;?&gt; target, FromAnnotationsRuleSet ruleSet) {
+<span class="fc bfc" id="L129" title="All 2 branches covered.">        if (target == Object.class</span>
+<span class="pc bpc" id="L130" title="1 of 2 branches missed.">                || target.isInterface()</span>
+<span class="pc bpc" id="L131" title="1 of 2 branches missed.">                || ruleSet.mapsClass(target)) {</span>
+<span class="fc" id="L132">            return;</span>
+        }
+
+<span class="pc bpc" id="L135" title="1 of 2 branches missed.">        if (this.cachedRuleSet.containsKey(target)) {</span>
+<span class="nc" id="L136">            ruleSet.addRulesProviderFrom(this.cachedRuleSet.get(target));</span>
+<span class="nc" id="L137">            ruleSet.addMappedClass(target);</span>
+<span class="nc" id="L138">            return;</span>
+        }
+
+        // current analyzed class
+<span class="fc" id="L142">        handle(target, ruleSet);</span>
+
+        // class fields
+<span class="fc bfc" id="L145" title="All 2 branches covered.">        for (Field field : target.getDeclaredFields()) {</span>
+<span class="fc" id="L146">            handle(field, ruleSet);</span>
+        }
+
+        // class methods
+<span class="fc bfc" id="L150" title="All 2 branches covered.">        for (Method method : target.getDeclaredMethods()) {</span>
+<span class="fc" id="L151">            handle(method, ruleSet);</span>
+
+            // method args
+<span class="fc" id="L154">            Annotation[][] parameterAnnotations = method.getParameterAnnotations();</span>
+<span class="fc" id="L155">            Class&lt;?&gt;[] parameterTypes = method.getParameterTypes();</span>
+<span class="fc bfc" id="L156" title="All 2 branches covered.">            for (int i = 0; i &lt; parameterTypes.length; i++) {</span>
+<span class="fc" id="L157">                handle(new MethodArgument(i, parameterTypes[i], parameterAnnotations[i]), ruleSet);</span>
+            }
+        }
+
+<span class="fc" id="L161">        ruleSet.addMappedClass(target);</span>
+<span class="fc" id="L162">        addRulesTo(target.getSuperclass(), ruleSet);</span>
+<span class="fc" id="L163">    }</span>
+
+    /**
+     * Executes an analysis for each annotation present in the element.
+     *
+     * @param element the current element under analysis.
+     * @param ruleSet the ruleSet where add providers.
+     */
+    private void handle(AnnotatedElement element, FromAnnotationsRuleSet ruleSet) {
+<span class="fc bfc" id="L172" title="All 2 branches covered.">        for (Annotation annotation : element.getAnnotations()) {</span>
+<span class="fc" id="L173">            handle(annotation, element, ruleSet);</span>
+        }
+<span class="fc" id="L175">    }</span>
+
+    /**
+     * Handles the current visited element and related annotation, invoking the
+     * right handler putting the rule provider in the rule set.
+     *
+     * @param annotation the current visited annotation.
+     * @param element the current visited element.
+     */
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private &lt;A extends Annotation, E extends AnnotatedElement, R extends Rule&gt; void handle(A annotation,
+            E element,
+            FromAnnotationsRuleSet ruleSet) {
+<span class="fc" id="L188">        Class&lt;?&gt; annotationType = annotation.annotationType();</span>
+
+        // check if it is one of the @*.List annotation
+<span class="fc bfc" id="L191" title="All 2 branches covered.">        if (annotationType.isAnnotationPresent(DigesterRuleList.class)) {</span>
+<span class="fc" id="L192">            Annotation[] annotations = AnnotationUtils.getAnnotationsArrayValue(annotation);</span>
+<span class="pc bpc" id="L193" title="2 of 4 branches missed.">            if (annotations != null &amp;&amp; annotations.length &gt; 0) {</span>
+                // if it is an annotations array, process them
+<span class="fc bfc" id="L195" title="All 2 branches covered.">                for (Annotation ptr : annotations) {</span>
+<span class="fc" id="L196">                    handle(ptr, element, ruleSet);</span>
+                }
+            }
+<span class="pc bpc" id="L199" title="1 of 2 branches missed.">        } else if (annotationType.isAnnotationPresent(DigesterRule.class)) {</span>
+<span class="fc" id="L200">            DigesterRule digesterRule = annotationType.getAnnotation(DigesterRule.class);</span>
+
+<span class="fc bfc" id="L202" title="All 2 branches covered.">            if (DefaultLoaderHandler.class == digesterRule.handledBy()) {</span>
+<span class="fc" id="L203">                Class&lt;? extends AnnotationRuleProvider&lt;A, E, R&gt;&gt; providerType =</span>
+<span class="fc" id="L204">                    (Class&lt;? extends AnnotationRuleProvider&lt;A, E, R&gt;&gt;) digesterRule.providedBy();</span>
+<span class="fc" id="L205">                ruleSet.addRuleProvider(AnnotationUtils.getAnnotationPattern(annotation),</span>
+                        providerType,
+                        annotation,
+                        element);
+<span class="fc" id="L209">            } else {</span>
+<span class="fc" id="L210">                Class&lt;? extends DigesterLoaderHandler&lt;Annotation, AnnotatedElement&gt;&gt; handlerType =</span>
+<span class="fc" id="L211">                    (Class&lt;? extends DigesterLoaderHandler&lt;Annotation, AnnotatedElement&gt;&gt;) digesterRule.handledBy();</span>
+<span class="fc" id="L212">                DigesterLoaderHandler&lt;Annotation, AnnotatedElement&gt; handler =</span>
+<span class="fc" id="L213">                    this.digesterLoaderHandlerFactory.newInstance(handlerType);</span>
+
+                // run!
+<span class="fc" id="L216">                handler.handle(annotation, element, ruleSet);</span>
+            }
+        }
+<span class="fc" id="L219">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

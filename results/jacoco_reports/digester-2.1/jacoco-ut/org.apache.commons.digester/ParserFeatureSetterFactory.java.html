@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>ParserFeatureSetterFactory.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester</a> &gt; <span class="el_source">ParserFeatureSetterFactory.java</span></div><h1>ParserFeatureSetterFactory.java</h1><pre class="source lang-java linenums">/* $Id$
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+package org.apache.commons.digester;
+
+import java.util.Properties;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
+import org.apache.commons.digester.parser.GenericParser;
+import org.apache.commons.digester.parser.XercesParser;
+
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
+
+/**
+ * Creates a &lt;code&gt;SAXParser&lt;/code&gt; based on the underlying parser.
+ * Allows logical properties depending on logical parser versions
+ * to be set.
+ *
+ * @since 1.6
+ * @deprecated Create an XMLParser instance yourself, configure validation
+ *             appropriately, and pass it as a parameter to the
+ *             {@link Digester} constructor, or use
+ *             {@link Digester#setXMLSchema(javax.xml.validation.Schema)} for validation.
+ */
+@Deprecated
+<span class="nc" id="L47">public class ParserFeatureSetterFactory {</span>
+
+    /**
+     * &lt;code&gt;true&lt;/code&gt; is Xerces is used.
+     */
+    private static boolean isXercesUsed; 
+
+    static {
+        try{
+            // Use reflection to avoid a build dependency with Xerces.
+            //
+            // Note that this does not detect Sun's repackaging of 
+            // Xerces as com.sun.org.apache.xerces; perhaps it should?
+<span class="nc" id="L60">            SAXParserFactory factory = SAXParserFactory.newInstance();</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">            if (factory.getClass().getName().startsWith(&quot;org.apache.xerces&quot;)) {</span>
+<span class="nc" id="L62">                isXercesUsed = true;</span>
+            }
+<span class="nc" id="L64">        } catch (Exception ex) {</span>
+<span class="nc" id="L65">            isXercesUsed = false;</span>
+<span class="nc" id="L66">        }</span>
+<span class="nc" id="L67">    }</span>
+
+    /**
+     * Create a new &lt;code&gt;SAXParser&lt;/code&gt;
+     * @param properties (logical) properties to be set on parser
+     * @return a &lt;code&gt;SAXParser&lt;/code&gt; configured based on the underlying
+     * parser implementation.
+     */
+    public static SAXParser newSAXParser(Properties properties)
+            throws ParserConfigurationException, 
+                   SAXException,
+                   SAXNotRecognizedException, 
+                   SAXNotSupportedException {
+
+<span class="nc bnc" id="L81" title="All 2 branches missed.">        if (isXercesUsed){</span>
+<span class="nc" id="L82">            return XercesParser.newSAXParser(properties);</span>
+        } else {
+<span class="nc" id="L84">            return GenericParser.newSAXParser(properties);</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

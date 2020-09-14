@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>AbstractYAMLBasedConfiguration.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Configuration</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.configuration2</a> &gt; <span class="el_source">AbstractYAMLBasedConfiguration.java</span></div><h1>AbstractYAMLBasedConfiguration.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.configuration2;
+
+import org.apache.commons.configuration2.ex.ConfigurationException;
+import org.apache.commons.configuration2.io.ConfigurationLogger;
+import org.apache.commons.configuration2.tree.ImmutableNode;
+
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * &lt;p&gt;
+ * A base class for configuration implementations based on YAML structures.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * This base class offers functionality related to YAML-like data structures
+ * based on maps. Such a map has strings as keys and arbitrary objects as
+ * values. The class offers methods to transform such a map into a hierarchy
+ * of {@link ImmutableNode} objects and vice versa.
+ * &lt;/p&gt;
+ *
+ * @since 2.2
+ */
+public class AbstractYAMLBasedConfiguration extends BaseHierarchicalConfiguration
+{
+    /**
+     * Creates a new instance of {@code AbstractYAMLBasedConfiguration}.
+     */
+    protected AbstractYAMLBasedConfiguration()
+<span class="fc" id="L46">    {</span>
+<span class="fc" id="L47">        initLogger(new ConfigurationLogger(getClass()));</span>
+<span class="fc" id="L48">    }</span>
+
+    /**
+     * Creates a new instance of {@code AbstractYAMLBasedConfiguration} as a
+     * copy of the specified configuration.
+     *
+     * @param c the configuration to be copied
+     */
+    protected AbstractYAMLBasedConfiguration(
+            HierarchicalConfiguration&lt;ImmutableNode&gt; c)
+    {
+<span class="fc" id="L59">        super(c);</span>
+<span class="fc" id="L60">        initLogger(new ConfigurationLogger(getClass()));</span>
+<span class="fc" id="L61">    }</span>
+
+    /**
+     * Loads this configuration from the content of the specified map. The data
+     * in the map is transformed into a hierarchy of {@link ImmutableNode}
+     * objects.
+     *
+     * @param map the map to be processed
+     */
+    protected void load(Map&lt;String, Object&gt; map)
+    {
+<span class="fc" id="L72">        ImmutableNode.Builder rootBuilder = new ImmutableNode.Builder();</span>
+<span class="fc" id="L73">        ImmutableNode top = constructHierarchy(rootBuilder, map);</span>
+<span class="fc" id="L74">        getNodeModel().setRootNode(top);</span>
+<span class="fc" id="L75">    }</span>
+
+    /**
+     * Constructs a YAML map, i.e. String -&amp;gt; Object from a given configuration
+     * node.
+     *
+     * @param node The configuration node to create a map from.
+     * @return A Map that contains the configuration node information.
+     */
+    protected Map&lt;String, Object&gt; constructMap(ImmutableNode node)
+    {
+<span class="fc" id="L86">        Map&lt;String, Object&gt; map =</span>
+<span class="fc" id="L87">                new HashMap&lt;&gt;(node.getChildren().size());</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        for (ImmutableNode cNode : node.getChildren())</span>
+        {
+<span class="fc bfc" id="L90" title="All 2 branches covered.">            if (cNode.getChildren().isEmpty())</span>
+            {
+<span class="fc" id="L92">                map.put(cNode.getNodeName(), cNode.getValue());</span>
+            }
+            else
+            {
+<span class="fc" id="L96">                map.put(cNode.getNodeName(), constructMap(cNode));</span>
+            }
+<span class="fc" id="L98">        }</span>
+<span class="fc" id="L99">        return map;</span>
+    }
+
+    /**
+     * Constructs the internal configuration nodes hierarchy.
+     *
+     * @param parent The configuration node that is the root of the current
+     *        configuration section.
+     * @param map The map with the yaml configurations nodes, i.e. String -&amp;gt;
+     *        Object.
+     */
+    private ImmutableNode constructHierarchy(ImmutableNode.Builder parent,
+            Map&lt;String, Object&gt; map)
+    {
+<span class="fc bfc" id="L113" title="All 2 branches covered.">        for (Map.Entry&lt;String, Object&gt; entry : map.entrySet())</span>
+        {
+<span class="fc" id="L115">            String key = entry.getKey();</span>
+<span class="fc" id="L116">            Object value = entry.getValue();</span>
+<span class="fc bfc" id="L117" title="All 2 branches covered.">            if (value instanceof Map)</span>
+            {
+<span class="fc" id="L119">                ImmutableNode.Builder subtree =</span>
+<span class="fc" id="L120">                        new ImmutableNode.Builder().name(key);</span>
+<span class="fc" id="L121">                ImmutableNode children =</span>
+<span class="fc" id="L122">                        constructHierarchy(subtree, (Map) value);</span>
+<span class="fc" id="L123">                parent.addChild(children);</span>
+<span class="fc" id="L124">            }</span>
+            else
+            {
+<span class="fc" id="L127">                ImmutableNode leaf = new ImmutableNode.Builder().name(key)</span>
+<span class="fc" id="L128">                        .value(value).create();</span>
+<span class="fc" id="L129">                parent.addChild(leaf);</span>
+            }
+<span class="fc" id="L131">        }</span>
+<span class="fc" id="L132">        return parent.create();</span>
+    }
+
+    /**
+     * Internal helper method to wrap an exception in a
+     * {@code ConfigurationException}.
+     * @param e the exception to be wrapped
+     * @throws ConfigurationException the resulting exception
+     */
+    static void rethrowException(Exception e) throws ConfigurationException
+    {
+<span class="nc bnc" id="L143" title="All 2 branches missed.">        if (e instanceof ClassCastException)</span>
+        {
+<span class="nc" id="L145">            throw new ConfigurationException(&quot;Error parsing&quot;, e);</span>
+        }
+        else
+        {
+<span class="nc" id="L149">            throw new ConfigurationException(&quot;Unable to load the configuration&quot;,</span>
+                    e);
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

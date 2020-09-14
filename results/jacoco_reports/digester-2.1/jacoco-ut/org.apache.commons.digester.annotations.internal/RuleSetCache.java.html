@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>RuleSetCache.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester.annotations.internal</a> &gt; <span class="el_source">RuleSetCache.java</span></div><h1>RuleSetCache.java</h1><pre class="source lang-java linenums">/* $Id$
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.digester.annotations.internal;
+
+import java.io.Serializable;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import org.apache.commons.digester.annotations.FromAnnotationsRuleSet;
+
+/**
+ * Simple in-memory LRU cache implementation.
+ *
+ * @since 2.1
+ */
+<span class="fc" id="L31">public final class RuleSetCache implements Serializable {</span>
+
+    /**
+     * This class serialVersionUID.
+     */
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * The fixed cache size.
+     */
+<span class="fc" id="L41">    private final int cacheSize = 255;</span>
+
+    /**
+     * The fixed cache load facor.
+     */
+<span class="fc" id="L46">    private final float loadFactor = 0.75f;</span>
+
+    /**
+     * The fixed cache capacity.
+     */
+<span class="fc" id="L51">    private final int capacity = (int) Math.ceil(this.cacheSize / this.loadFactor) + 1;</span>
+
+    /**
+     * The map that implements the LRU cache.
+     */
+<span class="fc" id="L56">    private final Map&lt;Class&lt;?&gt;, FromAnnotationsRuleSet&gt; data =</span>
+<span class="fc" id="L57">        new LinkedHashMap&lt;Class&lt;?&gt;, FromAnnotationsRuleSet&gt;(capacity, loadFactor) {</span>
+
+        /**
+         * This class serialVersionUID.
+         */
+        private static final long serialVersionUID = 1L;
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        protected boolean removeEldestEntry(Map.Entry&lt;Class&lt;?&gt;, FromAnnotationsRuleSet&gt; eldest) {
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">            return size() &gt; cacheSize;</span>
+        }
+    };
+
+    /**
+     * Returns true if this cache contains a mapping for the specified key.
+     *
+     * @param key key whose presence in this map is to be tested.
+     * @return true if this map contains a mapping for the specified key, false
+     *         otherwise.
+     */
+    public boolean containsKey(Class&lt;?&gt; key) {
+<span class="fc" id="L81">        checkKey(key);</span>
+<span class="fc" id="L82">        return this.data.containsKey(key);</span>
+    }
+
+    /**
+     * Returns the value to which the specified key is cached, or null if this
+     * cache contains no mapping for the key.
+     *
+     * Key parameter must not be null.
+     *
+     * @param key the key has to be checked it is present, it must not be null.
+     * @return the value to which the specified key is cached, null if this
+     *         cache contains no mapping for the key.
+     */
+    public FromAnnotationsRuleSet get(Class&lt;?&gt; key) {
+<span class="nc" id="L96">        checkKey(key);</span>
+<span class="nc" id="L97">        return this.data.get(key);</span>
+    }
+
+    /**
+     * Associates the specified value with the specified key in this cache.
+     *
+     * Key parameter must not be null.
+     *
+     * @param key key with which the specified value is to be associated.
+     * @param value value to be associated with the specified key.
+     */
+    public void put(Class&lt;?&gt; key, FromAnnotationsRuleSet value) {
+<span class="fc" id="L109">        checkKey(key);</span>
+<span class="fc" id="L110">        this.data.put(key, value);</span>
+<span class="fc" id="L111">    }</span>
+
+    /**
+     * Verify that a key is not null.
+     *
+     * @param &lt;T&gt; the generic key type.
+     * @param key the key object.
+     */
+    private static void checkKey(Class&lt;?&gt; key) {
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">        if (key == null) {</span>
+<span class="nc" id="L121">            throw new IllegalArgumentException(&quot;null keys not supported&quot;);</span>
+        }
+<span class="fc" id="L123">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

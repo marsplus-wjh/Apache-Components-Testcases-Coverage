@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ASF JIRA</title>
+    <meta http-equiv="Content-Type" Content="application/vnd.ms-word; charset=utf-8">
+        <style type="text/css">
+
+.tableBorder, .grid
+{
+    background-color: #fff;
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.tableBorder td, .grid td
+{
+    vertical-align: top;
+    padding: 2px;
+    border: 1px solid #ccc;
+}
+
+.noPadding
+{
+    padding: 0 !important;
+}
+
+h3 .subText
+{
+    font-size: 60%;
+    font-weight: normal;
+}
+
+.tabLabel
+{
+    font-weight: bold;
+    border: 1px solid #ccc;
+    border-bottom:none;
+    padding: 2px;
+    display: inline;
+}
+
+td.blank
+{
+    padding: 0;
+    margin: 0;
+}
+
+.blank td
+{
+    border: none;
+}
+
+#descriptionArea
+{
+    margin: 0;
+    padding: 2px;
+    border: 1px solid #ccc;
+}
+
+hr
+{
+    border-top:1px solid #aaa;
+}
+
+hr.fullcontent
+{
+  height: 15px;
+  padding: 10px 0;
+  background: #fff url('https://issues.apache.org/jira/images/icons/hr.gif') no-repeat scroll center;
+}
+
+</style>
+
+</head>
+<body>
+
+<table class="tableBorder" cellpadding="0" cellspacing="0" border="0" width="100%">
+    <tr>
+        <td bgcolor="#f0f0f0" width="100%" colspan="2" valign="top">
+                            <h3 class="formtitle">
+                        [COLLECTIONS-714]&nbsp;<a href="https://issues.apache.org/jira/browse/COLLECTIONS-714">PatriciaTrie ignores trailing null characters in keys</a>
+            <span class="subText">
+               Created: 30/Apr/19                   &nbsp;Updated: 03/May/19
+
+                                            </span>
+            </h3>
+        </td>
+    </tr>
+    <tr>
+        <td width="20%"><b>Status:</b></td>
+        <td width="80%">Open</td>
+    </tr>
+    <tr>
+        <td width="20%"><b>Project:</b></td>
+        <td width="80%"><a href="https://issues.apache.org/jira/secure/BrowseProject.jspa?id=12310465">Commons Collections</a></td>
+    </tr>
+
+        <tr>
+            <td><b>Component/s:</b></td>
+            <td>
+                                        <a title="Collection"
+                href="https://issues.apache.org/jira/issues/?jql=project%3D12310465%20AND%20%22component%22%3D12311226%20ORDER%20BY%20priority%20ASC"
+            >Collection</a>,                    <a title="Map"
+                href="https://issues.apache.org/jira/issues/?jql=project%3D12310465%20AND%20%22component%22%3D12311232%20ORDER%20BY%20priority%20ASC"
+            >Map</a>                        </td>
+    </tr>
+    
+
+        <tr>
+            <td><b>Affects Version/s:</b></td>
+            <td>
+                                        <a title="4.3"
+                href="https://issues.apache.org/jira/issues/?jql=project%3D12310465%20AND%20%22affectedVersion%22%3D12343652%20ORDER%20BY%20priority%20ASC"
+            >4.3</a>                        </td>
+    </tr>
+    
+
+        <tr>
+            <td><b>Fix Version/s:</b></td>
+            <td>
+                            None
+                </td>
+    </tr>
+    
+    </table>
+
+<br />
+<table class="grid" cellpadding="0" cellspacing="0" border="0" width="100%">
+    <tr>
+        <td bgcolor="#f0f0f0" valign="top" width="20%">
+            <b>Type:</b>
+        </td>
+        <td bgcolor="#ffffff" valign="top"  width="30%" >
+            Bug
+        </td>
+
+                    <td bgcolor="#f0f0f0">
+                <b>Priority:</b>
+            </td>
+            <td bgcolor="#ffffff" valign="top" nowrap>
+                Critical
+            </td>
+            </tr>
+    <tr>
+                        <td bgcolor="#f0f0f0" valign="top" width="20%">
+                <b>Reporter:</b>
+            </td>
+            <td bgcolor="#ffffff" valign="top"  width="30%" >
+                                            <a class="user-hover" rel="rohanpadhye" id="word_reporter_rohanpadhye" href="https://issues.apache.org/jira/secure/ViewProfile.jspa?name=rohanpadhye">Rohan Padhye</a>
+                            </td>
+        
+                    <td bgcolor="#f0f0f0" width="20%">
+                <b>Assignee:</b>
+            </td>
+            <td bgcolor="#ffffff" valign="top" nowrap  width="30%" >
+                                    Unassigned
+                            </td>
+            </tr>
+    	<tr>
+		<td bgcolor="#f0f0f0" width="20%">
+			<b>Resolution:</b>
+		</td>
+		<td bgcolor="#ffffff" valign="top" width="30%" nowrap>
+            				Unresolved
+                    </td>
+                    <td bgcolor="#f0f0f0" width="20%">
+                <b>Votes:</b>
+            </td>
+            <td bgcolor="#ffffff" valign="top" width="30%" nowrap>
+                0
+            </td>
+        
+    </tr>
+    
+        <tr>
+        <td bgcolor="#f0f0f0" width="20%">
+            <b>Labels:</b>
+        </td>
+        <td id="labels-13231018-value" class="value" bgcolor="#ffffff" valign="top" colspan="3" nowrap>
+                            None
+                    </td>
+    </tr>
+    
+    	<tr>
+        		<td bgcolor="#f0f0f0" width="20%"><b>Remaining Estimate:</b></td>
+        <td bgcolor="#ffffff" valign="top" nowrap width="80%" colspan="3">
+                            Not Specified
+            		</td>
+    </tr>
+    <tr>
+                <td bgcolor="#f0f0f0" width="20%"><b>Time Spent:</b></td>
+		<td bgcolor="#ffffff" valign="top" nowrap width="80%" colspan="3">
+                            Not Specified
+            		</td>
+	</tr>
+    <tr>
+                <td bgcolor="#f0f0f0" width="20%"><b>Original Estimate:</b></td>
+		<td bgcolor="#ffffff" valign="top" nowrap width="80%" colspan="3">
+                            Not Specified
+            		</td>
+    </tr>
+    
+    </table>
+
+
+
+    <br />
+
+    	<table class="grid" cellpadding="0" cellspacing="0" border="0" width="100%">
+            
+
+        
+    
+
+
+
+</table>
+
+    <br/>
+
+    <table cellpadding="2" cellspacing="0" border="0" width="100%" align="center">
+    <tr>
+        <td bgcolor="#bbbbbb" width="1%" nowrap align="center">
+            &nbsp;<font color="#ffffff"><b>Description</b></font>&nbsp;
+        </td>
+        <td>&nbsp;</td>
+    </tr>
+    </table>
+
+    <table cellpadding="0" cellspacing="0" border="0" width="100%">
+    <tr>
+        <td id="descriptionArea">
+            <p>In Java, strings are not null terminated. The string "x" (of length = 1 char) is different from the string "x\u0000" (of length = 2 chars). However, PatriciaTrie does not seem to distinguish between these strings.</p>
+
+<p>To reproduce: </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+<span class="code-keyword">public</span> void testNullTerminatedKey1() {
+    Map&lt;<span class="code-object">String</span>, <span class="code-object">Integer</span>&gt; map = <span class="code-keyword">new</span> HashMap&lt;&gt;();
+    map.put(<span class="code-quote">"x"</span>, 0);         <span class="code-comment">// key of length 1
+</span>    map.put(<span class="code-quote">"x\u0000"</span>, 1);   <span class="code-comment">// key of length 2
+</span>    map.put(<span class="code-quote">"x\u0000y"</span>, 2);  <span class="code-comment">// key of length 3
+</span>    Assert.assertEquals(3, map.size());  <span class="code-comment">// ok, 3 distinct keys
+</span>
+    PatriciaTrie&lt;<span class="code-object">Integer</span>&gt; trie = <span class="code-keyword">new</span> PatriciaTrie&lt;&gt;(map);
+    Assert.assertEquals(3, trie.size());  <span class="code-comment">// fail; actual=2
+</span>}</pre>
+</div></div>
+<p>In the above example, the resulting trie has only two keys: "x\u0000" and "x\u0000y". The key "x" gets overwritten. Here is another way to repro the bug: </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+<span class="code-keyword">public</span> void testNullTerminatedKey2() {
+    PatriciaTrie&lt;<span class="code-object">Integer</span>&gt; trie = <span class="code-keyword">new</span> PatriciaTrie&lt;&gt;();
+    trie.put(<span class="code-quote">"x"</span>, 0);
+    Assert.assertTrue(trie.containsKey(<span class="code-quote">"x"</span>)); <span class="code-comment">// ok
+</span>    trie.put(<span class="code-quote">"x\u0000"</span>, 1);
+    Assert.assertTrue(trie.containsKey(<span class="code-quote">"x"</span>)); <span class="code-comment">// fail
+</span>}
+</pre>
+</div></div>
+<p>In the above example, the key "x" suddenly disappears when an entry with key "x\u0000" is inserted.</p>
+
+<p>The PatriciaTrie docs do not mention anything about null-terminated strings. In general, I believe this also breaks the JDK Map contract since the keys "x".equals("x\u0000") is false. </p>
+
+<p>This bug was found automatically using JQF: <a href="https://github.com/rohanpadhye/jqf" class="external-link" rel="nofollow">https://github.com/rohanpadhye/jqf</a>.</p>
+
+<p> </p>
+            <br/>
+        </td>
+    </tr>
+    </table>
+
+    <br/>
+
+    <table cellpadding="2" cellspacing="0" border="0" width="100%" align="center">
+    <tr>
+        <td bgcolor="#bbbbbb" width="1%" nowrap align="center">
+            &nbsp;<font color="#ffffff"><b>Comments</b></font>&nbsp;
+        </td>
+        <td>&nbsp;</td>
+    </tr>
+    </table>
+
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" class="grid" style="margin: 0;">
+                <tr id="comment-header-16831896"><td bgcolor="#f0f0f0">
+            Comment by  
+                                                        <a class="user-hover" rel="rohanpadhye" id="word_commented_rohanpadhye" href="https://issues.apache.org/jira/secure/ViewProfile.jspa?name=rohanpadhye">Rohan Padhye</a>
+                                        <font size="-2">
+            [
+                <font color="#336699">02/May/19</font>
+
+                            ]
+            </font>
+
+        </td></tr>
+        <tr id="comment-body-16831896"><td bgcolor="#ffffff">
+            <p>Upon further investigation I noticed that the problem lies in the way PatriciaTrie uses the results of StringKeyAnalyzer.</p>
+
+<p>The insertion of entry with key "x\u0000" when key "x" already exists, hits this path in AbstractPatriciaTrie.put():</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+} <span class="code-keyword">else</span> <span class="code-keyword">if</span> (KeyAnalyzer.isEqualBitKey(bitIndex)) {
+    <span class="code-comment">// This is a very special and rare <span class="code-keyword">case</span>.
+</span>
+    <span class="code-comment">/* REPLACE OLD KEY+VALUE */</span>
+    <span class="code-keyword">if</span> (found != root) { <span class="code-comment">// NOPMD
+</span>        incrementModCount();
+        <span class="code-keyword">return</span> found.setKeyValue(key, value);
+    }
+}
+</pre>
+</div></div>
+<p> </p>
+
+<p>I'm not sure what the "very special and rare case" is that the original developer intended, but it incorrectly overwrites the found key "x" with new key "x\u0000".</p>
+
+<p>The above branch is executed because the call to AbstractPatriciaTrie.bitIndex("x", "x\u0000") returns EQUAL_BIT_KEY, which seems incorrect. The bug may be rooted in the way StringKeyAnalyzer.bitIndex() handles cases where index1 &gt;= endIndex1: with the placeholder value `0`, which is actually a valid character in Java.</p>
+
+<p>I cannot think of a simple fix at the top of my head, since the entire XOR-based algorithm seems to rely on the assumption that two non-equal keys must have a bit-index where their corresponding bits differ. This algorithm does not consider the fact that two keys can be non-equal simply because they have different lengths.</p>
+        </td></tr>
+            </table>
+<hr class='fullcontent'><br /><br style='page-break-before:always;'/><br />Generated at Fri Jun 07 18:29:22 UTC 2019 using JIRA 7.6.3#76005-sha1:8a4e38d34af948780dbf52044e7aafb13a7cae58.
+
+</body>
+</html>

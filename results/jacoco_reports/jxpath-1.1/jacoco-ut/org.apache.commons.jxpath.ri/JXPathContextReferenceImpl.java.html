@@ -1,0 +1,829 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>JXPathContextReferenceImpl.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri</a> &gt; <span class="el_source">JXPathContextReferenceImpl.java</span></div><h1>JXPathContextReferenceImpl.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri;
+
+import java.lang.ref.SoftReference;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Vector;
+import java.util.Map.Entry;
+
+import org.apache.commons.jxpath.CompiledExpression;
+import org.apache.commons.jxpath.Function;
+import org.apache.commons.jxpath.Functions;
+import org.apache.commons.jxpath.JXPathContext;
+import org.apache.commons.jxpath.JXPathException;
+import org.apache.commons.jxpath.JXPathFunctionNotFoundException;
+import org.apache.commons.jxpath.JXPathInvalidSyntaxException;
+import org.apache.commons.jxpath.JXPathNotFoundException;
+import org.apache.commons.jxpath.JXPathTypeConversionException;
+import org.apache.commons.jxpath.Pointer;
+import org.apache.commons.jxpath.ri.axes.InitialContext;
+import org.apache.commons.jxpath.ri.axes.RootContext;
+import org.apache.commons.jxpath.ri.compiler.Expression;
+import org.apache.commons.jxpath.ri.compiler.LocationPath;
+import org.apache.commons.jxpath.ri.compiler.Path;
+import org.apache.commons.jxpath.ri.compiler.TreeCompiler;
+import org.apache.commons.jxpath.ri.model.NodePointer;
+import org.apache.commons.jxpath.ri.model.NodePointerFactory;
+import org.apache.commons.jxpath.ri.model.VariablePointerFactory;
+import org.apache.commons.jxpath.ri.model.beans.BeanPointerFactory;
+import org.apache.commons.jxpath.ri.model.beans.CollectionPointerFactory;
+import org.apache.commons.jxpath.ri.model.container.ContainerPointerFactory;
+import org.apache.commons.jxpath.ri.model.dynamic.DynamicPointerFactory;
+import org.apache.commons.jxpath.util.ReverseComparator;
+import org.apache.commons.jxpath.util.TypeUtils;
+
+/**
+ * The reference implementation of JXPathContext.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision$ $Date$
+ */
+public class JXPathContextReferenceImpl extends JXPathContext {
+
+    /**
+     * Change this to &lt;code&gt;false&lt;/code&gt; to disable soft caching of
+     * CompiledExpressions.
+     */
+    public static final boolean USE_SOFT_CACHE = true;
+
+<span class="fc" id="L70">    private static final Compiler COMPILER = new TreeCompiler();</span>
+<span class="fc" id="L71">    private static Map compiled = new HashMap();</span>
+<span class="fc" id="L72">    private static int cleanupCount = 0;</span>
+
+<span class="fc" id="L74">    private static NodePointerFactory[] nodeFactoryArray = null;</span>
+    // The frequency of the cache cleanup
+    private static final int CLEANUP_THRESHOLD = 500;
+<span class="fc" id="L77">    private static final Vector nodeFactories = new Vector();</span>
+
+    static {
+<span class="fc" id="L80">        nodeFactories.add(new CollectionPointerFactory());</span>
+<span class="fc" id="L81">        nodeFactories.add(new BeanPointerFactory());</span>
+<span class="fc" id="L82">        nodeFactories.add(new DynamicPointerFactory());</span>
+<span class="fc" id="L83">        nodeFactories.add(new VariablePointerFactory());</span>
+
+        // DOM  factory is only registered if DOM support is on the classpath
+<span class="fc" id="L86">        Object domFactory = allocateConditionally(</span>
+                &quot;org.apache.commons.jxpath.ri.model.dom.DOMPointerFactory&quot;,
+                &quot;org.w3c.dom.Node&quot;);
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">        if (domFactory != null) {</span>
+<span class="fc" id="L90">            nodeFactories.add(domFactory);</span>
+        }
+
+        // JDOM  factory is only registered if JDOM is on the classpath
+<span class="fc" id="L94">        Object jdomFactory = allocateConditionally(</span>
+                &quot;org.apache.commons.jxpath.ri.model.jdom.JDOMPointerFactory&quot;,
+                &quot;org.jdom.Document&quot;);
+<span class="pc bpc" id="L97" title="1 of 2 branches missed.">        if (jdomFactory != null) {</span>
+<span class="fc" id="L98">            nodeFactories.add(jdomFactory);</span>
+        }
+
+        // DynaBean factory is only registered if BeanUtils are on the classpath
+<span class="fc" id="L102">        Object dynaBeanFactory =</span>
+<span class="fc" id="L103">            allocateConditionally(</span>
+                &quot;org.apache.commons.jxpath.ri.model.dynabeans.&quot;
+                    + &quot;DynaBeanPointerFactory&quot;,
+                &quot;org.apache.commons.beanutils.DynaBean&quot;);
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">        if (dynaBeanFactory != null) {</span>
+<span class="fc" id="L108">            nodeFactories.add(dynaBeanFactory);</span>
+        }
+
+<span class="fc" id="L111">        nodeFactories.add(new ContainerPointerFactory());</span>
+<span class="fc" id="L112">        createNodeFactoryArray();</span>
+<span class="fc" id="L113">    }</span>
+
+    /**
+     * Create the default node factory array.
+     */
+    private static synchronized void createNodeFactoryArray() {
+<span class="fc bfc" id="L119" title="All 2 branches covered.">        if (nodeFactoryArray == null) {</span>
+<span class="fc" id="L120">            nodeFactoryArray =</span>
+                (NodePointerFactory[]) nodeFactories.
+<span class="fc" id="L122">                    toArray(new NodePointerFactory[nodeFactories.size()]);</span>
+<span class="fc" id="L123">            Arrays.sort(nodeFactoryArray, new Comparator() {</span>
+                public int compare(Object a, Object b) {
+<span class="fc" id="L125">                    int orderA = ((NodePointerFactory) a).getOrder();</span>
+<span class="fc" id="L126">                    int orderB = ((NodePointerFactory) b).getOrder();</span>
+<span class="fc" id="L127">                    return orderA - orderB;</span>
+                }
+            });
+        }
+<span class="fc" id="L131">    }</span>
+
+    /**
+     * Call this with a custom NodePointerFactory to add support for
+     * additional types of objects.  Make sure the factory returns
+     * a name that puts it in the right position on the list of factories.
+     * @param factory NodePointerFactory to add
+     */
+    public static void addNodePointerFactory(NodePointerFactory factory) {
+<span class="nc" id="L140">        synchronized (nodeFactories) {</span>
+<span class="nc" id="L141">            nodeFactories.add(factory);</span>
+<span class="nc" id="L142">            nodeFactoryArray = null;</span>
+<span class="nc" id="L143">        }</span>
+<span class="nc" id="L144">    }</span>
+
+    /**
+     * Get the registered NodePointerFactories.
+     * @return NodePointerFactory[]
+     */
+    public static NodePointerFactory[] getNodePointerFactories() {
+<span class="fc" id="L151">        return nodeFactoryArray;</span>
+    }
+
+    /** Namespace resolver */
+    protected NamespaceResolver namespaceResolver;
+
+    private Pointer rootPointer;
+    private Pointer contextPointer;
+
+    /**
+     * Create a new JXPathContextReferenceImpl.
+     * @param parentContext parent context
+     * @param contextBean Object
+     */
+    protected JXPathContextReferenceImpl(JXPathContext parentContext,
+            Object contextBean) {
+<span class="fc" id="L167">        this(parentContext, contextBean, null);</span>
+<span class="fc" id="L168">    }</span>
+
+    /**
+     * Create a new JXPathContextReferenceImpl.
+     * @param parentContext parent context
+     * @param contextBean Object
+     * @param contextPointer context pointer
+     */
+    public JXPathContextReferenceImpl(JXPathContext parentContext,
+            Object contextBean, Pointer contextPointer) {
+<span class="fc" id="L178">        super(parentContext, contextBean);</span>
+
+<span class="fc" id="L180">        synchronized (nodeFactories) {</span>
+<span class="fc" id="L181">            createNodeFactoryArray();</span>
+<span class="pc" id="L182">        }</span>
+
+<span class="fc bfc" id="L184" title="All 2 branches covered.">        if (contextPointer != null) {</span>
+<span class="fc" id="L185">            this.contextPointer = contextPointer;</span>
+<span class="fc" id="L186">            this.rootPointer =</span>
+<span class="fc" id="L187">                NodePointer.newNodePointer(</span>
+                    new QName(null, &quot;root&quot;),
+<span class="fc" id="L189">                    contextPointer.getRootNode(),</span>
+<span class="fc" id="L190">                    getLocale());</span>
+        }
+        else {
+<span class="fc" id="L193">            this.contextPointer =</span>
+<span class="fc" id="L194">                NodePointer.newNodePointer(</span>
+                    new QName(null, &quot;root&quot;),
+                    contextBean,
+<span class="fc" id="L197">                    getLocale());</span>
+<span class="fc" id="L198">            this.rootPointer = this.contextPointer;</span>
+        }
+
+<span class="fc" id="L201">        NamespaceResolver parentNR = null;</span>
+<span class="fc bfc" id="L202" title="All 2 branches covered.">        if (parentContext instanceof JXPathContextReferenceImpl) {</span>
+<span class="fc" id="L203">            parentNR = ((JXPathContextReferenceImpl) parentContext).getNamespaceResolver();</span>
+        }
+<span class="fc" id="L205">        namespaceResolver = new NamespaceResolver(parentNR);</span>
+<span class="fc" id="L206">        namespaceResolver</span>
+<span class="fc" id="L207">                .setNamespaceContextPointer((NodePointer) this.contextPointer);</span>
+<span class="fc" id="L208">    }</span>
+
+    /**
+     * Returns a static instance of TreeCompiler.
+     *
+     * Override this to return an alternate compiler.
+     * @return Compiler
+     */
+    protected Compiler getCompiler() {
+<span class="fc" id="L217">        return COMPILER;</span>
+    }
+
+    protected CompiledExpression compilePath(String xpath) {
+<span class="fc" id="L221">        return new JXPathCompiledExpression(xpath, compileExpression(xpath));</span>
+    }
+
+    /**
+     * Compile the given expression.
+     * @param xpath to compile
+     * @return Expression
+     */
+    private Expression compileExpression(String xpath) {
+        Expression expr;
+
+<span class="fc" id="L232">        synchronized (compiled) {</span>
+            if (USE_SOFT_CACHE) {
+<span class="fc" id="L234">                expr = null;</span>
+<span class="fc" id="L235">                SoftReference ref = (SoftReference) compiled.get(xpath);</span>
+<span class="fc bfc" id="L236" title="All 2 branches covered.">                if (ref != null) {</span>
+<span class="fc" id="L237">                    expr = (Expression) ref.get();</span>
+                }
+            }
+            else {
+                expr = (Expression) compiled.get(xpath);
+            }
+<span class="pc" id="L243">        }</span>
+
+<span class="fc bfc" id="L245" title="All 2 branches covered.">        if (expr != null) {</span>
+<span class="fc" id="L246">            return expr;</span>
+        }
+
+<span class="fc" id="L249">        expr = (Expression) Parser.parseExpression(xpath, getCompiler());</span>
+
+<span class="fc" id="L251">        synchronized (compiled) {</span>
+            if (USE_SOFT_CACHE) {
+<span class="fc bfc" id="L253" title="All 2 branches covered.">                if (cleanupCount++ &gt;= CLEANUP_THRESHOLD) {</span>
+<span class="fc" id="L254">                    Iterator it = compiled.entrySet().iterator();</span>
+<span class="fc bfc" id="L255" title="All 2 branches covered.">                    while (it.hasNext()) {</span>
+<span class="fc" id="L256">                        Entry me = (Entry) it.next();</span>
+<span class="pc bpc" id="L257" title="1 of 2 branches missed.">                        if (((SoftReference) me.getValue()).get() == null) {</span>
+<span class="nc" id="L258">                            it.remove();</span>
+                        }
+<span class="fc" id="L260">                    }</span>
+<span class="fc" id="L261">                    cleanupCount = 0;</span>
+                }
+<span class="fc" id="L263">                compiled.put(xpath, new SoftReference(expr));</span>
+            }
+            else {
+                compiled.put(xpath, expr);
+            }
+<span class="pc" id="L268">        }</span>
+
+<span class="fc" id="L270">        return expr;</span>
+    }
+
+    /**
+     * Traverses the xpath and returns the resulting object. Primitive
+     * types are wrapped into objects.
+     * @param xpath expression
+     * @return Object found
+     */
+    public Object getValue(String xpath) {
+<span class="fc" id="L280">        Expression expression = compileExpression(xpath);</span>
+// TODO: (work in progress) - trying to integrate with Xalan
+//        Object ctxNode = getNativeContextNode(expression);
+//        if (ctxNode != null) {
+//            System.err.println(&quot;WILL USE XALAN: &quot; + xpath);
+//            CachedXPathAPI api = new CachedXPathAPI();
+//            try {
+//                if (expression instanceof Path) {
+//                    Node node = api.selectSingleNode((Node)ctxNode, xpath);
+//                    System.err.println(&quot;NODE: &quot; + node);
+//                    if (node == null) {
+//                        return null;
+//                    }
+//                    return new DOMNodePointer(node, null).getValue();
+//                }
+//                else {
+//                    XObject object = api.eval((Node)ctxNode, xpath);
+//                    switch (object.getType()) {
+//                    case XObject.CLASS_STRING: return object.str();
+//                    case XObject.CLASS_NUMBER: return new Double(object.num());
+//                    case XObject.CLASS_BOOLEAN: return new Boolean(object.bool());
+//                    default:
+//                        System.err.println(&quot;OTHER TYPE: &quot; + object.getTypeString());
+//                    }
+//                }
+//            }
+//            catch (TransformerException e) {
+//                // TODO Auto-generated catch block
+//                e.printStackTrace();
+//            }
+//            return
+//        }
+
+<span class="fc" id="L313">        return getValue(xpath, expression);</span>
+    }
+
+//    private Object getNativeContextNode(Expression expression) {
+//        Object node = getNativeContextNode(getContextBean());
+//        if (node == null) {
+//            return null;
+//        }
+//
+//        List vars = expression.getUsedVariables();
+//        if (vars != null) {
+//            return null;
+//        }
+//
+//        return node;
+//    }
+
+//    private Object getNativeContextNode(Object bean) {
+//        if (bean instanceof Number || bean instanceof String || bean instanceof Boolean) {
+//            return bean;
+//        }
+//        if (bean instanceof Node) {
+//            return (Node)bean;
+//        }
+//
+//        if (bean instanceof Container) {
+//            bean = ((Container)bean).getValue();
+//            return getNativeContextNode(bean);
+//        }
+//
+//        return null;
+//    }
+
+    /**
+     * Get the value indicated.
+     * @param xpath String
+     * @param expr Expression
+     * @return Object
+     */
+    public Object getValue(String xpath, Expression expr) {
+<span class="fc" id="L353">        Object result = expr.computeValue(getEvalContext());</span>
+<span class="fc bfc" id="L354" title="All 2 branches covered.">        if (result == null) {</span>
+<span class="fc bfc" id="L355" title="All 2 branches covered.">            if (expr instanceof Path) {</span>
+<span class="fc bfc" id="L356" title="All 2 branches covered.">                if (!isLenient()) {</span>
+<span class="fc" id="L357">                    throw new JXPathNotFoundException(&quot;No value for xpath: &quot;</span>
+                            + xpath);
+                }
+            }
+<span class="fc" id="L361">            return null;</span>
+        }
+<span class="fc bfc" id="L363" title="All 2 branches covered.">        if (result instanceof EvalContext) {</span>
+<span class="fc" id="L364">            EvalContext ctx = (EvalContext) result;</span>
+<span class="fc" id="L365">            result = ctx.getSingleNodePointer();</span>
+<span class="pc bpc" id="L366" title="2 of 4 branches missed.">            if (!isLenient() &amp;&amp; result == null) {</span>
+<span class="nc" id="L367">                throw new JXPathNotFoundException(&quot;No value for xpath: &quot;</span>
+                        + xpath);
+            }
+        }
+<span class="fc bfc" id="L371" title="All 2 branches covered.">        if (result instanceof NodePointer) {</span>
+<span class="fc" id="L372">            result = ((NodePointer) result).getValuePointer();</span>
+<span class="fc bfc" id="L373" title="All 4 branches covered.">            if (!isLenient() &amp;&amp; !((NodePointer) result).isActual()) {</span>
+                // We need to differentiate between pointers representing
+                // a non-existing property and ones representing a property
+                // whose value is null.  In the latter case, the pointer
+                // is going to have isActual == false, but its parent,
+                // which is a non-node pointer identifying the bean property,
+                // will return isActual() == true.
+<span class="fc" id="L380">                NodePointer parent =</span>
+<span class="fc" id="L381">                    ((NodePointer) result).getImmediateParentPointer();</span>
+<span class="pc bpc" id="L382" title="1 of 2 branches missed.">                if (parent == null</span>
+<span class="pc bpc" id="L383" title="1 of 2 branches missed.">                    || !parent.isContainer()</span>
+<span class="fc bfc" id="L384" title="All 2 branches covered.">                    || !parent.isActual()) {</span>
+<span class="fc" id="L385">                    throw new JXPathNotFoundException(&quot;No value for xpath: &quot;</span>
+                            + xpath);
+                }
+            }
+<span class="fc" id="L389">            result = ((NodePointer) result).getValue();</span>
+        }
+<span class="fc" id="L391">        return result;</span>
+    }
+
+    /**
+     * Calls getValue(xpath), converts the result to the required type
+     * and returns the result of the conversion.
+     * @param xpath expression
+     * @param requiredType Class
+     * @return Object
+     */
+    public Object getValue(String xpath, Class requiredType) {
+<span class="fc" id="L402">        Expression expr = compileExpression(xpath);</span>
+<span class="fc" id="L403">        return getValue(xpath, expr, requiredType);</span>
+    }
+
+    /**
+     * Get the value indicated.
+     * @param xpath expression
+     * @param expr compiled Expression
+     * @param requiredType Class
+     * @return Object
+     */
+    public Object getValue(String xpath, Expression expr, Class requiredType) {
+<span class="fc" id="L414">        Object value = getValue(xpath, expr);</span>
+<span class="pc bpc" id="L415" title="2 of 4 branches missed.">        if (value != null &amp;&amp; requiredType != null) {</span>
+<span class="pc bpc" id="L416" title="1 of 2 branches missed.">            if (!TypeUtils.canConvert(value, requiredType)) {</span>
+<span class="nc" id="L417">                throw new JXPathTypeConversionException(</span>
+                    &quot;Invalid expression type. '&quot;
+                        + xpath
+                        + &quot;' returns &quot;
+<span class="nc" id="L421">                        + value.getClass().getName()</span>
+                        + &quot;. It cannot be converted to &quot;
+<span class="nc" id="L423">                        + requiredType.getName());</span>
+            }
+<span class="fc" id="L425">            value = TypeUtils.convert(value, requiredType);</span>
+        }
+<span class="fc" id="L427">        return value;</span>
+    }
+
+    /**
+     * Traverses the xpath and returns a Iterator of all results found
+     * for the path. If the xpath matches no properties
+     * in the graph, the Iterator will not be null.
+     * @param xpath expression
+     * @return Iterator
+     */
+    public Iterator iterate(String xpath) {
+<span class="fc" id="L438">        return iterate(xpath, compileExpression(xpath));</span>
+    }
+
+    /**
+     * Traverses the xpath and returns a Iterator of all results found
+     * for the path. If the xpath matches no properties
+     * in the graph, the Iterator will not be null.
+     * @param xpath expression
+     * @param expr compiled Expression
+     * @return Iterator
+     */
+    public Iterator iterate(String xpath, Expression expr) {
+<span class="fc" id="L450">        return expr.iterate(getEvalContext());</span>
+    }
+
+    public Pointer getPointer(String xpath) {
+<span class="fc" id="L454">        return getPointer(xpath, compileExpression(xpath));</span>
+    }
+
+    /**
+     * Get a pointer to the specified path/expression.
+     * @param xpath String
+     * @param expr compiled Expression
+     * @return Pointer
+     */
+    public Pointer getPointer(String xpath, Expression expr) {
+<span class="fc" id="L464">        Object result = expr.computeValue(getEvalContext());</span>
+<span class="fc bfc" id="L465" title="All 2 branches covered.">        if (result instanceof EvalContext) {</span>
+<span class="fc" id="L466">            result = ((EvalContext) result).getSingleNodePointer();</span>
+        }
+<span class="fc bfc" id="L468" title="All 2 branches covered.">        if (result instanceof Pointer) {</span>
+<span class="pc bpc" id="L469" title="1 of 4 branches missed.">            if (!isLenient() &amp;&amp; !((NodePointer) result).isActual()) {</span>
+<span class="nc" id="L470">                throw new JXPathNotFoundException(&quot;No pointer for xpath: &quot;</span>
+                        + xpath);
+            }
+<span class="fc" id="L473">            return (Pointer) result;</span>
+        }
+<span class="fc" id="L475">        return NodePointer.newNodePointer(null, result, getLocale());</span>
+    }
+
+    public void setValue(String xpath, Object value) {
+<span class="fc" id="L479">        setValue(xpath, compileExpression(xpath), value);</span>
+<span class="fc" id="L480">    }</span>
+
+    /**
+     * Set the value of xpath to value.
+     * @param xpath path
+     * @param expr compiled Expression
+     * @param value Object
+     */
+    public void setValue(String xpath, Expression expr, Object value) {
+        try {
+<span class="fc" id="L490">            setValue(xpath, expr, value, false);</span>
+        }
+<span class="fc" id="L492">        catch (Throwable ex) {</span>
+<span class="fc" id="L493">            throw new JXPathException(</span>
+                &quot;Exception trying to set value with xpath &quot; + xpath, ex);
+<span class="fc" id="L495">        }</span>
+<span class="fc" id="L496">    }</span>
+
+    public Pointer createPath(String xpath) {
+<span class="fc" id="L499">        return createPath(xpath, compileExpression(xpath));</span>
+    }
+
+    /**
+     * Create the given path.
+     * @param xpath String
+     * @param expr compiled Expression
+     * @return resulting Pointer
+     */
+    public Pointer createPath(String xpath, Expression expr) {
+        try {
+<span class="fc" id="L510">            Object result = expr.computeValue(getEvalContext());</span>
+<span class="fc" id="L511">            Pointer pointer = null;</span>
+
+<span class="fc bfc" id="L513" title="All 2 branches covered.">            if (result instanceof Pointer) {</span>
+<span class="fc" id="L514">                pointer = (Pointer) result;</span>
+            }
+<span class="pc bpc" id="L516" title="1 of 2 branches missed.">            else if (result instanceof EvalContext) {</span>
+<span class="fc" id="L517">                EvalContext ctx = (EvalContext) result;</span>
+<span class="fc" id="L518">                pointer = ctx.getSingleNodePointer();</span>
+<span class="fc" id="L519">            }</span>
+            else {
+<span class="nc" id="L521">                checkSimplePath(expr);</span>
+                // This should never happen
+<span class="nc" id="L523">                throw new JXPathException(&quot;Cannot create path:&quot; + xpath);</span>
+            }
+<span class="fc" id="L525">            return ((NodePointer) pointer).createPath(this);</span>
+        }
+<span class="fc" id="L527">        catch (Throwable ex) {</span>
+<span class="fc" id="L528">            throw new JXPathException(</span>
+                &quot;Exception trying to create xpath &quot; + xpath,
+                ex);
+        }
+    }
+
+    public Pointer createPathAndSetValue(String xpath, Object value) {
+<span class="fc" id="L535">        return createPathAndSetValue(xpath, compileExpression(xpath), value);</span>
+    }
+
+    /**
+     * Create the given path setting its value to value.
+     * @param xpath String
+     * @param expr compiled Expression
+     * @param value Object
+     * @return resulting Pointer
+     */
+    public Pointer createPathAndSetValue(String xpath, Expression expr,
+            Object value) {
+        try {
+<span class="fc" id="L548">            return setValue(xpath, expr, value, true);</span>
+        }
+<span class="nc" id="L550">        catch (Throwable ex) {</span>
+<span class="nc" id="L551">            throw new JXPathException(</span>
+                &quot;Exception trying to create xpath &quot; + xpath,
+                ex);
+        }
+    }
+
+    /**
+     * Set the specified value.
+     * @param xpath path
+     * @param expr compiled Expression
+     * @param value destination value
+     * @param create whether to create missing node(s)
+     * @return Pointer created
+     */
+    private Pointer setValue(String xpath, Expression expr, Object value,
+            boolean create) {
+<span class="fc" id="L567">        Object result = expr.computeValue(getEvalContext());</span>
+<span class="fc" id="L568">        Pointer pointer = null;</span>
+
+<span class="fc bfc" id="L570" title="All 2 branches covered.">        if (result instanceof Pointer) {</span>
+<span class="fc" id="L571">            pointer = (Pointer) result;</span>
+        }
+<span class="pc bpc" id="L573" title="1 of 2 branches missed.">        else if (result instanceof EvalContext) {</span>
+<span class="fc" id="L574">            EvalContext ctx = (EvalContext) result;</span>
+<span class="fc" id="L575">            pointer = ctx.getSingleNodePointer();</span>
+<span class="fc" id="L576">        }</span>
+        else {
+<span class="nc bnc" id="L578" title="All 2 branches missed.">            if (create) {</span>
+<span class="nc" id="L579">                checkSimplePath(expr);</span>
+            }
+
+            // This should never happen
+<span class="nc" id="L583">            throw new JXPathException(&quot;Cannot set value for xpath: &quot; + xpath);</span>
+        }
+<span class="fc bfc" id="L585" title="All 2 branches covered.">        if (create) {</span>
+<span class="fc" id="L586">            pointer = ((NodePointer) pointer).createPath(this, value);</span>
+        }
+        else {
+<span class="fc" id="L589">            pointer.setValue(value);</span>
+        }
+<span class="fc" id="L591">        return pointer;</span>
+    }
+
+    /**
+     * Checks if the path follows the JXPath restrictions on the type
+     * of path that can be passed to create... methods.
+     * @param expr Expression to check
+     */
+    private void checkSimplePath(Expression expr) {
+<span class="pc bpc" id="L600" title="1 of 2 branches missed.">        if (!(expr instanceof LocationPath)</span>
+<span class="pc bpc" id="L601" title="1 of 2 branches missed.">            || !((LocationPath) expr).isSimplePath()) {</span>
+<span class="fc" id="L602">            throw new JXPathInvalidSyntaxException(</span>
+                &quot;JXPath can only create a path if it uses exclusively &quot;
+                    + &quot;the child:: and attribute:: axes and has &quot;
+                    + &quot;no context-dependent predicates&quot;);
+        }
+<span class="nc" id="L607">    }</span>
+
+    /**
+     * Traverses the xpath and returns an Iterator of Pointers.
+     * A Pointer provides easy access to a property.
+     * If the xpath matches no properties
+     * in the graph, the Iterator be empty, but not null.
+     * @param xpath expression
+     * @return Iterator
+     */
+    public Iterator iteratePointers(String xpath) {
+<span class="fc" id="L618">        return iteratePointers(xpath, compileExpression(xpath));</span>
+    }
+
+    /**
+     * Traverses the xpath and returns an Iterator of Pointers.
+     * A Pointer provides easy access to a property.
+     * If the xpath matches no properties
+     * in the graph, the Iterator be empty, but not null.
+     * @param xpath expression
+     * @param expr compiled Expression
+     * @return Iterator
+     */
+    public Iterator iteratePointers(String xpath, Expression expr) {
+<span class="fc" id="L631">        return expr.iteratePointers(getEvalContext());</span>
+    }
+
+    public void removePath(String xpath) {
+<span class="fc" id="L635">        removePath(xpath, compileExpression(xpath));</span>
+<span class="fc" id="L636">    }</span>
+
+    /**
+     * Remove the specified path.
+     * @param xpath expression
+     * @param expr compiled Expression
+     */
+    public void removePath(String xpath, Expression expr) {
+        try {
+<span class="fc" id="L645">            NodePointer pointer = (NodePointer) getPointer(xpath, expr);</span>
+<span class="pc bpc" id="L646" title="1 of 2 branches missed.">            if (pointer != null) {</span>
+<span class="fc" id="L647">                ((NodePointer) pointer).remove();</span>
+            }
+        }
+<span class="nc" id="L650">        catch (Throwable ex) {</span>
+<span class="nc" id="L651">            throw new JXPathException(</span>
+                &quot;Exception trying to remove xpath &quot; + xpath,
+                ex);
+<span class="fc" id="L654">        }</span>
+<span class="fc" id="L655">    }</span>
+
+    public void removeAll(String xpath) {
+<span class="fc" id="L658">        removeAll(xpath, compileExpression(xpath));</span>
+<span class="fc" id="L659">    }</span>
+
+    /**
+     * Remove all matching nodes.
+     * @param xpath expression
+     * @param expr compiled Expression
+     */
+    public void removeAll(String xpath, Expression expr) {
+        try {
+<span class="fc" id="L668">            ArrayList list = new ArrayList();</span>
+<span class="fc" id="L669">            Iterator it = expr.iteratePointers(getEvalContext());</span>
+<span class="fc bfc" id="L670" title="All 2 branches covered.">            while (it.hasNext()) {</span>
+<span class="fc" id="L671">                list.add(it.next());</span>
+            }
+<span class="fc" id="L673">            Collections.sort(list, ReverseComparator.INSTANCE);</span>
+<span class="fc" id="L674">            it = list.iterator();</span>
+<span class="pc bpc" id="L675" title="1 of 2 branches missed.">            if (it.hasNext()) {</span>
+<span class="fc" id="L676">                NodePointer pointer = (NodePointer) it.next();</span>
+<span class="fc" id="L677">                pointer.remove();</span>
+<span class="fc bfc" id="L678" title="All 2 branches covered.">                while (it.hasNext()) {</span>
+<span class="fc" id="L679">                    removePath(((NodePointer) it.next()).asPath());</span>
+                }
+            }
+        }
+<span class="nc" id="L683">        catch (Throwable ex) {</span>
+<span class="nc" id="L684">            throw new JXPathException(</span>
+                &quot;Exception trying to remove all for xpath &quot; + xpath,
+                ex);
+<span class="fc" id="L687">        }</span>
+<span class="fc" id="L688">    }</span>
+
+    public JXPathContext getRelativeContext(Pointer pointer) {
+<span class="fc" id="L691">        Object contextBean = pointer.getNode();</span>
+<span class="pc bpc" id="L692" title="1 of 2 branches missed.">        if (contextBean == null) {</span>
+<span class="nc" id="L693">            throw new JXPathException(</span>
+                &quot;Cannot create a relative context for a non-existent node: &quot;
+                    + pointer);
+        }
+<span class="fc" id="L697">        return new JXPathContextReferenceImpl(this, contextBean, pointer);</span>
+    }
+
+    public Pointer getContextPointer() {
+<span class="fc" id="L701">        return contextPointer;</span>
+    }
+
+    /**
+     * Get absolute root pointer.
+     * @return NodePointer
+     */
+    private NodePointer getAbsoluteRootPointer() {
+<span class="fc" id="L709">        return (NodePointer) rootPointer;</span>
+    }
+
+    /**
+     * Get the evaluation context.
+     * @return EvalContext
+     */
+    private EvalContext getEvalContext() {
+<span class="fc" id="L717">        return new InitialContext(new RootContext(this,</span>
+<span class="fc" id="L718">                (NodePointer) getContextPointer()));</span>
+    }
+
+    /**
+     * Get the absolute root context.
+     * @return EvalContext
+     */
+    public EvalContext getAbsoluteRootContext() {
+<span class="fc" id="L726">        return new InitialContext(new RootContext(this,</span>
+<span class="fc" id="L727">                getAbsoluteRootPointer()));</span>
+    }
+
+    /**
+     * Get a VariablePointer for the given variable name.
+     * @param name variable name
+     * @return NodePointer
+     */
+    public NodePointer getVariablePointer(QName name) {
+<span class="fc" id="L736">        return NodePointer.newNodePointer(name, VariablePointerFactory</span>
+<span class="fc" id="L737">                .contextWrapper(this), getLocale());</span>
+    }
+
+    /**
+     * Get the named Function.
+     * @param functionName name
+     * @param parameters function args
+     * @return Function
+     */
+    public Function getFunction(QName functionName, Object[] parameters) {
+<span class="fc" id="L747">        String namespace = functionName.getPrefix();</span>
+<span class="fc" id="L748">        String name = functionName.getName();</span>
+<span class="fc" id="L749">        JXPathContext funcCtx = this;</span>
+<span class="fc" id="L750">        Function func = null;</span>
+        Functions funcs;
+<span class="pc bpc" id="L752" title="1 of 2 branches missed.">        while (funcCtx != null) {</span>
+<span class="fc" id="L753">            funcs = funcCtx.getFunctions();</span>
+<span class="fc bfc" id="L754" title="All 2 branches covered.">            if (funcs != null) {</span>
+<span class="fc" id="L755">                func = funcs.getFunction(namespace, name, parameters);</span>
+<span class="pc bpc" id="L756" title="1 of 2 branches missed.">                if (func != null) {</span>
+<span class="fc" id="L757">                    return func;</span>
+                }
+            }
+<span class="fc" id="L760">            funcCtx = funcCtx.getParentContext();</span>
+        }
+<span class="nc" id="L762">        throw new JXPathFunctionNotFoundException(</span>
+<span class="nc" id="L763">            &quot;Undefined function: &quot; + functionName.toString());</span>
+    }
+
+    public void registerNamespace(String prefix, String namespaceURI) {
+<span class="fc bfc" id="L767" title="All 2 branches covered.">        if (namespaceResolver.isSealed()) {</span>
+<span class="fc" id="L768">            namespaceResolver = (NamespaceResolver) namespaceResolver.clone();</span>
+        }
+<span class="fc" id="L770">        namespaceResolver.registerNamespace(prefix, namespaceURI);</span>
+<span class="fc" id="L771">    }</span>
+
+    public String getNamespaceURI(String prefix) {
+<span class="fc" id="L774">        return namespaceResolver.getNamespaceURI(prefix);</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     * @see org.apache.commons.jxpath.JXPathContext#getPrefix(java.lang.String)
+     */
+    public String getPrefix(String namespaceURI) {
+<span class="nc" id="L782">        return namespaceResolver.getPrefix(namespaceURI);</span>
+    }
+
+    public void setNamespaceContextPointer(Pointer pointer) {
+<span class="nc bnc" id="L786" title="All 2 branches missed.">        if (namespaceResolver.isSealed()) {</span>
+<span class="nc" id="L787">            namespaceResolver = (NamespaceResolver) namespaceResolver.clone();</span>
+        }
+<span class="nc" id="L789">        namespaceResolver.setNamespaceContextPointer((NodePointer) pointer);</span>
+<span class="nc" id="L790">    }</span>
+
+    public Pointer getNamespaceContextPointer() {
+<span class="nc" id="L793">        return namespaceResolver.getNamespaceContextPointer();</span>
+    }
+
+    /**
+     * Get the namespace resolver.
+     * @return NamespaceResolver
+     */
+    public NamespaceResolver getNamespaceResolver() {
+<span class="fc" id="L801">        namespaceResolver.seal();</span>
+<span class="fc" id="L802">        return namespaceResolver;</span>
+    }
+
+    /**
+     * Checks if existenceCheckClass exists on the class path. If so, allocates
+     * an instance of the specified class, otherwise returns null.
+     * @param className to instantiate
+     * @param existenceCheckClassName guard class
+     * @return className instance
+     */
+    public static Object allocateConditionally(String className,
+            String existenceCheckClassName) {
+        try {
+            try {
+<span class="fc" id="L816">                Class.forName(existenceCheckClassName);</span>
+            }
+<span class="nc" id="L818">            catch (ClassNotFoundException ex) {</span>
+<span class="nc" id="L819">                return null;</span>
+<span class="fc" id="L820">            }</span>
+<span class="fc" id="L821">            Class cls = Class.forName(className);</span>
+<span class="fc" id="L822">            return cls.newInstance();</span>
+        }
+<span class="nc" id="L824">        catch (Exception ex) {</span>
+<span class="nc" id="L825">            throw new JXPathException(&quot;Cannot allocate &quot; + className, ex);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

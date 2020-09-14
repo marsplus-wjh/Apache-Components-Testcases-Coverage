@@ -1,0 +1,873 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>DigesterRuleParser.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester.xmlrules</a> &gt; <span class="el_source">DigesterRuleParser.java</span></div><h1>DigesterRuleParser.java</h1><pre class="source lang-java linenums">/* $Id$
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+package org.apache.commons.digester.xmlrules;
+
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.Stack;
+import java.util.StringTokenizer;
+
+import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.digester.AbstractObjectCreationFactory;
+import org.apache.commons.digester.BeanPropertySetterRule;
+import org.apache.commons.digester.CallMethodRule;
+import org.apache.commons.digester.CallParamRule;
+import org.apache.commons.digester.Digester;
+import org.apache.commons.digester.FactoryCreateRule;
+import org.apache.commons.digester.NodeCreateRule;
+import org.apache.commons.digester.ObjectCreateRule;
+import org.apache.commons.digester.ObjectParamRule;
+import org.apache.commons.digester.Rule;
+import org.apache.commons.digester.RuleSetBase;
+import org.apache.commons.digester.Rules;
+import org.apache.commons.digester.SetNestedPropertiesRule;
+import org.apache.commons.digester.SetNextRule;
+import org.apache.commons.digester.SetPropertiesRule;
+import org.apache.commons.digester.SetPropertyRule;
+import org.apache.commons.digester.SetRootRule;
+import org.apache.commons.digester.SetTopRule;
+import org.w3c.dom.Node;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+
+
+/**
+ * This is a RuleSet that parses XML into Digester rules, and then
+ * adds those rules to a 'target' Digester.
+ *
+ * @since 1.2
+ */
+
+public class DigesterRuleParser extends RuleSetBase {
+    
+    public static final String DIGESTER_PUBLIC_ID = &quot;-//Jakarta Apache //DTD digester-rules XML V1.0//EN&quot;;
+    
+    /**
+     * path to the DTD
+     */
+    private String digesterDtdUrl;
+    
+    /**
+     * This is the digester to which we are adding the rules that we parse
+     * from the Rules XML document.
+     */
+    protected Digester targetDigester;
+
+    /** See {@link #setBasePath}. */
+<span class="pc" id="L80">    protected String basePath = &quot;&quot;;</span>
+    
+    /**
+     * A stack whose toString method returns a '/'-separated concatenation
+     * of all the elements in the stack.
+     */
+<span class="fc" id="L86">    protected class PatternStack&lt;E&gt; extends Stack&lt;E&gt; {</span>
+
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public String toString() {
+<span class="fc" id="L92">            StringBuffer str = new StringBuffer();</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">            for (int i = 0; i &lt; size(); i++) {</span>
+<span class="fc" id="L94">                String elem = get(i).toString();</span>
+<span class="fc bfc" id="L95" title="All 2 branches covered.">                if (elem.length() &gt; 0) {</span>
+<span class="fc bfc" id="L96" title="All 2 branches covered.">                    if (str.length() &gt; 0) {</span>
+<span class="fc" id="L97">                        str.append('/');</span>
+                    }
+<span class="fc" id="L99">                    str.append(elem);</span>
+                }
+            }
+<span class="fc" id="L102">            return str.toString();</span>
+        }
+    }
+    
+    /**
+     * A stack used to maintain the current pattern. The Rules XML document
+     * type allows nesting of patterns. If an element defines a matching
+     * pattern, the resulting pattern is a concatenation of that pattern with
+     * all the ancestor elements' patterns. Hence the need for a stack.
+     */
+    protected PatternStack&lt;String&gt; patternStack;
+    
+    /**
+     * Used to detect circular includes
+     */
+<span class="pc" id="L117">    private Set&lt;String&gt; includedFiles = new HashSet&lt;String&gt;();</span>
+    
+    /**
+     * Constructs a DigesterRuleParser. This object will be inoperable
+     * until the target digester is set, via &lt;code&gt;setTarget(Digester)&lt;/code&gt;
+     */
+<span class="fc" id="L123">    public DigesterRuleParser() {</span>
+<span class="fc" id="L124">        patternStack = new PatternStack&lt;String&gt;();</span>
+<span class="fc" id="L125">    }</span>
+    
+    /**
+     * Constructs a rule set for converting XML digester rule descriptions
+     * into Rule objects, and adding them to the given Digester
+     * @param targetDigester the Digester to add the rules to
+     */
+<span class="nc" id="L132">    public DigesterRuleParser(Digester targetDigester) {</span>
+<span class="nc" id="L133">        this.targetDigester = targetDigester;</span>
+<span class="nc" id="L134">        patternStack = new PatternStack&lt;String&gt;();</span>
+<span class="nc" id="L135">    }</span>
+    
+    /**
+     * Constructs a rule set for parsing an XML digester rule file that
+     * has been included within an outer XML digester rule file. In this
+     * case, we must pass the pattern stack and the target digester
+     * to the rule set, as well as the list of files that have already
+     * been included, for cycle detection.
+     * @param targetDigester the Digester to add the rules to
+     * @param stack Stack containing the prefix pattern string to be prepended
+     * to any pattern parsed by this rule set.
+     */
+    private DigesterRuleParser(Digester targetDigester,
+<span class="fc" id="L148">                                PatternStack&lt;String&gt; stack, Set&lt;String&gt; includedFiles) {</span>
+<span class="fc" id="L149">        this.targetDigester = targetDigester;</span>
+<span class="fc" id="L150">        patternStack = stack;</span>
+<span class="fc" id="L151">        this.includedFiles = includedFiles;</span>
+<span class="fc" id="L152">    }</span>
+    
+    /**
+     * Sets the digester into which to add the parsed rules
+     * @param d the Digester to add the rules to
+     */
+    public void setTarget(Digester d) {
+<span class="fc" id="L159">        targetDigester = d;</span>
+<span class="fc" id="L160">    }</span>
+    
+    /**
+     * Set a base pattern beneath which all the rules loaded by this
+     * object will be registered. If this string is not empty, and does
+     * not end in a &quot;/&quot;, then one will be added.
+     *
+     * @since 1.6
+     */
+    public void setBasePath(String path) {
+<span class="fc bfc" id="L170" title="All 2 branches covered.">        if (path == null) {</span>
+<span class="fc" id="L171">            basePath = &quot;&quot;;</span>
+        }
+<span class="pc bpc" id="L173" title="2 of 4 branches missed.">        else if ((path.length() &gt; 0) &amp;&amp; !path.endsWith(&quot;/&quot;)) {</span>
+<span class="fc" id="L174">            basePath = path + &quot;/&quot;;</span>
+        } else {
+<span class="nc" id="L176">            basePath = path;</span>
+        }
+<span class="fc" id="L178">    }</span>
+
+    /**
+     * Sets the location of the digester rules DTD. This is the DTD used
+     * to validate the rules XML file.
+     */
+    public void setDigesterRulesDTD(String dtdURL) {
+<span class="fc" id="L185">        digesterDtdUrl = dtdURL;</span>
+<span class="fc" id="L186">    }</span>
+    
+    /**
+     * Returns the location of the DTD used to validate the digester rules
+     * XML document.
+     */
+    protected String getDigesterRulesDTD() {
+        //ClassLoader classLoader = getClass().getClassLoader();
+        //URL url = classLoader.getResource(DIGESTER_DTD_PATH);
+        //return url.toString();
+<span class="fc" id="L196">        return digesterDtdUrl;</span>
+    }
+    
+    /**
+     * Adds a rule the the target digester. After a rule has been created by
+     * parsing the XML, it is added to the digester by calling this method.
+     * Typically, this method is called via reflection, when executing
+     * a SetNextRule, from the Digester that is parsing the rules XML.
+     * @param rule a Rule to add to the target digester.
+     */
+    public void add(Rule rule) {
+<span class="fc" id="L207">        targetDigester.addRule(</span>
+<span class="fc" id="L208">            basePath + patternStack.toString(), rule);</span>
+<span class="fc" id="L209">    }</span>
+    
+    
+    /**
+     * Add to the given digester the set of Rule instances used to parse an XML
+     * document defining Digester rules. When the digester parses an XML file,
+     * it will add the resulting rules &amp; patterns to the 'target digester'
+     * that was passed in this RuleSet's constructor.&lt;P&gt;
+     * If you extend this class to support additional rules, your implementation
+     * should of this method should call this implementation first: i.e.
+     * &lt;code&gt;super.addRuleInstances(digester);&lt;/code&gt;
+     */
+    @Override
+    public void addRuleInstances(Digester digester) {
+<span class="fc" id="L223">        final String ruleClassName = Rule.class.getName();</span>
+<span class="fc" id="L224">        digester.register(DIGESTER_PUBLIC_ID, getDigesterRulesDTD());</span>
+        
+<span class="fc" id="L226">        digester.addRule(&quot;*/pattern&quot;, new PatternRule(&quot;value&quot;));</span>
+        
+<span class="fc" id="L228">        digester.addRule(&quot;*/include&quot;, new IncludeRule());</span>
+        
+<span class="fc" id="L230">        digester.addFactoryCreate(&quot;*/bean-property-setter-rule&quot;, new BeanPropertySetterRuleFactory());</span>
+<span class="fc" id="L231">        digester.addRule(&quot;*/bean-property-setter-rule&quot;, new PatternRule(&quot;pattern&quot;));</span>
+<span class="fc" id="L232">        digester.addSetNext(&quot;*/bean-property-setter-rule&quot;, &quot;add&quot;, ruleClassName);</span>
+        
+<span class="fc" id="L234">        digester.addFactoryCreate(&quot;*/call-method-rule&quot;, new CallMethodRuleFactory());</span>
+<span class="fc" id="L235">        digester.addRule(&quot;*/call-method-rule&quot;, new PatternRule(&quot;pattern&quot;));</span>
+<span class="fc" id="L236">        digester.addSetNext(&quot;*/call-method-rule&quot;, &quot;add&quot;, ruleClassName);</span>
+
+<span class="fc" id="L238">        digester.addFactoryCreate(&quot;*/object-param-rule&quot;, new ObjectParamRuleFactory());</span>
+<span class="fc" id="L239">        digester.addRule(&quot;*/object-param-rule&quot;, new PatternRule(&quot;pattern&quot;));</span>
+<span class="fc" id="L240">        digester.addSetNext(&quot;*/object-param-rule&quot;, &quot;add&quot;, ruleClassName);</span>
+        
+<span class="fc" id="L242">        digester.addFactoryCreate(&quot;*/call-param-rule&quot;, new CallParamRuleFactory());</span>
+<span class="fc" id="L243">        digester.addRule(&quot;*/call-param-rule&quot;, new PatternRule(&quot;pattern&quot;));</span>
+<span class="fc" id="L244">        digester.addSetNext(&quot;*/call-param-rule&quot;, &quot;add&quot;, ruleClassName);</span>
+        
+<span class="fc" id="L246">        digester.addFactoryCreate(&quot;*/factory-create-rule&quot;, new FactoryCreateRuleFactory());</span>
+<span class="fc" id="L247">        digester.addRule(&quot;*/factory-create-rule&quot;, new PatternRule(&quot;pattern&quot;));</span>
+<span class="fc" id="L248">        digester.addSetNext(&quot;*/factory-create-rule&quot;, &quot;add&quot;, ruleClassName);</span>
+        
+<span class="fc" id="L250">        digester.addFactoryCreate(&quot;*/object-create-rule&quot;, new ObjectCreateRuleFactory());</span>
+<span class="fc" id="L251">        digester.addRule(&quot;*/object-create-rule&quot;, new PatternRule(&quot;pattern&quot;));</span>
+<span class="fc" id="L252">        digester.addSetNext(&quot;*/object-create-rule&quot;, &quot;add&quot;, ruleClassName);</span>
+        
+<span class="fc" id="L254">        digester.addFactoryCreate(&quot;*/node-create-rule&quot;, new NodeCreateRuleFactory());</span>
+<span class="fc" id="L255">        digester.addRule(&quot;*/node-create-rule&quot;, new PatternRule(&quot;pattern&quot;));</span>
+<span class="fc" id="L256">        digester.addSetNext(&quot;*/node-create-rule&quot;, &quot;add&quot;, ruleClassName);</span>
+        
+<span class="fc" id="L258">        digester.addFactoryCreate(&quot;*/set-properties-rule&quot;, new SetPropertiesRuleFactory());</span>
+<span class="fc" id="L259">        digester.addRule(&quot;*/set-properties-rule&quot;, new PatternRule(&quot;pattern&quot;));</span>
+<span class="fc" id="L260">        digester.addSetNext(&quot;*/set-properties-rule&quot;, &quot;add&quot;, ruleClassName);</span>
+        
+<span class="fc" id="L262">        digester.addRule(&quot;*/set-properties-rule/alias&quot;, new SetPropertiesAliasRule());</span>
+        
+<span class="fc" id="L264">        digester.addFactoryCreate(&quot;*/set-property-rule&quot;, new SetPropertyRuleFactory());</span>
+<span class="fc" id="L265">        digester.addRule(&quot;*/set-property-rule&quot;, new PatternRule(&quot;pattern&quot;));</span>
+<span class="fc" id="L266">        digester.addSetNext(&quot;*/set-property-rule&quot;, &quot;add&quot;, ruleClassName);</span>
+        
+<span class="fc" id="L268">        digester.addFactoryCreate(&quot;*/set-nested-properties-rule&quot;, new SetNestedPropertiesRuleFactory());</span>
+<span class="fc" id="L269">        digester.addRule(&quot;*/set-nested-properties-rule&quot;, new PatternRule(&quot;pattern&quot;));</span>
+<span class="fc" id="L270">        digester.addSetNext(&quot;*/set-nested-properties-rule&quot;, &quot;add&quot;, ruleClassName);</span>
+        
+<span class="fc" id="L272">        digester.addRule(&quot;*/set-nested-properties-rule/alias&quot;, new SetNestedPropertiesAliasRule());</span>
+        
+<span class="fc" id="L274">        digester.addFactoryCreate(&quot;*/set-top-rule&quot;, new SetTopRuleFactory());</span>
+<span class="fc" id="L275">        digester.addRule(&quot;*/set-top-rule&quot;, new PatternRule(&quot;pattern&quot;));</span>
+<span class="fc" id="L276">        digester.addSetNext(&quot;*/set-top-rule&quot;, &quot;add&quot;, ruleClassName);</span>
+        
+<span class="fc" id="L278">        digester.addFactoryCreate(&quot;*/set-next-rule&quot;, new SetNextRuleFactory());</span>
+<span class="fc" id="L279">        digester.addRule(&quot;*/set-next-rule&quot;, new PatternRule(&quot;pattern&quot;));</span>
+<span class="fc" id="L280">        digester.addSetNext(&quot;*/set-next-rule&quot;, &quot;add&quot;, ruleClassName);</span>
+<span class="fc" id="L281">        digester.addFactoryCreate(&quot;*/set-root-rule&quot;, new SetRootRuleFactory());</span>
+<span class="fc" id="L282">        digester.addRule(&quot;*/set-root-rule&quot;, new PatternRule(&quot;pattern&quot;));</span>
+<span class="fc" id="L283">        digester.addSetNext(&quot;*/set-root-rule&quot;, &quot;add&quot;, ruleClassName);</span>
+<span class="fc" id="L284">    }</span>
+    
+    
+    /**
+     * A rule for extracting the pattern matching strings from the rules XML.
+     * In the digester-rules document type, a pattern can either be declared
+     * in the 'value' attribute of a &lt;pattern&gt; element (in which case the pattern
+     * applies to all rules elements contained within the &lt;pattern&gt; element),
+     * or it can be declared in the optional 'pattern' attribute of a rule
+     * element.
+     */
+    private class PatternRule extends Rule {
+        
+        private String attrName;
+<span class="fc" id="L298">        private String pattern = null;</span>
+        
+        /**
+         * @param attrName The name of the attribute containing the pattern
+         */
+<span class="fc" id="L303">        public PatternRule(String attrName) {</span>
+<span class="fc" id="L304">            super();</span>
+<span class="fc" id="L305">            this.attrName = attrName;</span>
+<span class="fc" id="L306">        }</span>
+        
+        /**
+         * If a pattern is defined for the attribute, push it onto the
+         * pattern stack.
+         */
+        @Override
+        public void begin(Attributes attributes) {
+<span class="fc" id="L314">            pattern = attributes.getValue(attrName);</span>
+<span class="fc bfc" id="L315" title="All 2 branches covered.">            if (pattern != null) {</span>
+<span class="fc" id="L316">                patternStack.push(pattern);</span>
+            }
+<span class="fc" id="L318">        }</span>
+        
+        /**
+         * If there was a pattern for this element, pop it off the pattern
+         * stack.
+         */
+        @Override
+        public void end() {
+<span class="fc bfc" id="L326" title="All 2 branches covered.">            if (pattern != null) {</span>
+<span class="fc" id="L327">                patternStack.pop();</span>
+            }
+<span class="fc" id="L329">        }</span>
+    }
+    
+    /**
+     * A rule for including one rules XML file within another. Included files
+     * behave as if they are 'macro-expanded' within the includer. This means
+     * that the values of the pattern stack are prefixed to every pattern
+     * in the included rules. &lt;p&gt;This rule will detect 'circular' includes,
+     * which would result in infinite recursion. It throws a
+     * CircularIncludeException when a cycle is detected, which will terminate
+     * the parse.
+     */
+    private class IncludeRule extends Rule {
+<span class="fc" id="L342">        public IncludeRule() {</span>
+<span class="fc" id="L343">            super();</span>
+<span class="fc" id="L344">        }</span>
+        
+        /**
+         * To include a rules xml file, we instantiate another Digester, and
+         * another DigesterRulesRuleSet. We pass the
+         * pattern stack and the target Digester to the new rule set, and
+         * tell the Digester to parse the file.
+         */
+        @Override
+        public void begin(Attributes attributes) throws Exception {
+            // The path attribute gives the URI to another digester rules xml file
+<span class="fc" id="L355">            String fileName = attributes.getValue(&quot;path&quot;);</span>
+<span class="pc bpc" id="L356" title="1 of 4 branches missed.">            if (fileName != null &amp;&amp; fileName.length() &gt; 0) {</span>
+<span class="fc" id="L357">                includeXMLRules(fileName);</span>
+            }
+            
+            // The class attribute gives the name of a class that implements
+            // the DigesterRulesSource interface
+<span class="fc" id="L362">            String className = attributes.getValue(&quot;class&quot;);</span>
+<span class="pc bpc" id="L363" title="1 of 4 branches missed.">            if (className != null &amp;&amp; className.length() &gt; 0) {</span>
+<span class="fc" id="L364">                includeProgrammaticRules(className);</span>
+            }
+<span class="fc" id="L366">        }</span>
+        
+        /**
+         * Creates another DigesterRuleParser, and uses it to extract the rules
+         * out of the give XML file. The contents of the current pattern stack
+         * will be prepended to all of the pattern strings parsed from the file.
+         */
+        private void includeXMLRules(String fileName)
+                        throws IOException, SAXException, CircularIncludeException {
+<span class="fc" id="L375">            ClassLoader cl = Thread.currentThread().getContextClassLoader();</span>
+<span class="pc bpc" id="L376" title="1 of 2 branches missed.">            if (cl == null) {</span>
+<span class="nc" id="L377">                cl = DigesterRuleParser.this.getClass().getClassLoader();</span>
+            }
+<span class="fc" id="L379">            URL fileURL = cl.getResource(fileName);</span>
+<span class="pc bpc" id="L380" title="1 of 2 branches missed.">            if (fileURL == null) {</span>
+<span class="nc" id="L381">                throw new FileNotFoundException(&quot;File \&quot;&quot; + fileName + &quot;\&quot; not found.&quot;);</span>
+            }
+<span class="fc" id="L383">            fileName = fileURL.toExternalForm();</span>
+<span class="fc bfc" id="L384" title="All 2 branches covered.">            if (includedFiles.add(fileName) == false) {</span>
+                // circular include detected
+<span class="fc" id="L386">                throw new CircularIncludeException(fileName);</span>
+            }
+            // parse the included xml file
+<span class="fc" id="L389">            DigesterRuleParser includedSet =</span>
+<span class="fc" id="L390">                        new DigesterRuleParser(targetDigester, patternStack, includedFiles);</span>
+<span class="fc" id="L391">            includedSet.setDigesterRulesDTD(getDigesterRulesDTD());</span>
+<span class="fc" id="L392">            Digester digester = new Digester();</span>
+<span class="fc" id="L393">            digester.addRuleSet(includedSet);</span>
+<span class="fc" id="L394">            digester.push(DigesterRuleParser.this);</span>
+<span class="fc" id="L395">            digester.parse(fileName);</span>
+<span class="fc" id="L396">            includedFiles.remove(fileName);</span>
+<span class="fc" id="L397">        }</span>
+        
+        /**
+         * Creates an instance of the indicated class. The class must implement
+         * the DigesterRulesSource interface. Passes the target digester to
+         * that instance. The DigesterRulesSource instance is supposed to add
+         * rules into the digester. The contents of the current pattern stack
+         * will be automatically prepended to all of the pattern strings added
+         * by the DigesterRulesSource instance.
+         */
+        private void includeProgrammaticRules(String className)
+                        throws ClassNotFoundException, ClassCastException,
+                        InstantiationException, IllegalAccessException {
+            
+<span class="fc" id="L411">            Class&lt;?&gt; cls = Class.forName(className);</span>
+<span class="fc" id="L412">            DigesterRulesSource rulesSource = (DigesterRulesSource) cls.newInstance();</span>
+            
+            // wrap the digester's Rules object, to prepend pattern
+<span class="fc" id="L415">            Rules digesterRules = targetDigester.getRules();</span>
+<span class="fc" id="L416">            Rules prefixWrapper =</span>
+<span class="fc" id="L417">                    new RulesPrefixAdapter(patternStack.toString(), digesterRules);</span>
+            
+<span class="fc" id="L419">            targetDigester.setRules(prefixWrapper);</span>
+            try {
+<span class="fc" id="L421">                rulesSource.getRules(targetDigester);</span>
+            } finally {
+                // Put the unwrapped rules back
+<span class="pc" id="L424">                targetDigester.setRules(digesterRules);</span>
+<span class="fc" id="L425">            }</span>
+<span class="fc" id="L426">        }</span>
+    }
+    
+    
+    /**
+     * Wraps a Rules object. Delegates all the Rules interface methods
+     * to the underlying Rules object. Overrides the add method to prepend
+     * a prefix to the pattern string.
+     */
+    private class RulesPrefixAdapter implements Rules {
+        
+        private Rules delegate;
+        private String prefix;
+        
+        /**
+         * @param patternPrefix the pattern string to prepend to the pattern
+         * passed to the add method.
+         * @param rules The wrapped Rules object. All of this class's methods
+         * pass through to this object.
+         */
+<span class="fc" id="L446">        public RulesPrefixAdapter(String patternPrefix, Rules rules) {</span>
+<span class="fc" id="L447">            prefix = patternPrefix;</span>
+<span class="fc" id="L448">            delegate = rules;</span>
+<span class="fc" id="L449">        }</span>
+        
+        /**
+         * Register a new Rule instance matching a pattern which is constructed
+         * by concatenating the pattern prefix with the given pattern.
+         */
+        public void add(String pattern, Rule rule) {
+<span class="fc" id="L456">            StringBuffer buffer = new StringBuffer();</span>
+<span class="fc" id="L457">            buffer.append(prefix);</span>
+<span class="fc bfc" id="L458" title="All 2 branches covered.">            if (!pattern.startsWith(&quot;/&quot;)) {</span>
+<span class="fc" id="L459">                buffer.append('/'); </span>
+            }
+<span class="fc" id="L461">            buffer.append(pattern);</span>
+<span class="fc" id="L462">            delegate.add(buffer.toString(), rule);</span>
+<span class="fc" id="L463">        }</span>
+        
+        /**
+         * This method passes through to the underlying Rules object.
+         */
+        public void clear() {
+<span class="nc" id="L469">            delegate.clear();</span>
+<span class="nc" id="L470">        }</span>
+        
+        /**
+         * This method passes through to the underlying Rules object.
+         */
+        public Digester getDigester() {
+<span class="nc" id="L476">            return delegate.getDigester();</span>
+        }
+        
+        /**
+         * This method passes through to the underlying Rules object.
+         */
+        public String getNamespaceURI() {
+<span class="nc" id="L483">            return delegate.getNamespaceURI();</span>
+        }
+        
+        /**
+         * @deprecated Call match(namespaceURI,pattern) instead.
+         */
+        @Deprecated
+        public List&lt;Rule&gt; match(String pattern) {
+<span class="nc" id="L491">            return delegate.match(pattern);</span>
+        }
+        
+        /**
+         * This method passes through to the underlying Rules object.
+         */
+        public List&lt;Rule&gt; match(String namespaceURI, String pattern) {
+<span class="nc" id="L498">            return delegate.match(namespaceURI, pattern);</span>
+        }
+        
+        /**
+         * This method passes through to the underlying Rules object.
+         */
+        public List&lt;Rule&gt; rules() {
+<span class="nc" id="L505">            return delegate.rules();</span>
+        }
+        
+        /**
+         * This method passes through to the underlying Rules object.
+         */
+        public void setDigester(Digester digester) {
+<span class="fc" id="L512">            delegate.setDigester(digester);</span>
+<span class="fc" id="L513">        }</span>
+        
+        /**
+         * This method passes through to the underlying Rules object.
+         */
+        public void setNamespaceURI(String namespaceURI) {
+<span class="nc" id="L519">            delegate.setNamespaceURI(namespaceURI);</span>
+<span class="nc" id="L520">        }</span>
+    }
+    
+    
+    ///////////////////////////////////////////////////////////////////////
+    // Classes beyond this point are ObjectCreationFactory implementations,
+    // used to create Rule objects and initialize them from SAX attributes.
+    ///////////////////////////////////////////////////////////////////////
+    
+    /**
+     * Factory for creating a BeanPropertySetterRule.
+     */
+<span class="fc" id="L532">    private class BeanPropertySetterRuleFactory extends AbstractObjectCreationFactory {</span>
+        @Override
+        public Object createObject(Attributes attributes) throws Exception {
+<span class="fc" id="L535">            Rule beanPropertySetterRule = null;</span>
+<span class="fc" id="L536">            String propertyname = attributes.getValue(&quot;propertyname&quot;);</span>
+                
+<span class="pc bpc" id="L538" title="1 of 2 branches missed.">            if (propertyname == null) {</span>
+                // call the setter method corresponding to the element name.
+<span class="fc" id="L540">                beanPropertySetterRule = new BeanPropertySetterRule();</span>
+            } else {
+<span class="nc" id="L542">                beanPropertySetterRule = new BeanPropertySetterRule(propertyname);</span>
+            }
+            
+<span class="fc" id="L545">            return beanPropertySetterRule;</span>
+        }
+        
+    }
+
+    /**
+     * Factory for creating a CallMethodRule.
+     */
+<span class="fc" id="L553">    protected class CallMethodRuleFactory extends AbstractObjectCreationFactory {</span>
+        @Override
+        public Object createObject(Attributes attributes) {
+<span class="fc" id="L556">            Rule callMethodRule = null;</span>
+<span class="fc" id="L557">            String methodName = attributes.getValue(&quot;methodname&quot;);</span>
+
+            // Select which element is to be the target. Default to zero,
+            // ie the top object on the stack.
+<span class="fc" id="L561">            int targetOffset = 0;</span>
+<span class="fc" id="L562">            String targetOffsetStr = attributes.getValue(&quot;targetoffset&quot;);</span>
+<span class="fc bfc" id="L563" title="All 2 branches covered.">            if (targetOffsetStr != null) {</span>
+<span class="fc" id="L564">                targetOffset = Integer.parseInt(targetOffsetStr);</span>
+            }
+
+<span class="fc bfc" id="L567" title="All 2 branches covered.">            if (attributes.getValue(&quot;paramcount&quot;) == null) {</span>
+                // call against empty method
+<span class="fc" id="L569">                callMethodRule = new CallMethodRule(targetOffset, methodName);</span>
+            
+            } else {
+<span class="fc" id="L572">                int paramCount = Integer.parseInt(attributes.getValue(&quot;paramcount&quot;));</span>
+                
+<span class="fc" id="L574">                String paramTypesAttr = attributes.getValue(&quot;paramtypes&quot;);</span>
+<span class="pc bpc" id="L575" title="1 of 4 branches missed.">                if (paramTypesAttr == null || paramTypesAttr.length() == 0) {</span>
+<span class="fc" id="L576">                    callMethodRule = new CallMethodRule(targetOffset, methodName, paramCount);</span>
+                } else {
+<span class="fc" id="L578">                    String[] paramTypes = getParamTypes(paramTypesAttr);</span>
+<span class="fc" id="L579">                    callMethodRule = new CallMethodRule(</span>
+                        targetOffset, methodName, paramCount, paramTypes);
+                }
+            }
+<span class="fc" id="L583">            return callMethodRule;</span>
+        }
+
+        /**
+         * Process the comma separated list of paramTypes
+         * into an array of String class names
+         */
+        private String[] getParamTypes(String paramTypes) {
+            String[] paramTypesArray;
+<span class="pc bpc" id="L592" title="1 of 2 branches missed.">            if( paramTypes != null ) {</span>
+<span class="fc" id="L593">                ArrayList&lt;String&gt; paramTypesList = new ArrayList&lt;String&gt;();</span>
+<span class="fc" id="L594">                StringTokenizer tokens = new StringTokenizer(</span>
+                        paramTypes, &quot; \t\n\r,&quot;);
+<span class="fc bfc" id="L596" title="All 2 branches covered.">                while (tokens.hasMoreTokens()) {</span>
+<span class="fc" id="L597">                    paramTypesList.add(tokens.nextToken());</span>
+                }
+<span class="fc" id="L599">                paramTypesArray = paramTypesList.toArray(new String[0]);</span>
+<span class="fc" id="L600">            } else {</span>
+<span class="nc" id="L601">                paramTypesArray = new String[0];</span>
+            }
+<span class="fc" id="L603">            return paramTypesArray;</span>
+        }
+    }
+    
+    /**
+     * Factory for creating a CallParamRule.
+     */
+<span class="fc" id="L610">    protected class CallParamRuleFactory extends AbstractObjectCreationFactory {</span>
+    
+        @Override
+        public Object createObject(Attributes attributes) {
+            // create callparamrule
+<span class="fc" id="L615">            int paramIndex = Integer.parseInt(attributes.getValue(&quot;paramnumber&quot;));</span>
+<span class="fc" id="L616">            String attributeName = attributes.getValue(&quot;attrname&quot;);</span>
+<span class="fc" id="L617">            String fromStack = attributes.getValue(&quot;from-stack&quot;);</span>
+<span class="fc" id="L618">            String stackIndex = attributes.getValue(&quot;stack-index&quot;);</span>
+<span class="fc" id="L619">            Rule callParamRule = null;</span>
+
+<span class="fc bfc" id="L621" title="All 2 branches covered.">            if (attributeName == null) {</span>
+<span class="pc bpc" id="L622" title="1 of 2 branches missed.">                if (stackIndex != null) {                    </span>
+<span class="nc" id="L623">                    callParamRule = new CallParamRule(</span>
+<span class="nc" id="L624">                        paramIndex, Integer.parseInt(stackIndex));                </span>
+<span class="fc bfc" id="L625" title="All 2 branches covered.">                } else if (fromStack != null) {                </span>
+<span class="fc" id="L626">                    callParamRule = new CallParamRule(</span>
+<span class="fc" id="L627">                        paramIndex, Boolean.valueOf(fromStack).booleanValue());                </span>
+                } else {
+<span class="fc" id="L629">                    callParamRule = new CallParamRule(paramIndex);     </span>
+                }
+            } else {
+<span class="pc bpc" id="L632" title="1 of 2 branches missed.">                if (fromStack == null) {</span>
+<span class="fc" id="L633">                    callParamRule = new CallParamRule(paramIndex, attributeName);                    </span>
+                } else {
+                    // specifying both from-stack and attribute name is not allowed
+<span class="nc" id="L636">                    throw new RuntimeException(</span>
+                        &quot;Attributes from-stack and attrname cannot both be present.&quot;);
+                }
+            }
+<span class="fc" id="L640">            return callParamRule;</span>
+        }
+    }
+    
+    /**
+     * Factory for creating a ObjectParamRule
+     */
+<span class="fc" id="L647">    protected class ObjectParamRuleFactory extends AbstractObjectCreationFactory {</span>
+        @Override
+        public Object createObject(Attributes attributes) throws Exception {
+            // create callparamrule
+<span class="fc" id="L651">            int paramIndex = Integer.parseInt(attributes.getValue(&quot;paramnumber&quot;));</span>
+<span class="fc" id="L652">            String attributeName = attributes.getValue(&quot;attrname&quot;);</span>
+<span class="fc" id="L653">            String type = attributes.getValue(&quot;type&quot;);</span>
+<span class="fc" id="L654">            String value = attributes.getValue(&quot;value&quot;);</span>
+
+<span class="fc" id="L656">            Rule objectParamRule = null;</span>
+
+            // type name is requried
+<span class="pc bpc" id="L659" title="1 of 2 branches missed.">            if (type == null) {</span>
+<span class="nc" id="L660">                throw new RuntimeException(&quot;Attribute 'type' is required.&quot;);</span>
+            }
+
+            // create object instance
+<span class="fc" id="L664">            Object param = null;</span>
+<span class="fc" id="L665">            Class&lt;?&gt; clazz = Class.forName(type);</span>
+<span class="fc bfc" id="L666" title="All 2 branches covered.">            if (value == null) {</span>
+<span class="fc" id="L667">                param = clazz.newInstance();</span>
+            } else {
+<span class="fc" id="L669">                param = ConvertUtils.convert(value, clazz);</span>
+            }
+
+<span class="pc bpc" id="L672" title="1 of 2 branches missed.">            if (attributeName == null) {</span>
+<span class="fc" id="L673">                objectParamRule = new ObjectParamRule(paramIndex, param);</span>
+            } else {
+<span class="nc" id="L675">                objectParamRule = new ObjectParamRule(paramIndex, attributeName, param);</span>
+            }
+<span class="fc" id="L677">            return objectParamRule;</span>
+        }
+     }
+    
+        /**
+         * Factory for creating a NodeCreateRule
+         */
+<span class="fc" id="L684">    protected class NodeCreateRuleFactory extends AbstractObjectCreationFactory {</span>
+
+        @Override
+        public Object createObject(Attributes attributes) throws Exception {
+
+<span class="fc" id="L689">            String nodeType = attributes.getValue(&quot;type&quot;);</span>
+<span class="pc bpc" id="L690" title="3 of 4 branches missed.">            if (nodeType == null || &quot;&quot;.equals(nodeType)) {</span>
+
+                // uses Node.ELEMENT_NODE
+<span class="fc" id="L693">                return new NodeCreateRule();</span>
+<span class="nc bnc" id="L694" title="All 2 branches missed.">            } else if (&quot;element&quot;.equals(nodeType)) {</span>
+
+<span class="nc" id="L696">                return new NodeCreateRule(Node.ELEMENT_NODE);</span>
+<span class="nc bnc" id="L697" title="All 2 branches missed.">            } else if (&quot;fragment&quot;.equals(nodeType)) {</span>
+
+<span class="nc" id="L699">                return new NodeCreateRule(Node.DOCUMENT_FRAGMENT_NODE);</span>
+            } else {
+
+<span class="nc" id="L702">                throw new RuntimeException(</span>
+                        &quot;Unrecognized node type: &quot;
+                                + nodeType
+                                + &quot;.  This attribute is optional or can have a value of element|fragment.&quot;);
+            }
+        }
+    }    
+    
+    /**
+     * Factory for creating a FactoryCreateRule
+     */
+<span class="fc" id="L713">    protected class FactoryCreateRuleFactory extends AbstractObjectCreationFactory {</span>
+        @Override
+        public Object createObject(Attributes attributes) {
+<span class="fc" id="L716">            String className = attributes.getValue(&quot;classname&quot;);</span>
+<span class="fc" id="L717">            String attrName = attributes.getValue(&quot;attrname&quot;);</span>
+<span class="fc" id="L718">            boolean ignoreExceptions = </span>
+<span class="fc" id="L719">                &quot;true&quot;.equalsIgnoreCase(attributes.getValue(&quot;ignore-exceptions&quot;));</span>
+<span class="pc bpc" id="L720" title="3 of 4 branches missed.">            return (attrName == null || attrName.length() == 0) ?</span>
+                new FactoryCreateRule( className, ignoreExceptions) :
+                new FactoryCreateRule( className, attrName, ignoreExceptions);
+        }
+    }
+    
+    /**
+     * Factory for creating a ObjectCreateRule
+     */
+<span class="fc" id="L729">    protected class ObjectCreateRuleFactory extends AbstractObjectCreationFactory {</span>
+        @Override
+        public Object createObject(Attributes attributes) {
+<span class="fc" id="L732">            String className = attributes.getValue(&quot;classname&quot;);</span>
+<span class="fc" id="L733">            String attrName = attributes.getValue(&quot;attrname&quot;);</span>
+<span class="pc bpc" id="L734" title="3 of 4 branches missed.">            return (attrName == null || attrName.length() == 0) ?</span>
+                new ObjectCreateRule( className) :
+                new ObjectCreateRule( className, attrName);
+        }
+    }
+    
+    /**
+     * Factory for creating a SetPropertiesRule
+     */
+<span class="fc" id="L743">    protected class SetPropertiesRuleFactory extends AbstractObjectCreationFactory {</span>
+        @Override
+        public Object createObject(Attributes attributes) {
+<span class="fc" id="L746">                return new SetPropertiesRule();</span>
+        }
+    }
+    
+    /**
+     * Factory for creating a SetPropertyRule
+     */
+<span class="fc" id="L753">    protected class SetPropertyRuleFactory extends AbstractObjectCreationFactory {</span>
+        @Override
+        public Object createObject(Attributes attributes) {
+<span class="nc" id="L756">            String name = attributes.getValue(&quot;name&quot;);</span>
+<span class="nc" id="L757">            String value = attributes.getValue(&quot;value&quot;);</span>
+<span class="nc" id="L758">            return new SetPropertyRule( name, value);</span>
+        }
+    }
+    
+    /**
+     * Factory for creating a SetNestedPropertiesRule
+     */
+<span class="fc" id="L765">    protected class SetNestedPropertiesRuleFactory extends AbstractObjectCreationFactory {</span>
+        @Override
+        public Object createObject(Attributes attributes) {
+<span class="nc" id="L768">           boolean allowUnknownChildElements = </span>
+<span class="nc" id="L769">                &quot;true&quot;.equalsIgnoreCase(attributes.getValue(&quot;allow-unknown-child-elements&quot;));</span>
+<span class="nc" id="L770">                SetNestedPropertiesRule snpr = new SetNestedPropertiesRule();</span>
+<span class="nc" id="L771">                snpr.setAllowUnknownChildElements( allowUnknownChildElements );</span>
+<span class="nc" id="L772">                return snpr;</span>
+        }
+    }
+    
+    /**
+     * Factory for creating a SetTopRuleFactory
+     */
+<span class="fc" id="L779">    protected class SetTopRuleFactory extends AbstractObjectCreationFactory {</span>
+        @Override
+        public Object createObject(Attributes attributes) {
+<span class="nc" id="L782">            String methodName = attributes.getValue(&quot;methodname&quot;);</span>
+<span class="nc" id="L783">            String paramType = attributes.getValue(&quot;paramtype&quot;);</span>
+<span class="nc bnc" id="L784" title="All 4 branches missed.">            return (paramType == null || paramType.length() == 0) ?</span>
+                new SetTopRule( methodName) :
+                new SetTopRule( methodName, paramType);
+        }
+    }
+    
+    /**
+     * Factory for creating a SetNextRuleFactory
+     */
+<span class="fc" id="L793">    protected class SetNextRuleFactory extends AbstractObjectCreationFactory {</span>
+        @Override
+        public Object createObject(Attributes attributes) {
+<span class="fc" id="L796">            String methodName = attributes.getValue(&quot;methodname&quot;);</span>
+<span class="fc" id="L797">            String paramType = attributes.getValue(&quot;paramtype&quot;);</span>
+<span class="pc bpc" id="L798" title="1 of 4 branches missed.">            return (paramType == null || paramType.length() == 0) ?</span>
+                new SetNextRule( methodName) :
+                new SetNextRule( methodName, paramType);
+        }
+    }
+    
+    /**
+     * Factory for creating a SetRootRuleFactory
+     */
+<span class="fc" id="L807">    protected class SetRootRuleFactory extends AbstractObjectCreationFactory {</span>
+        @Override
+        public Object createObject(Attributes attributes) {
+<span class="nc" id="L810">            String methodName = attributes.getValue(&quot;methodname&quot;);</span>
+<span class="nc" id="L811">            String paramType = attributes.getValue(&quot;paramtype&quot;);</span>
+<span class="nc bnc" id="L812" title="All 4 branches missed.">            return (paramType == null || paramType.length() == 0) ?</span>
+                new SetRootRule( methodName) :
+                new SetRootRule( methodName, paramType);
+        }
+    }
+    
+    /**
+     * A rule for adding a attribute-property alias to the custom alias mappings of
+     * the containing SetPropertiesRule rule.
+     */
+    protected class SetPropertiesAliasRule extends Rule {
+        
+        /**
+         * &lt;p&gt;Base constructor.&lt;/p&gt;
+         */
+<span class="fc" id="L827">        public SetPropertiesAliasRule() {</span>
+<span class="fc" id="L828">            super();</span>
+<span class="fc" id="L829">        }</span>
+        
+        /**
+         * Add the alias to the SetPropertiesRule object created by the
+         * enclosing &lt;set-properties-rule&gt; tag.
+         */
+        @Override
+        public void begin(Attributes attributes) {
+<span class="fc" id="L837">            String attrName = attributes.getValue(&quot;attr-name&quot;);</span>
+<span class="fc" id="L838">            String propName = attributes.getValue(&quot;prop-name&quot;);</span>
+    
+<span class="fc" id="L840">            SetPropertiesRule rule = (SetPropertiesRule) digester.peek();</span>
+<span class="fc" id="L841">            rule.addAlias(attrName, propName);</span>
+<span class="fc" id="L842">        }</span>
+    }
+
+    /**
+     * A rule for adding a attribute-property alias to the custom alias mappings of
+     * the containing SetNestedPropertiesRule rule.
+     */
+    protected class SetNestedPropertiesAliasRule extends Rule {
+        
+        /**
+         * &lt;p&gt;Base constructor.&lt;/p&gt;
+         */
+<span class="fc" id="L854">        public SetNestedPropertiesAliasRule() {</span>
+<span class="fc" id="L855">            super();</span>
+<span class="fc" id="L856">        }</span>
+        
+        /**
+         * Add the alias to the SetNestedPropertiesRule object created by the
+         * enclosing &lt;set-nested-properties-rule&gt; tag.
+         */
+        @Override
+        public void begin(Attributes attributes) {
+<span class="nc" id="L864">            String attrName = attributes.getValue(&quot;attr-name&quot;);</span>
+<span class="nc" id="L865">            String propName = attributes.getValue(&quot;prop-name&quot;);</span>
+    
+<span class="nc" id="L867">            SetNestedPropertiesRule rule = (SetNestedPropertiesRule) digester.peek();</span>
+<span class="nc" id="L868">            rule.addAlias(attrName, propName);</span>
+<span class="nc" id="L869">        }</span>
+    }
+        
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

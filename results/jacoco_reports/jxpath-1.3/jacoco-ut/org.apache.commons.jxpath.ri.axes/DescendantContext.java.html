@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DescendantContext.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri.axes</a> &gt; <span class="el_source">DescendantContext.java</span></div><h1>DescendantContext.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri.axes;
+
+import java.util.Stack;
+
+import org.apache.commons.jxpath.Pointer;
+import org.apache.commons.jxpath.ri.Compiler;
+import org.apache.commons.jxpath.ri.EvalContext;
+import org.apache.commons.jxpath.ri.compiler.NodeTest;
+import org.apache.commons.jxpath.ri.compiler.NodeTypeTest;
+import org.apache.commons.jxpath.ri.model.NodeIterator;
+import org.apache.commons.jxpath.ri.model.NodePointer;
+
+/**
+ * An EvalContext that walks the &quot;descendant::&quot; and &quot;descendant-or-self::&quot;
+ * axes.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision: 670727 $ $Date: 2008-06-23 15:10:38 -0500 (Mon, 23 Jun 2008) $
+ */
+public class DescendantContext extends EvalContext {
+    private NodeTest nodeTest;
+<span class="fc" id="L38">    private boolean setStarted = false;</span>
+<span class="fc" id="L39">    private Stack stack = null;</span>
+<span class="fc" id="L40">    private NodePointer currentNodePointer = null;</span>
+    private boolean includeSelf;
+<span class="fc" id="L42">    private static final NodeTest ELEMENT_NODE_TEST =</span>
+            new NodeTypeTest(Compiler.NODE_TYPE_NODE);
+
+    /**
+     * Create a new DescendantContext.
+     * @param parentContext parent context
+     * @param includeSelf whether to include this node
+     * @param nodeTest test
+     */
+    public DescendantContext(EvalContext parentContext, boolean includeSelf,
+            NodeTest nodeTest) {
+<span class="fc" id="L53">        super(parentContext);</span>
+<span class="fc" id="L54">        this.includeSelf = includeSelf;</span>
+<span class="fc" id="L55">        this.nodeTest = nodeTest;</span>
+<span class="fc" id="L56">    }</span>
+
+    public boolean isChildOrderingRequired() {
+<span class="fc" id="L59">        return true;</span>
+    }
+
+    public NodePointer getCurrentNodePointer() {
+<span class="pc bpc" id="L63" title="3 of 4 branches missed.">        if (position == 0 &amp;&amp; !setPosition(1)) {</span>
+<span class="nc" id="L64">            return null;</span>
+        }
+<span class="fc" id="L66">        return currentNodePointer;</span>
+    }
+
+    public void reset() {
+<span class="fc" id="L70">        super.reset();</span>
+<span class="fc" id="L71">        setStarted = false;</span>
+<span class="fc" id="L72">    }</span>
+
+    public boolean setPosition(int position) {
+<span class="nc bnc" id="L75" title="All 2 branches missed.">        if (position &lt; this.position) {</span>
+<span class="nc" id="L76">            reset();</span>
+        }
+
+<span class="nc bnc" id="L79" title="All 2 branches missed.">        while (this.position &lt; position) {</span>
+<span class="nc bnc" id="L80" title="All 2 branches missed.">            if (!nextNode()) {</span>
+<span class="nc" id="L81">                return false;</span>
+            }
+        }
+<span class="nc" id="L84">        return true;</span>
+    }
+
+    public boolean nextNode() {
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        if (!setStarted) {</span>
+<span class="fc" id="L89">            setStarted = true;</span>
+<span class="fc bfc" id="L90" title="All 2 branches covered.">            if (stack == null) {</span>
+<span class="fc" id="L91">                stack = new Stack();</span>
+            }
+            else {
+<span class="fc" id="L94">                stack.clear();</span>
+            }
+<span class="fc" id="L96">            currentNodePointer = parentContext.getCurrentNodePointer();</span>
+<span class="pc bpc" id="L97" title="1 of 2 branches missed.">            if (currentNodePointer != null) {</span>
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">                if (!currentNodePointer.isLeaf()) {</span>
+<span class="fc" id="L99">                    stack.push(</span>
+<span class="fc" id="L100">                        currentNodePointer.childIterator(</span>
+                            ELEMENT_NODE_TEST,
+                            false,
+                            null));
+                }
+<span class="fc bfc" id="L105" title="All 4 branches covered.">                if (includeSelf &amp;&amp; currentNodePointer.testNode(nodeTest)) {</span>
+<span class="fc" id="L106">                    position++;</span>
+<span class="fc" id="L107">                    return true;</span>
+                }
+            }
+        }
+
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        while (!stack.isEmpty()) {</span>
+<span class="fc" id="L113">            NodeIterator it = (NodeIterator) stack.peek();</span>
+<span class="fc bfc" id="L114" title="All 2 branches covered.">            if (it.setPosition(it.getPosition() + 1)) {</span>
+<span class="fc" id="L115">                currentNodePointer = it.getNodePointer();</span>
+<span class="fc bfc" id="L116" title="All 2 branches covered.">                if (!isRecursive()) {</span>
+<span class="fc bfc" id="L117" title="All 2 branches covered.">                    if (!currentNodePointer.isLeaf()) {</span>
+<span class="fc" id="L118">                        stack.push(</span>
+<span class="fc" id="L119">                            currentNodePointer.childIterator(</span>
+                                ELEMENT_NODE_TEST,
+                                false,
+                                null));
+                    }
+<span class="fc bfc" id="L124" title="All 2 branches covered.">                    if (currentNodePointer.testNode(nodeTest)) {</span>
+<span class="fc" id="L125">                        position++;</span>
+<span class="fc" id="L126">                        return true;</span>
+                    }
+                }
+            }
+            else {
+                // We get here only if the name test failed
+                // and the iterator ended
+<span class="fc" id="L133">                stack.pop();</span>
+            }
+<span class="fc" id="L135">        }</span>
+<span class="fc" id="L136">        return false;</span>
+    }
+
+    /**
+     * Checks if we are reentering a bean we have already seen and if so
+     * returns true to prevent infinite recursion.
+     * @return boolean
+     */
+    private boolean isRecursive() {
+<span class="fc" id="L145">        Object node = currentNodePointer.getNode();</span>
+<span class="fc bfc" id="L146" title="All 2 branches covered.">        for (int i = stack.size() - 1; --i &gt;= 0;) {</span>
+<span class="fc" id="L147">            NodeIterator it = (NodeIterator) stack.get(i);</span>
+<span class="fc" id="L148">            Pointer pointer = it.getNodePointer();</span>
+<span class="pc bpc" id="L149" title="1 of 4 branches missed.">            if (pointer != null &amp;&amp; pointer.getNode() == node) {</span>
+<span class="fc" id="L150">                return true;</span>
+            }
+<span class="fc" id="L152">        }</span>
+<span class="fc" id="L153">        return false;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

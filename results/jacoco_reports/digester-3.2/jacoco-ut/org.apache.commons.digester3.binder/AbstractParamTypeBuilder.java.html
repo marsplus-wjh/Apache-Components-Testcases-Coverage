@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractParamTypeBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester3.binder</a> &gt; <span class="el_source">AbstractParamTypeBuilder.java</span></div><h1>AbstractParamTypeBuilder.java</h1><pre class="source lang-java linenums">package org.apache.commons.digester3.binder;
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import static java.lang.String.format;
+
+import org.apache.commons.digester3.AbstractMethodRule;
+
+/**
+ * Builder chained when invoking {@link LinkedRuleBuilder#setNext(String)},
+ * {@link LinkedRuleBuilder#setRoot(String)} or {@link LinkedRuleBuilder#setTop(String)}.
+ *
+ * @param &lt;R&gt; any {@link AbstractMethodRule} concrete implementation, typically
+ *        {@link org.apache.commons.digester3.SetNextRule}, {@link org.apache.commons.digester3.SetRootRule}
+ *        and {@link org.apache.commons.digester3.SetTopRule}
+ * @since 3.0
+ */
+public abstract class AbstractParamTypeBuilder&lt;R extends AbstractMethodRule&gt;
+    extends AbstractBackToLinkedRuleBuilder&lt;R&gt;
+{
+
+    private final String methodName;
+
+    private final ClassLoader classLoader;
+
+<span class="fc" id="L43">    private boolean useExactMatch = false;</span>
+
+    private Class&lt;?&gt; paramType;
+
+<span class="fc" id="L47">    private boolean fireOnBegin = false;</span>
+
+    AbstractParamTypeBuilder( String keyPattern, String namespaceURI, RulesBinder mainBinder,
+                              LinkedRuleBuilder mainBuilder, String methodName, ClassLoader classLoader )
+    {
+<span class="fc" id="L52">        super( keyPattern, namespaceURI, mainBinder, mainBuilder );</span>
+<span class="fc" id="L53">        this.methodName = methodName;</span>
+<span class="fc" id="L54">        this.classLoader = classLoader;</span>
+<span class="fc" id="L55">    }</span>
+
+    /**
+     * Sets the Java class of the method's argument.
+     * 
+     * If you wish to use a primitive type, specify the corresonding
+     * Java wrapper class instead, such as {@code java.lang.Boolean}
+     * for a {@code boolean} parameter.
+     *
+     * @param paramType The Java class of the method's argument
+     * @return this builder instance
+     */
+    public final AbstractParamTypeBuilder&lt;R&gt; withParameterType( Class&lt;?&gt; paramType )
+    {
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">        if ( paramType == null )</span>
+        {
+<span class="nc" id="L71">            reportError( format( &quot;.%s.withParameterType( Class&lt;?&gt; )&quot;, methodName ), &quot;NULL Java type not allowed&quot; );</span>
+<span class="nc" id="L72">            return this;</span>
+        }
+<span class="fc" id="L74">        this.paramType = paramType;</span>
+<span class="fc" id="L75">        return withParameterType( paramType.getName() );</span>
+    }
+
+    /**
+     * Sets the Java class name of the method's argument.
+     * 
+     * If you wish to use a primitive type, specify the corresonding
+     * Java wrapper class instead, such as {@code java.lang.Boolean}
+     * for a {@code boolean} parameter.
+     *
+     * @param paramType The Java class name of the method's argument
+     * @return this builder instance
+     */
+    public final AbstractParamTypeBuilder&lt;R&gt; withParameterType( String paramType )
+    {
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">        if ( paramType == null )</span>
+        {
+<span class="nc" id="L92">            reportError( format( &quot;.%s.withParameterType( Class&lt;?&gt; )&quot;, methodName ), &quot;NULL Java type not allowed&quot; );</span>
+<span class="nc" id="L93">            return this;</span>
+        }
+
+<span class="fc bfc" id="L96" title="All 2 branches covered.">        if ( this.paramType == null )</span>
+        {
+            try
+            {
+<span class="fc" id="L100">                this.paramType = classLoader.loadClass( paramType );</span>
+            }
+<span class="nc" id="L102">            catch ( ClassNotFoundException e )</span>
+            {
+<span class="nc" id="L104">                this.reportError( format( &quot;.%s.withParameterType( Class&lt;?&gt; )&quot;, methodName ),</span>
+<span class="nc" id="L105">                                  format( &quot;class '%s' cannot be load&quot;, paramType ) );</span>
+<span class="fc" id="L106">            }</span>
+        }
+<span class="fc" id="L108">        return this;</span>
+    }
+
+    /**
+     * Sets exact matching being used.
+     *
+     * @param useExactMatch The exact matching being used
+     * @return this builder instance
+     */
+    public final AbstractParamTypeBuilder&lt;R&gt; useExactMatch( boolean useExactMatch )
+    {
+<span class="fc" id="L119">        this.useExactMatch = useExactMatch;</span>
+<span class="fc" id="L120">        return this;</span>
+    }
+
+    /**
+     * Marks the rule be invoked when {@code begin} or {@code end} events match.
+     *
+     * @param fireOnBegin true, to invoke the rule at {@code begin}, false for {@code end}
+     * @return this builder instance
+     */
+    public final AbstractParamTypeBuilder&lt;R&gt; fireOnBegin( boolean fireOnBegin )
+    {
+<span class="fc" id="L131">        this.fireOnBegin = fireOnBegin;</span>
+<span class="fc" id="L132">        return this;</span>
+    }
+
+    final String getMethodName()
+    {
+<span class="fc" id="L137">        return methodName;</span>
+    }
+
+    final Class&lt;?&gt; getParamType()
+    {
+<span class="fc" id="L142">        return paramType;</span>
+    }
+
+    final boolean isUseExactMatch()
+    {
+<span class="fc" id="L147">        return useExactMatch;</span>
+    }
+
+    final boolean isFireOnBegin()
+    {
+<span class="fc" id="L152">        return fireOnBegin;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

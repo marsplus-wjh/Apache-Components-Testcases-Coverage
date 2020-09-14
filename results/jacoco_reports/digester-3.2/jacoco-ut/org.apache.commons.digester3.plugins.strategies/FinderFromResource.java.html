@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FinderFromResource.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester3.plugins.strategies</a> &gt; <span class="el_source">FinderFromResource.java</span></div><h1>FinderFromResource.java</h1><pre class="source lang-java linenums">package org.apache.commons.digester3.plugins.strategies;
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
+import org.apache.commons.digester3.Digester;
+import org.apache.commons.digester3.plugins.PluginException;
+import org.apache.commons.digester3.plugins.RuleFinder;
+import org.apache.commons.digester3.plugins.RuleLoader;
+
+/**
+ * A rule-finding algorithm which expects the user to specify a resource name (ie a file in the classpath). The file is
+ * expected to contain Digester rules in xmlrules format.
+ * 
+ * @since 1.6
+ */
+public class FinderFromResource
+    extends RuleFinder
+{
+
+    /**
+     * Default name of xml attribute on the plugin declaration which is used to configure rule-loading
+     * for that declaration.
+     */
+    private static final String DFLT_RESOURCE_ATTR = &quot;resource&quot;;
+
+    /** See {@link #findLoader}. */
+    private final String resourceAttr;
+
+    /** Constructor. */
+    public FinderFromResource()
+    {
+<span class="fc" id="L53">        this( DFLT_RESOURCE_ATTR );</span>
+<span class="fc" id="L54">    }</span>
+
+    /**
+     * See {@link #findLoader}.
+     *
+     * @param resourceAttr Name of xml attribute on the plugin declaration which is used to configure rule-loading
+     *        for that declaration
+     */
+    public FinderFromResource( String resourceAttr )
+<span class="fc" id="L63">    {</span>
+<span class="fc" id="L64">        this.resourceAttr = resourceAttr;</span>
+<span class="fc" id="L65">    }</span>
+
+    /**
+     * If there exists a property with the name matching constructor param resourceAttr, then load that file, run it
+     * through the xmlrules module and return an object encapsulating those rules.
+     * &lt;p&gt;
+     * If there is no matching property provided, then just return null.
+     * &lt;p&gt;
+     * The returned object (when non-null) will add the selected rules to the digester whenever its addRules method is
+     * invoked.
+     *
+     * @param d The digester instance where locating plugin classes
+     * @param pluginClass The plugin Java class
+     * @param p The properties object that holds any xml attributes the user may have specified on the plugin
+     *          declaration in order to indicate how to locate the plugin rules.
+     * @return a source of digester rules for the specified plugin class.
+     * @throws PluginException if the algorithm finds a source of rules, but there is something invalid
+     *         about that source.
+     */
+    @Override
+    public RuleLoader findLoader( Digester d, Class&lt;?&gt; pluginClass, Properties p )
+        throws PluginException
+    {
+<span class="fc" id="L88">        String resourceName = p.getProperty( resourceAttr );</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">        if ( resourceName == null )</span>
+        {
+            // nope, user hasn't requested dynamic rules to be loaded
+            // from a specific file.
+<span class="fc" id="L93">            return null;</span>
+        }
+
+<span class="fc" id="L96">        InputStream is = pluginClass.getClassLoader().getResourceAsStream( resourceName );</span>
+
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">        if ( is == null )</span>
+        {
+<span class="nc" id="L100">            throw new PluginException( &quot;Resource &quot; + resourceName + &quot; not found.&quot; );</span>
+        }
+
+<span class="fc" id="L103">        return loadRules( d, pluginClass, is, resourceName );</span>
+    }
+
+    /**
+     * Open the specified resource file (ie a file in the classpath, including being within a jar in the classpath), run
+     * it through the xmlrules module and return an object encapsulating those rules.
+     * 
+     * @param d is the digester into which rules will eventually be loaded.
+     * @param pluginClass is the class whose xml params the rules are parsing.
+     * @param is is where the xmlrules will be read from, and must be non-null.
+     * @param resourceName is a string describing the source of the xmlrules, for use in generating error messages.
+     * @return a source of digester rules for the specified plugin class.
+     * @throws PluginException if any error occurs
+     */
+    public static RuleLoader loadRules( Digester d, Class&lt;?&gt; pluginClass, InputStream is, String resourceName )
+        throws PluginException
+    {
+        try
+        {
+<span class="fc" id="L122">            RuleLoader loader = new LoaderFromStream( is );</span>
+<span class="fc" id="L123">            return loader;</span>
+        }
+<span class="nc" id="L125">        catch ( Exception e )</span>
+        {
+<span class="nc" id="L127">            throw new PluginException( &quot;Unable to load xmlrules from resource [&quot; + resourceName + &quot;]&quot;, e );</span>
+        }
+        finally
+        {
+<span class="nc" id="L131">            try</span>
+            {
+<span class="pc" id="L133">                is.close();</span>
+            }
+<span class="nc" id="L135">            catch ( IOException ioe )</span>
+            {
+<span class="nc" id="L137">                throw new PluginException( &quot;Unable to close stream for resource [&quot; + resourceName + &quot;]&quot;, ioe );</span>
+<span class="pc" id="L138">            }</span>
+<span class="nc" id="L139">        }</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

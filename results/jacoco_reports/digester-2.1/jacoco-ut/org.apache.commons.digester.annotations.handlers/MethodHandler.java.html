@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>MethodHandler.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester.annotations.handlers</a> &gt; <span class="el_source">MethodHandler.java</span></div><h1>MethodHandler.java</h1><pre class="source lang-java linenums">/* $Id$
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.digester.annotations.handlers;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+
+import org.apache.commons.digester.Rule;
+import org.apache.commons.digester.annotations.AnnotationRuleProvider;
+import org.apache.commons.digester.annotations.CreationRule;
+import org.apache.commons.digester.annotations.DigesterLoaderHandler;
+import org.apache.commons.digester.annotations.DigesterLoadingException;
+import org.apache.commons.digester.annotations.DigesterRule;
+import org.apache.commons.digester.annotations.DigesterRuleList;
+import org.apache.commons.digester.annotations.FromAnnotationsRuleSet;
+import org.apache.commons.digester.annotations.utils.AnnotationUtils;
+
+/**
+ * Handler that takes care to create the
+ * {@link org.apache.commons.digester.annotations.providers.SetNextRuleProvider}
+ * and
+ * {@link org.apache.commons.digester.annotations.providers.SetRootRuleProvider}.
+ *
+ * @since 2.1
+ */
+<span class="fc" id="L42">public final class MethodHandler implements DigesterLoaderHandler&lt;Annotation, Method&gt; {</span>
+
+    /**
+     * The default args size the method has to have in order to be analyzed.
+     */
+    private static final int SUPPORTED_ARGS = 1;
+
+    /**
+     * {@inheritDoc}
+     */
+    public void handle(Annotation annotation, Method element, FromAnnotationsRuleSet ruleSet) {
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">        if (SUPPORTED_ARGS != element.getParameterTypes().length) {</span>
+<span class="nc" id="L54">            DigesterRule rule = annotation.annotationType().getAnnotation(DigesterRule.class);</span>
+
+<span class="nc" id="L56">            throw new DigesterLoadingException(&quot;Methods annotated with digester annotation rule @&quot;</span>
+<span class="nc" id="L57">                    + rule.reflectsRule().getName()</span>
+                    + &quot; must have just one argument&quot;);
+        }
+
+<span class="fc" id="L61">        Object explicitTypesObject = AnnotationUtils.getAnnotationValue(annotation);</span>
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">        if (explicitTypesObject == null</span>
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">                || !explicitTypesObject.getClass().isArray()</span>
+<span class="pc bpc" id="L64" title="1 of 2 branches missed.">                || Class.class != explicitTypesObject.getClass().getComponentType()) {</span>
+<span class="nc" id="L65">            throw new DigesterLoadingException(&quot;Impossible to apply this handler, @&quot;</span>
+<span class="nc" id="L66">                    + annotation.getClass().getName()</span>
+                    + &quot;.value() has to be of type 'Class&lt;?&gt;[]'&quot;);
+        }
+
+<span class="fc" id="L70">        Class&lt;?&gt;[] explicitTypes = (Class&lt;?&gt;[]) explicitTypesObject;</span>
+<span class="fc" id="L71">        Class&lt;?&gt; paramType = element.getParameterTypes()[0];</span>
+
+<span class="fc bfc" id="L73" title="All 2 branches covered.">        if (explicitTypes.length &gt; 0) {</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">            for (Class&lt;?&gt; explicitType : explicitTypes) {</span>
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">                if (!paramType.isAssignableFrom(explicitType)) {</span>
+<span class="nc" id="L76">                    throw new DigesterLoadingException(&quot;Impossible to handle annotation &quot;</span>
+                            + annotation
+                            + &quot; on method &quot;
+<span class="nc" id="L79">                            + element.toGenericString()</span>
+                            + &quot;, &quot;
+<span class="nc" id="L81">                            + explicitType.getName()</span>
+                            + &quot; has to be a &quot;
+<span class="nc" id="L83">                            + paramType.getName());</span>
+                }
+
+<span class="fc" id="L86">                this.doHandle(annotation, element, explicitType, ruleSet);</span>
+            }
+        } else {
+<span class="fc" id="L89">            this.doHandle(annotation, element, paramType, ruleSet);</span>
+        }
+<span class="fc" id="L91">    }</span>
+
+    private void doHandle(Annotation methodAnnotation, Method method, Class&lt;?&gt; type, FromAnnotationsRuleSet ruleSet) {
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">        if (type.isInterface()</span>
+<span class="nc bnc" id="L95" title="All 2 branches missed.">                &amp;&amp; Modifier.isAbstract(type.getModifiers())) {</span>
+<span class="nc" id="L96">            throw new DigesterLoadingException(&quot;Impossible to proceed analyzing &quot;</span>
+                    + methodAnnotation
+                    + &quot;, specified type '&quot;
+<span class="nc" id="L99">                    + type.getName()</span>
+                    + &quot;' is an interface/abstract&quot;);
+        }
+
+<span class="fc bfc" id="L103" title="All 2 branches covered.">        for (Annotation annotation : type.getAnnotations()) {</span>
+<span class="fc" id="L104">            this.doHandle(methodAnnotation, annotation, method, type, ruleSet);</span>
+        }
+<span class="fc" id="L106">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private &lt;A extends Annotation, R extends Rule&gt; void doHandle(A methodAnnotation,
+            Annotation annotation,
+            Method method,
+            Class&lt;?&gt; type,
+            FromAnnotationsRuleSet ruleSet) {
+<span class="fc bfc" id="L114" title="All 2 branches covered.">        if (annotation.annotationType().isAnnotationPresent(DigesterRule.class)</span>
+<span class="pc bpc" id="L115" title="1 of 2 branches missed.">                &amp;&amp; annotation.annotationType().isAnnotationPresent(CreationRule.class)) {</span>
+<span class="fc" id="L116">            ruleSet.addRules(type);</span>
+
+<span class="fc" id="L118">            DigesterRule digesterRule = methodAnnotation.annotationType().getAnnotation(DigesterRule.class);</span>
+<span class="fc" id="L119">            Class&lt;? extends AnnotationRuleProvider&lt;A, Method, R&gt;&gt; providerType =</span>
+<span class="fc" id="L120">                (Class&lt;? extends AnnotationRuleProvider&lt;A, Method, R&gt;&gt;) digesterRule.providedBy();</span>
+<span class="fc" id="L121">            ruleSet.addRuleProvider(AnnotationUtils.getAnnotationPattern(annotation),</span>
+                    providerType,
+                    methodAnnotation,
+                    method);
+<span class="pc bpc" id="L125" title="1 of 2 branches missed.">        } else if (annotation.annotationType().isAnnotationPresent(DigesterRuleList.class)) {</span>
+            // check if it is one of the *.List annotation
+<span class="fc" id="L127">            Annotation[] annotations = AnnotationUtils.getAnnotationsArrayValue(annotation);</span>
+<span class="pc bpc" id="L128" title="1 of 2 branches missed.">            if (annotations != null) {</span>
+                // if it is an annotations array, process them
+<span class="fc bfc" id="L130" title="All 2 branches covered.">                for (Annotation ptr : annotations) {</span>
+<span class="fc" id="L131">                    this.doHandle(methodAnnotation, ptr, method, type, ruleSet);</span>
+                }
+            }
+        }
+<span class="fc" id="L135">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

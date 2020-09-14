@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PropertyOwnerPointer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri.model.beans</a> &gt; <span class="el_source">PropertyOwnerPointer.java</span></div><h1>PropertyOwnerPointer.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri.model.beans;
+
+import java.util.Locale;
+
+import org.apache.commons.jxpath.JXPathInvalidAccessException;
+import org.apache.commons.jxpath.ri.Compiler;
+import org.apache.commons.jxpath.ri.QName;
+import org.apache.commons.jxpath.ri.compiler.NodeNameTest;
+import org.apache.commons.jxpath.ri.compiler.NodeTest;
+import org.apache.commons.jxpath.ri.compiler.NodeTypeTest;
+import org.apache.commons.jxpath.ri.model.NodeIterator;
+import org.apache.commons.jxpath.ri.model.NodePointer;
+import org.apache.commons.jxpath.util.ValueUtils;
+
+/**
+ * A pointer describing a node that has properties, each of which could be
+ * a collection.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision: 652845 $ $Date: 2008-05-02 12:46:46 -0500 (Fri, 02 May 2008) $
+ */
+public abstract class PropertyOwnerPointer extends NodePointer {
+<span class="fc" id="L39">    private static final Object UNINITIALIZED = new Object();</span>
+
+<span class="fc" id="L41">    private Object value = UNINITIALIZED;</span>
+
+    public NodeIterator childIterator(NodeTest test, boolean reverse,
+            NodePointer startWith) {
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        if (test == null) {</span>
+<span class="fc" id="L46">            return createNodeIterator(null, reverse, startWith);</span>
+        }
+<span class="fc bfc" id="L48" title="All 2 branches covered.">        if (test instanceof NodeNameTest) {</span>
+<span class="fc" id="L49">            NodeNameTest nodeNameTest = (NodeNameTest) test;</span>
+<span class="fc" id="L50">            QName testName = nodeNameTest.getNodeName();</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">            if (isValidProperty(testName)) {</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">                return createNodeIterator(nodeNameTest.isWildcard() ? null</span>
+<span class="fc" id="L53">                        : testName.toString(), reverse, startWith);</span>
+            }
+<span class="fc" id="L55">            return null;</span>
+        }
+<span class="pc bpc" id="L57" title="2 of 4 branches missed.">        return test instanceof NodeTypeTest &amp;&amp; ((NodeTypeTest) test).getNodeType() == Compiler.NODE_TYPE_NODE</span>
+<span class="pc" id="L58">                ? createNodeIterator(null, reverse, startWith) : null;</span>
+    }
+
+    /**
+     * Create a NodeIterator.
+     * @param property property name
+     * @param reverse whether to iterate in reverse
+     * @param startWith first pointer to return
+     * @return NodeIterator
+     */
+    public NodeIterator createNodeIterator(String property, boolean reverse,
+            NodePointer startWith) {
+<span class="fc" id="L70">        return new PropertyIterator(this, property, reverse, startWith);</span>
+    }
+
+    public NodeIterator attributeIterator(QName name) {
+<span class="fc" id="L74">        return new BeanAttributeIterator(this, name);</span>
+    }
+
+    /**
+     * Create a new PropertyOwnerPointer.
+     * @param parent parent pointer
+     * @param locale Locale
+     */
+    protected PropertyOwnerPointer(NodePointer parent, Locale locale) {
+<span class="fc" id="L83">        super(parent, locale);</span>
+<span class="fc" id="L84">    }</span>
+
+    /**
+     * Create a new PropertyOwnerPointer.
+     * @param parent pointer
+     */
+    protected PropertyOwnerPointer(NodePointer parent) {
+<span class="fc" id="L91">        super(parent);</span>
+<span class="fc" id="L92">    }</span>
+
+    public void setIndex(int index) {
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">        if (this.index != index) {</span>
+<span class="fc" id="L96">            super.setIndex(index);</span>
+<span class="fc" id="L97">            value = UNINITIALIZED;</span>
+        }
+<span class="fc" id="L99">    }</span>
+
+    public Object getImmediateNode() {
+<span class="fc bfc" id="L102" title="All 2 branches covered.">        if (value == UNINITIALIZED) {</span>
+<span class="fc bfc" id="L103" title="All 2 branches covered.">            value = index == WHOLE_COLLECTION ? ValueUtils.getValue(getBaseValue())</span>
+<span class="fc" id="L104">                    : ValueUtils.getValue(getBaseValue(), index);</span>
+        }
+<span class="fc" id="L106">        return value;</span>
+    }
+
+    public abstract QName getName();
+
+    /**
+     * Learn whether &lt;code&gt;name&lt;/code&gt; is a valid child name for this PropertyOwnerPointer.
+     * @param name the QName to test
+     * @return &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;QName&lt;/code&gt; is a valid property name.
+     * @since JXPath 1.3
+     */
+    public boolean isValidProperty(QName name) {
+<span class="fc" id="L118">        return isDefaultNamespace(name.getPrefix());</span>
+    }
+
+    /**
+     * Throws an exception if you try to change the root element, otherwise
+     * forwards the call to the parent pointer.
+     * @param value to set
+     */
+    public void setValue(Object value) {
+<span class="fc" id="L127">        this.value = value;</span>
+<span class="pc bpc" id="L128" title="1 of 2 branches missed.">        if (parent != null) {</span>
+<span class="pc bpc" id="L129" title="1 of 2 branches missed.">            if (parent.isContainer()) {</span>
+<span class="fc" id="L130">                parent.setValue(value);</span>
+            }
+            else {
+<span class="nc bnc" id="L133" title="All 2 branches missed.">                if (index == WHOLE_COLLECTION) {</span>
+<span class="nc" id="L134">                    throw new UnsupportedOperationException(</span>
+                        &quot;Cannot setValue of an object that is not &quot;
+                            + &quot;some other object's property&quot;);
+                }
+<span class="nc" id="L138">                throw new JXPathInvalidAccessException(</span>
+                    &quot;The specified collection element does not exist: &quot; + this);
+            }
+        }
+        else {
+<span class="nc" id="L143">            throw new UnsupportedOperationException(</span>
+                &quot;Cannot replace the root object&quot;);
+        }
+<span class="fc" id="L146">    }</span>
+
+    /**
+     * If this is a root node pointer, throws an exception; otherwise
+     * forwards the call to the parent node.
+     */
+    public void remove() {
+<span class="fc" id="L153">        this.value = null;</span>
+<span class="pc bpc" id="L154" title="1 of 2 branches missed.">        if (parent != null) {</span>
+<span class="fc" id="L155">            parent.remove();</span>
+        }
+        else {
+<span class="nc" id="L158">            throw new UnsupportedOperationException(</span>
+                &quot;Cannot remove an object that is not &quot;
+                    + &quot;some other object's property or a collection element&quot;);
+        }
+<span class="fc" id="L162">    }</span>
+
+    /**
+     * Get a PropertyPointer for this PropertyOwnerPointer.
+     * @return PropertyPointer
+     */
+    public abstract PropertyPointer getPropertyPointer();
+
+    /**
+     * Learn whether dynamic property declaration is supported.
+     * @return true if the property owner can set a property &quot;does not exist&quot;.
+     *         A good example is a Map. You can always assign a value to any
+     *         key even if it has never been &quot;declared&quot;.
+     */
+    public boolean isDynamicPropertyDeclarationSupported() {
+<span class="nc" id="L177">        return false;</span>
+    }
+
+    public int compareChildNodePointers(NodePointer pointer1,
+            NodePointer pointer2) {
+<span class="fc" id="L182">        int r = pointer1.getName().toString().compareTo(pointer2.getName().toString());</span>
+<span class="fc bfc" id="L183" title="All 2 branches covered.">        return r == 0 ? pointer1.getIndex() - pointer2.getIndex() : r;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

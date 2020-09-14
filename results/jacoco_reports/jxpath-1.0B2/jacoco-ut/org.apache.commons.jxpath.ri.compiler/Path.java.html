@@ -1,0 +1,334 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>Path.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri.compiler</a> &gt; <span class="el_source">Path.java</span></div><h1>Path.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri.compiler;
+
+import org.apache.commons.jxpath.Pointer;
+import org.apache.commons.jxpath.ri.Compiler;
+import org.apache.commons.jxpath.ri.EvalContext;
+import org.apache.commons.jxpath.ri.QName;
+import org.apache.commons.jxpath.ri.axes.AncestorContext;
+import org.apache.commons.jxpath.ri.axes.AttributeContext;
+import org.apache.commons.jxpath.ri.axes.ChildContext;
+import org.apache.commons.jxpath.ri.axes.DescendantContext;
+import org.apache.commons.jxpath.ri.axes.InitialContext;
+import org.apache.commons.jxpath.ri.axes.NamespaceContext;
+import org.apache.commons.jxpath.ri.axes.ParentContext;
+import org.apache.commons.jxpath.ri.axes.PrecedingOrFollowingContext;
+import org.apache.commons.jxpath.ri.axes.PredicateContext;
+import org.apache.commons.jxpath.ri.axes.SelfContext;
+import org.apache.commons.jxpath.ri.axes.SimplePathInterpreter;
+import org.apache.commons.jxpath.ri.axes.UnionContext;
+import org.apache.commons.jxpath.ri.model.NodePointer;
+
+/**
+ * @author Dmitri Plotnikov
+ * @version $Revision$ $Date$
+ */
+public abstract class Path extends Expression {
+
+    private Step[] steps;
+<span class="fc" id="L44">    private boolean basicKnown = false;</span>
+    private boolean basic;
+
+    /**
+     * Create a new Path.
+     * @param steps that compose the Path
+     */
+<span class="fc" id="L51">    public Path(Step[] steps) {</span>
+<span class="fc" id="L52">        this.steps = steps;</span>
+<span class="fc" id="L53">    }</span>
+
+    /**
+     * Get the steps.
+     * @return Step[]
+     */
+    public Step[] getSteps() {
+<span class="fc" id="L60">        return steps;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean computeContextDependent() {
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">        if (steps != null) {</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">            for (int i = 0; i &lt; steps.length; i++) {</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">                if (steps[i].isContextDependent()) {</span>
+<span class="fc" id="L70">                    return true;</span>
+                }
+            }
+        }
+<span class="fc" id="L74">        return false;</span>
+    }
+
+    /**
+     * Recognizes paths formatted as &lt;code&gt;foo/bar[3]/baz[@name = 'biz']&lt;/code&gt;.
+     * The evaluation of such &quot;simple&quot; paths is optimized and
+     * streamlined.
+     * @return &lt;code&gt;true&lt;/code&gt; if this path is simple
+     */
+    public synchronized boolean isSimplePath() {
+<span class="fc bfc" id="L84" title="All 2 branches covered.">        if (!basicKnown) {</span>
+<span class="fc" id="L85">            basicKnown = true;</span>
+<span class="fc" id="L86">            basic = true;</span>
+<span class="fc" id="L87">            Step[] steps = getSteps();</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">            for (int i = 0; i &lt; steps.length; i++) {</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">                if (!isSimpleStep(steps[i])) {</span>
+<span class="fc" id="L90">                    basic = false;</span>
+<span class="fc" id="L91">                    break;</span>
+                }
+            }
+        }
+<span class="fc" id="L95">        return basic;</span>
+    }
+
+    /**
+     * A Step is &quot;simple&quot; if it takes one of these forms: &quot;.&quot;, &quot;/foo&quot;,
+     * &quot;@bar&quot;, &quot;/foo[3]&quot;. If there are predicates, they should be
+     * context independent for the step to still be considered simple.
+     * @param step the step to check
+     * @return boolean
+     */
+    protected boolean isSimpleStep(Step step) {
+<span class="fc bfc" id="L106" title="All 2 branches covered.">        if (step.getAxis() == Compiler.AXIS_SELF) {</span>
+<span class="fc" id="L107">            NodeTest nodeTest = step.getNodeTest();</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">            if (!(nodeTest instanceof NodeTypeTest)) {</span>
+<span class="fc" id="L109">                return false;</span>
+            }
+<span class="fc" id="L111">            int nodeType = ((NodeTypeTest) nodeTest).getNodeType();</span>
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">            if (nodeType != Compiler.NODE_TYPE_NODE) {</span>
+<span class="nc" id="L113">                return false;</span>
+            }
+<span class="fc" id="L115">            return areBasicPredicates(step.getPredicates());</span>
+        }
+<span class="fc bfc" id="L117" title="All 2 branches covered.">        if (step.getAxis() == Compiler.AXIS_CHILD</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">                || step.getAxis() == Compiler.AXIS_ATTRIBUTE) {</span>
+<span class="fc" id="L119">            NodeTest nodeTest = step.getNodeTest();</span>
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">            if (!(nodeTest instanceof NodeNameTest)) {</span>
+<span class="nc" id="L121">                return false;</span>
+            }
+<span class="fc bfc" id="L123" title="All 2 branches covered.">            if (((NodeNameTest) nodeTest).isWildcard()) {</span>
+<span class="fc" id="L124">                return false;</span>
+            }
+<span class="fc" id="L126">            return areBasicPredicates(step.getPredicates());</span>
+        }
+<span class="fc" id="L128">        return false;</span>
+    }
+
+    /**
+     * Learn whether the elements of the specified array are &quot;basic&quot; predicates.
+     * @param predicates the Expression[] to check
+     * @return boolean
+     */
+    protected boolean areBasicPredicates(Expression[] predicates) {
+<span class="pc bpc" id="L137" title="1 of 4 branches missed.">        if (predicates != null &amp;&amp; predicates.length != 0) {</span>
+<span class="fc" id="L138">            boolean firstIndex = true;</span>
+<span class="fc bfc" id="L139" title="All 2 branches covered.">            for (int i = 0; i &lt; predicates.length; i++) {</span>
+<span class="fc bfc" id="L140" title="All 2 branches covered.">                if (predicates[i] instanceof NameAttributeTest) {</span>
+<span class="fc" id="L141">                    if (((NameAttributeTest) predicates[i])</span>
+<span class="fc" id="L142">                        .getNameTestExpression()</span>
+<span class="pc bpc" id="L143" title="1 of 2 branches missed.">                        .isContextDependent()) {</span>
+<span class="nc" id="L144">                        return false;</span>
+                    }
+                }
+<span class="fc bfc" id="L147" title="All 2 branches covered.">                else if (predicates[i].isContextDependent()) {</span>
+<span class="fc" id="L148">                    return false;</span>
+                }
+                else {
+<span class="pc bpc" id="L151" title="1 of 2 branches missed.">                    if (!firstIndex) {</span>
+<span class="nc" id="L152">                        return false;</span>
+                    }
+<span class="fc" id="L154">                    firstIndex = false;</span>
+                }
+            }
+        }
+<span class="fc" id="L158">        return true;</span>
+    }
+
+    /**
+     * Given a root context, walks a path therefrom and finds the
+     * pointer to the first element matching the path.
+     * @param context evaluation context
+     * @return Pointer
+     */
+    protected Pointer getSingleNodePointerForSteps(EvalContext context) {
+<span class="fc bfc" id="L168" title="All 2 branches covered.">        if (steps.length == 0) {</span>
+<span class="fc" id="L169">            return context.getSingleNodePointer();</span>
+        }
+
+<span class="fc bfc" id="L172" title="All 2 branches covered.">        if (isSimplePath()) {</span>
+<span class="fc" id="L173">            NodePointer ptr = (NodePointer) context.getSingleNodePointer();</span>
+<span class="fc" id="L174">            return SimplePathInterpreter.interpretSimpleLocationPath(</span>
+                context,
+                ptr,
+                steps);
+        }
+<span class="fc" id="L179">        return searchForPath(context);</span>
+    }
+
+    /**
+     * The idea here is to return a NullPointer rather than null if that's at
+     * all possible. Take for example this path: &quot;//map/key&quot;. Let's say, &quot;map&quot;
+     * is an existing node, but &quot;key&quot; is not there. We will create a
+     * NullPointer that can be used to set/create the &quot;key&quot; property.
+     * &lt;p&gt;
+     * However, a path like &quot;//key&quot; would still produce null, because we have
+     * no way of knowing where &quot;key&quot; would be if it existed.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * To accomplish this, we first try the path itself. If it does not find
+     * anything, we chop off last step of the path, as long as it is a simple
+     * one like child:: or attribute:: and try to evaluate the truncated path.
+     * If it finds exactly one node - create a NullPointer and return. If it
+     * fails, chop off another step and repeat. If it finds more than one
+     * location - return null.
+     * &lt;/p&gt;
+     * @param context evaluation context
+     * @return Pointer
+     */
+    private Pointer searchForPath(EvalContext context) {
+<span class="fc" id="L203">        EvalContext ctx = buildContextChain(context, steps.length, true);</span>
+<span class="fc" id="L204">        Pointer pointer = ctx.getSingleNodePointer();</span>
+
+<span class="fc bfc" id="L206" title="All 2 branches covered.">        if (pointer != null) {</span>
+<span class="fc" id="L207">            return pointer;</span>
+        }
+
+<span class="fc bfc" id="L210" title="All 2 branches covered.">        for (int i = steps.length; --i &gt; 0;) {</span>
+<span class="fc bfc" id="L211" title="All 2 branches covered.">            if (!isSimpleStep(steps[i])) {</span>
+<span class="fc" id="L212">                return null;</span>
+            }
+<span class="fc" id="L214">            ctx = buildContextChain(context, i, true);</span>
+<span class="fc bfc" id="L215" title="All 2 branches covered.">            if (ctx.hasNext()) {</span>
+<span class="fc" id="L216">                Pointer partial = (Pointer) ctx.next();</span>
+<span class="fc bfc" id="L217" title="All 2 branches covered.">                if (ctx.hasNext()) {</span>
+                    // If we find another location - the search is
+                    // ambiguous, so we report failure
+<span class="fc" id="L220">                    return null;</span>
+                }
+<span class="pc bpc" id="L222" title="1 of 2 branches missed.">                if (partial instanceof NodePointer) {</span>
+<span class="fc" id="L223">                    return SimplePathInterpreter.createNullPointer(</span>
+                            context,
+                            (NodePointer) partial,
+                            steps,
+                            i);
+                }
+<span class="nc" id="L229">            }</span>
+        }
+<span class="fc" id="L231">        return null;</span>
+    }
+
+    /**
+     * Given a root context, walks a path therefrom and builds a context
+     * that contains all nodes matching the path.
+     * @param context evaluation context
+     * @return EvaluationContext
+     */
+    protected EvalContext evalSteps(EvalContext context) {
+<span class="fc" id="L241">        return buildContextChain(context, steps.length, false);</span>
+    }
+
+    /**
+     * Build a context from a chain of contexts.
+     * @param context evaluation context
+     * @param stepCount number of steps to descend
+     * @param createInitialContext whether to create the initial context
+     * @return created context
+     */
+    private EvalContext buildContextChain(
+            EvalContext context,
+            int stepCount,
+            boolean createInitialContext) {
+<span class="fc bfc" id="L255" title="All 2 branches covered.">        if (createInitialContext) {</span>
+<span class="fc" id="L256">            context = new InitialContext(context);</span>
+        }
+<span class="fc bfc" id="L258" title="All 2 branches covered.">        if (steps.length == 0) {</span>
+<span class="fc" id="L259">            return context;</span>
+        }
+<span class="fc bfc" id="L261" title="All 2 branches covered.">        for (int i = 0; i &lt; stepCount; i++) {</span>
+<span class="fc" id="L262">            context =</span>
+<span class="fc" id="L263">                createContextForStep(</span>
+                    context,
+<span class="fc" id="L265">                    steps[i].getAxis(),</span>
+<span class="fc" id="L266">                    steps[i].getNodeTest());</span>
+<span class="fc" id="L267">            Expression[] predicates = steps[i].getPredicates();</span>
+<span class="fc bfc" id="L268" title="All 2 branches covered.">            if (predicates != null) {</span>
+<span class="fc bfc" id="L269" title="All 2 branches covered.">                for (int j = 0; j &lt; predicates.length; j++) {</span>
+<span class="fc bfc" id="L270" title="All 2 branches covered.">                    if (j != 0) {</span>
+<span class="fc" id="L271">                        context = new UnionContext(context, new EvalContext[]{context});</span>
+                    }
+<span class="fc" id="L273">                    context = new PredicateContext(context, predicates[j]);</span>
+                }
+            }
+        }
+<span class="fc" id="L277">        return context;</span>
+    }
+
+    /**
+     * Different axes are serviced by different contexts. This method
+     * allocates the right context for the supplied step.
+     * @param context evaluation context
+     * @param axis code
+     * @param nodeTest node test
+     * @return EvalContext
+     */
+    protected EvalContext createContextForStep(
+        EvalContext context,
+        int axis,
+        NodeTest nodeTest) {
+<span class="fc bfc" id="L292" title="All 2 branches covered.">        if (nodeTest instanceof NodeNameTest) {</span>
+<span class="fc" id="L293">            QName qname = ((NodeNameTest) nodeTest).getNodeName();</span>
+<span class="fc" id="L294">            String prefix = qname.getPrefix();</span>
+<span class="fc bfc" id="L295" title="All 2 branches covered.">            if (prefix != null) {</span>
+<span class="fc" id="L296">                String namespaceURI = context.getJXPathContext()</span>
+<span class="fc" id="L297">                        .getNamespaceURI(prefix);</span>
+<span class="fc" id="L298">                nodeTest = new NodeNameTest(qname, namespaceURI);</span>
+            }
+        }
+
+<span class="pc bpc" id="L302" title="1 of 14 branches missed.">        switch (axis) {</span>
+        case Compiler.AXIS_ANCESTOR :
+<span class="fc" id="L304">            return new AncestorContext(context, false, nodeTest);</span>
+        case Compiler.AXIS_ANCESTOR_OR_SELF :
+<span class="fc" id="L306">            return new AncestorContext(context, true, nodeTest);</span>
+        case Compiler.AXIS_ATTRIBUTE :
+<span class="fc" id="L308">            return new AttributeContext(context, nodeTest);</span>
+        case Compiler.AXIS_CHILD :
+<span class="fc" id="L310">            return new ChildContext(context, nodeTest, false, false);</span>
+        case Compiler.AXIS_DESCENDANT :
+<span class="fc" id="L312">            return new DescendantContext(context, false, nodeTest);</span>
+        case Compiler.AXIS_DESCENDANT_OR_SELF :
+<span class="fc" id="L314">            return new DescendantContext(context, true, nodeTest);</span>
+        case Compiler.AXIS_FOLLOWING :
+<span class="fc" id="L316">            return new PrecedingOrFollowingContext(context, nodeTest, false);</span>
+        case Compiler.AXIS_FOLLOWING_SIBLING :
+<span class="fc" id="L318">            return new ChildContext(context, nodeTest, true, false);</span>
+        case Compiler.AXIS_NAMESPACE :
+<span class="fc" id="L320">            return new NamespaceContext(context, nodeTest);</span>
+        case Compiler.AXIS_PARENT :
+<span class="fc" id="L322">            return new ParentContext(context, nodeTest);</span>
+        case Compiler.AXIS_PRECEDING :
+<span class="fc" id="L324">            return new PrecedingOrFollowingContext(context, nodeTest, true);</span>
+        case Compiler.AXIS_PRECEDING_SIBLING :
+<span class="fc" id="L326">            return new ChildContext(context, nodeTest, true, true);</span>
+        case Compiler.AXIS_SELF :
+<span class="fc" id="L328">            return new SelfContext(context, nodeTest);</span>
+        default:
+<span class="nc" id="L330">            return null; // Never happens</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

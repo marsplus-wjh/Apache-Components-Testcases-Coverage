@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>WithDefaultsRulesWrapper.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester</a> &gt; <span class="el_source">WithDefaultsRulesWrapper.java</span></div><h1>WithDefaultsRulesWrapper.java</h1><pre class="source lang-java linenums">/* $Id$
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.digester;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * &lt;p&gt;&lt;code&gt;Rules&lt;/code&gt; &lt;em&gt;Decorator&lt;/em&gt; that returns default rules 
+ * when no matches are returned by the wrapped implementation.&lt;/p&gt;
+ *
+ * &lt;p&gt;This allows default &lt;code&gt;Rule&lt;/code&gt; instances to be added to any 
+ * existing &lt;code&gt;Rules&lt;/code&gt; implementation. These default &lt;code&gt;Rule&lt;/code&gt; 
+ * instances will be returned for any match for which the wrapped 
+ * implementation does not return any matches.&lt;/p&gt;
+ * &lt;p&gt; For example,
+ * &lt;pre&gt;
+ *   Rule alpha;
+ *   ...
+ *   WithDefaultsRulesWrapper rules = new WithDefaultsRulesWrapper(new BaseRules());
+ *   rules.addDefault(alpha);
+ *   ...
+ *   digester.setRules(rules);
+ *   ...
+ * &lt;/pre&gt;
+ * when a pattern does not match any other rule, then rule alpha will be called.
+ * &lt;/p&gt;
+ * &lt;p&gt;&lt;code&gt;WithDefaultsRulesWrapper&lt;/code&gt; follows the &lt;em&gt;Decorator&lt;/em&gt; pattern.&lt;/p&gt;
+ *
+ * @since 1.6
+ */
+
+public class WithDefaultsRulesWrapper implements Rules {
+
+    // --------------------------------------------------------- Fields
+    
+    /** The Rules implementation that this class wraps. */
+    private Rules wrappedRules;
+    /** Rules to be fired when the wrapped implementations returns none. */
+<span class="fc" id="L56">    private List&lt;Rule&gt; defaultRules = new ArrayList&lt;Rule&gt;();</span>
+    /** All rules (preserves order in which they were originally added) */
+<span class="fc" id="L58">    private List&lt;Rule&gt; allRules = new ArrayList&lt;Rule&gt;();</span>
+    
+    // --------------------------------------------------------- Constructor
+    
+    /** 
+     * Base constructor.
+     *
+     * @param wrappedRules the wrapped &lt;code&gt;Rules&lt;/code&gt; implementation, not null
+     * @throws IllegalArgumentException when &lt;code&gt;wrappedRules&lt;/code&gt; is null
+     */
+<span class="fc" id="L68">    public WithDefaultsRulesWrapper(Rules wrappedRules) {</span>
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">        if (wrappedRules == null) {</span>
+<span class="nc" id="L70">            throw new IllegalArgumentException(&quot;Wrapped rules must not be null&quot;);</span>
+        }
+<span class="fc" id="L72">        this.wrappedRules = wrappedRules;</span>
+<span class="fc" id="L73">    }</span>
+
+    // --------------------------------------------------------- Properties
+    
+    /** Gets digester using these Rules */
+    public Digester getDigester() {
+<span class="nc" id="L79">        return wrappedRules.getDigester();</span>
+    }
+    
+    /** Sets digeseter using these Rules */
+    public void setDigester(Digester digester) {
+<span class="nc" id="L84">        wrappedRules.setDigester(digester);</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">        for (Rule rule : defaultRules) {</span>
+<span class="nc" id="L86">            rule.setDigester(digester);</span>
+<span class="nc" id="L87">        }</span>
+<span class="nc" id="L88">    }</span>
+    
+    /** Gets namespace to apply to Rule's added */
+    public String getNamespaceURI() {
+<span class="nc" id="L92">        return wrappedRules.getNamespaceURI();</span>
+    }
+    
+    /** Sets namespace to apply to Rule's added subsequently */
+    public void setNamespaceURI(String namespaceURI) {
+<span class="nc" id="L97">        wrappedRules.setNamespaceURI(namespaceURI);</span>
+<span class="nc" id="L98">    }</span>
+    
+    /** Gets Rule's which will be fired when the wrapped implementation returns no matches */
+    public List&lt;Rule&gt; getDefaults() {
+<span class="nc" id="L102">        return defaultRules;</span>
+    }
+    
+    // --------------------------------------------------------- Public Methods
+    
+    public List&lt;Rule&gt; match(String pattern) {
+<span class="nc" id="L108">        return match(&quot;&quot;, pattern);</span>
+    }
+    
+    /**
+     * Return list of rules matching given pattern.
+     * If wrapped implementation returns any matches return those.
+     * Otherwise, return default matches.
+     */
+    public List&lt;Rule&gt; match(String namespaceURI, String pattern) {
+<span class="fc" id="L117">        List&lt;Rule&gt; matches = wrappedRules.match(namespaceURI, pattern);</span>
+<span class="pc bpc" id="L118" title="1 of 4 branches missed.">        if (matches ==  null || matches.isEmpty()) {</span>
+            // a little bit of defensive programming
+<span class="fc" id="L120">            return new ArrayList&lt;Rule&gt;(defaultRules);</span>
+        }
+        // otherwise
+<span class="fc" id="L123">        return matches;</span>
+    }
+    
+    /** Adds a rule to be fired when wrapped implementation returns no matches */
+    public void addDefault(Rule rule) {
+        // set up rule
+<span class="pc bpc" id="L129" title="1 of 2 branches missed.">        if (wrappedRules.getDigester() != null) {</span>
+<span class="nc" id="L130">            rule.setDigester(wrappedRules.getDigester());</span>
+        }
+        
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">        if (wrappedRules.getNamespaceURI() != null) {</span>
+<span class="nc" id="L134">            rule.setNamespaceURI(wrappedRules.getNamespaceURI());</span>
+        }
+        
+<span class="fc" id="L137">        defaultRules.add(rule);</span>
+<span class="fc" id="L138">        allRules.add(rule);</span>
+<span class="fc" id="L139">    }</span>
+    
+    /** Gets all rules */
+    public List&lt;Rule&gt; rules() {
+<span class="fc" id="L143">        return allRules;</span>
+    }
+    
+    /** Clears all Rule's */
+    public void clear() {
+<span class="fc" id="L148">        wrappedRules.clear();</span>
+<span class="fc" id="L149">        allRules.clear();</span>
+<span class="fc" id="L150">        defaultRules.clear();</span>
+<span class="fc" id="L151">    }</span>
+    
+    /** 
+     * Adds a Rule to be fired on given pattern.
+     * Pattern matching is delegated to wrapped implementation.
+     */
+    public void add(String pattern, Rule rule) {
+<span class="fc" id="L158">        wrappedRules.add(pattern, rule);</span>
+<span class="fc" id="L159">        allRules.add(rule);</span>
+<span class="fc" id="L160">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

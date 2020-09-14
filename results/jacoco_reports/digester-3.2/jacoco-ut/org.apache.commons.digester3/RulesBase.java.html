@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RulesBase.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester3</a> &gt; <span class="el_source">RulesBase.java</span></div><h1>RulesBase.java</h1><pre class="source lang-java linenums">package org.apache.commons.digester3;
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import org.xml.sax.Attributes;
+
+/**
+ * &lt;p&gt;
+ * Default implementation of the &lt;code&gt;Rules&lt;/code&gt; interface that supports the standard rule matching behavior. This
+ * class can also be used as a base class for specialized &lt;code&gt;Rules&lt;/code&gt; implementations.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * The matching policies implemented by this class support two different types of pattern matching rules:
+ * &lt;/p&gt;
+ * &lt;ul&gt;
+ * &lt;li&gt;&lt;em&gt;Exact Match&lt;/em&gt; - A pattern &quot;a/b/c&quot; exactly matches a &lt;code&gt;&amp;lt;c&amp;gt;&lt;/code&gt; element, nested inside a
+ * &lt;code&gt;&amp;lt;b&amp;gt;&lt;/code&gt; element, which is nested inside an &lt;code&gt;&amp;lt;a&amp;gt;&lt;/code&gt; element.&lt;/li&gt;
+ * &lt;li&gt;&lt;em&gt;Tail Match&lt;/em&gt; - A pattern &quot;&amp;#42;/a/b&quot; matches a &lt;code&gt;&amp;lt;b&amp;gt;&lt;/code&gt; element, nested inside an
+ * &lt;code&gt;&amp;lt;a&amp;gt;&lt;/code&gt; element, no matter how deeply the pair is nested.&lt;/li&gt;
+ * &lt;/ul&gt;
+ * &lt;p&gt;
+ * Note that wildcard patterns are ignored if an explicit match can be found (and when multiple wildcard patterns match,
+ * only the longest, ie most explicit, pattern is considered a match).
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * See the package documentation for package org.apache.commons.digester3 for more information.
+ * &lt;/p&gt;
+ */
+
+<span class="fc" id="L51">public class RulesBase</span>
+    extends AbstractRulesImpl
+{
+
+    // ----------------------------------------------------- Instance Variables
+
+    /**
+     * The set of registered Rule instances, keyed by the matching pattern. Each value is a List containing the Rules
+     * for that pattern, in the order that they were orginally registered.
+     */
+<span class="fc" id="L61">    protected HashMap&lt;String, List&lt;Rule&gt;&gt; cache = new HashMap&lt;String, List&lt;Rule&gt;&gt;();</span>
+
+    /**
+     * The set of registered Rule instances, in the order that they were originally registered.
+     */
+<span class="fc" id="L66">    protected ArrayList&lt;Rule&gt; rules = new ArrayList&lt;Rule&gt;();</span>
+
+    // ------------------------------------------------------------- Properties
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setDigester( Digester digester )
+    {
+<span class="fc" id="L76">        super.setDigester( digester );</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        for ( Rule rule : rules )</span>
+        {
+<span class="fc" id="L79">            rule.setDigester( digester );</span>
+<span class="fc" id="L80">        }</span>
+<span class="fc" id="L81">    }</span>
+
+    // --------------------------------------------------------- Public Methods
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void registerRule( String pattern, Rule rule )
+    {
+        // to help users who accidently add '/' to the end of their patterns
+<span class="fc" id="L92">        int patternLength = pattern.length();</span>
+<span class="fc bfc" id="L93" title="All 4 branches covered.">        if ( patternLength &gt; 1 &amp;&amp; pattern.endsWith( &quot;/&quot; ) )</span>
+        {
+<span class="fc" id="L95">            pattern = pattern.substring( 0, patternLength - 1 );</span>
+        }
+
+<span class="fc" id="L98">        List&lt;Rule&gt; list = cache.get( pattern );</span>
+<span class="fc bfc" id="L99" title="All 2 branches covered.">        if ( list == null )</span>
+        {
+<span class="fc" id="L101">            list = new ArrayList&lt;Rule&gt;();</span>
+<span class="fc" id="L102">            cache.put( pattern, list );</span>
+        }
+<span class="fc" id="L104">        list.add( rule );</span>
+<span class="fc" id="L105">        rules.add( rule );</span>
+<span class="fc" id="L106">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    public void clear()
+    {
+<span class="fc" id="L113">        cache.clear();</span>
+<span class="fc" id="L114">        rules.clear();</span>
+<span class="fc" id="L115">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    public List&lt;Rule&gt; match( String namespaceURI, String pattern, String name, Attributes attributes )
+    {
+        // List rulesList = (List) this.cache.get(pattern);
+<span class="fc" id="L123">        List&lt;Rule&gt; rulesList = lookup( namespaceURI, pattern );</span>
+<span class="fc bfc" id="L124" title="All 4 branches covered.">        if ( ( rulesList == null ) || ( rulesList.size() &lt; 1 ) )</span>
+        {
+            // Find the longest key, ie more discriminant
+<span class="fc" id="L127">            String longKey = &quot;&quot;;</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">            for ( String key : cache.keySet() )</span>
+            {
+<span class="fc bfc" id="L130" title="All 2 branches covered.">                if ( key.startsWith( &quot;*/&quot; )</span>
+<span class="fc bfc" id="L131" title="All 4 branches covered.">                                &amp;&amp; ( pattern.equals( key.substring( 2 ) ) || pattern.endsWith( key.substring( 1 ) )</span>
+<span class="fc bfc" id="L132" title="All 2 branches covered.">                                &amp;&amp; key.length() &gt; longKey.length() ) )</span>
+                {
+                    // rulesList = (List) this.cache.get(key);
+<span class="fc" id="L135">                    rulesList = lookup( namespaceURI, key );</span>
+<span class="fc" id="L136">                    longKey = key;</span>
+                }
+<span class="fc" id="L138">            }</span>
+        }
+<span class="fc bfc" id="L140" title="All 2 branches covered.">        if ( rulesList == null )</span>
+        {
+<span class="fc" id="L142">            rulesList = new ArrayList&lt;Rule&gt;();</span>
+        }
+<span class="fc" id="L144">        return ( rulesList );</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public List&lt;Rule&gt; rules()
+    {
+<span class="fc" id="L152">        return ( this.rules );</span>
+    }
+
+    // ------------------------------------------------------ Protected Methods
+
+    /**
+     * Return a List of Rule instances for the specified pattern that also match the specified namespace URI (if any).
+     * If there are no such rules, return &lt;code&gt;null&lt;/code&gt;.
+     *
+     * @param namespaceURI Namespace URI to match, or &lt;code&gt;null&lt;/code&gt; to select matching rules regardless of namespace
+     *            URI
+     * @param pattern Pattern to be matched
+     * @return a List of Rule instances for the specified pattern that also match the specified namespace URI (if any)
+     */
+    protected List&lt;Rule&gt; lookup( String namespaceURI, String pattern )
+    {
+        // Optimize when no namespace URI is specified
+<span class="fc" id="L169">        List&lt;Rule&gt; list = this.cache.get( pattern );</span>
+<span class="fc bfc" id="L170" title="All 2 branches covered.">        if ( list == null )</span>
+        {
+<span class="fc" id="L172">            return ( null );</span>
+        }
+<span class="fc bfc" id="L174" title="All 4 branches covered.">        if ( ( namespaceURI == null ) || ( namespaceURI.length() == 0 ) )</span>
+        {
+<span class="fc" id="L176">            return ( list );</span>
+        }
+
+        // Select only Rules that match on the specified namespace URI
+<span class="fc" id="L180">        ArrayList&lt;Rule&gt; results = new ArrayList&lt;Rule&gt;();</span>
+<span class="fc bfc" id="L181" title="All 2 branches covered.">        for ( Rule item : list )</span>
+        {
+<span class="fc bfc" id="L183" title="All 4 branches covered.">            if ( ( namespaceURI.equals( item.getNamespaceURI() ) ) || ( item.getNamespaceURI() == null ) )</span>
+            {
+<span class="fc" id="L185">                results.add( item );</span>
+            }
+<span class="fc" id="L187">        }</span>
+<span class="fc" id="L188">        return ( results );</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

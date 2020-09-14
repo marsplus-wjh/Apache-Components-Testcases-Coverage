@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>HttpSessionHandler.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.servlet</a> &gt; <span class="el_source">HttpSessionHandler.java</span></div><h1>HttpSessionHandler.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.servlet;
+
+import java.util.Enumeration;
+import java.util.HashSet;
+
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.jxpath.JXPathException;
+
+/**
+ * Implementation of the DynamicPropertyHandler interface that provides
+ * access to attributes of a HttpSession.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision$ $Date$
+ */
+<span class="nc" id="L33">public class HttpSessionHandler extends ServletContextHandler {</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    protected void collectPropertyNames(HashSet set, Object bean) {
+<span class="nc" id="L39">        HttpSessionAndServletContext handle =</span>
+            (HttpSessionAndServletContext) bean;
+<span class="nc" id="L41">        super.collectPropertyNames(set, handle.getServletContext());</span>
+<span class="nc" id="L42">        HttpSession session = handle.getSession();</span>
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        if (session != null) {</span>
+<span class="nc" id="L44">            Enumeration e = session.getAttributeNames();</span>
+<span class="nc bnc" id="L45" title="All 2 branches missed.">            while (e.hasMoreElements()) {</span>
+<span class="nc" id="L46">                set.add(e.nextElement());</span>
+            }
+        }
+<span class="nc" id="L49">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    public Object getProperty(Object bean, String property) {
+<span class="nc" id="L55">        HttpSessionAndServletContext handle =</span>
+            (HttpSessionAndServletContext) bean;
+<span class="nc" id="L57">        HttpSession session = handle.getSession();</span>
+<span class="nc bnc" id="L58" title="All 2 branches missed.">        if (session != null) {</span>
+<span class="nc" id="L59">            Object object = session.getAttribute(property);</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">            if (object != null) {</span>
+<span class="nc" id="L61">                return object;</span>
+            }
+        }
+<span class="nc" id="L64">        return super.getProperty(handle.getServletContext(), property);</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void setProperty(Object bean, String property, Object value) {
+<span class="nc" id="L71">        HttpSessionAndServletContext handle =</span>
+            (HttpSessionAndServletContext) bean;
+<span class="nc" id="L73">        HttpSession session = handle.getSession();</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">        if (session != null) {</span>
+<span class="nc" id="L75">            session.setAttribute(property, value);</span>
+        }
+        else {
+<span class="nc" id="L78">            throw new JXPathException(&quot;Cannot set session attribute: &quot;</span>
+                    + &quot;there is no session&quot;);
+        }
+<span class="nc" id="L81">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

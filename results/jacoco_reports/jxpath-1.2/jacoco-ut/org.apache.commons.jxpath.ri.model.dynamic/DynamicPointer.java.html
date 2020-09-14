@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>DynamicPointer.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri.model.dynamic</a> &gt; <span class="el_source">DynamicPointer.java</span></div><h1>DynamicPointer.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri.model.dynamic;
+
+import java.util.Locale;
+
+import org.apache.commons.jxpath.DynamicPropertyHandler;
+import org.apache.commons.jxpath.JXPathIntrospector;
+import org.apache.commons.jxpath.ri.QName;
+import org.apache.commons.jxpath.ri.model.NodeIterator;
+import org.apache.commons.jxpath.ri.model.NodePointer;
+import org.apache.commons.jxpath.ri.model.beans.PropertyIterator;
+import org.apache.commons.jxpath.ri.model.beans.PropertyOwnerPointer;
+import org.apache.commons.jxpath.ri.model.beans.PropertyPointer;
+
+/**
+ * A Pointer that points to an object with Dynamic Properties. It is used for
+ * the first element of a path; following elements will by of type
+ * {@link PropertyPointer}.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision$ $Date$
+ */
+public class DynamicPointer extends PropertyOwnerPointer {
+    private QName name;
+    private Object bean;
+    private DynamicPropertyHandler handler;
+
+    private static final long serialVersionUID = -1842347025295904256L;
+
+    /**
+     * Create a new DynamicPointer.
+     * @param name property name
+     * @param bean owning bean
+     * @param handler DynamicPropertyHandler
+     * @param locale Locale
+     */
+    public DynamicPointer(QName name, Object bean,
+            DynamicPropertyHandler handler, Locale locale) {
+<span class="fc" id="L54">        super(null, locale);</span>
+<span class="fc" id="L55">        this.name = name;</span>
+<span class="fc" id="L56">        this.bean = bean;</span>
+<span class="fc" id="L57">        this.handler = handler;</span>
+<span class="fc" id="L58">    }</span>
+
+    /**
+     * Create a new DynamicPointer.
+     * @param parent parent pointer
+     * @param name property name
+     * @param bean owning bean
+     * @param handler DynamicPropertyHandler
+     */
+    public DynamicPointer(NodePointer parent, QName name,
+            Object bean, DynamicPropertyHandler handler) {
+<span class="fc" id="L69">        super(parent);</span>
+<span class="fc" id="L70">        this.name = name;</span>
+<span class="fc" id="L71">        this.bean = bean;</span>
+<span class="fc" id="L72">        this.handler = handler;</span>
+<span class="fc" id="L73">    }</span>
+
+    public PropertyPointer getPropertyPointer() {
+<span class="fc" id="L76">        return new DynamicPropertyPointer(this, handler);</span>
+    }
+
+    public NodeIterator createNodeIterator(
+                String property, boolean reverse, NodePointer startWith) {
+<span class="fc" id="L81">        return new PropertyIterator(this, property, reverse, startWith);</span>
+    }
+
+    public NodeIterator attributeIterator(QName name) {
+<span class="nc" id="L85">        return new DynamicAttributeIterator(this, name);</span>
+    }
+
+    public QName getName() {
+<span class="fc" id="L89">        return name;</span>
+    }
+
+    public boolean isDynamicPropertyDeclarationSupported() {
+<span class="fc" id="L93">        return true;</span>
+    }
+
+    /**
+     * Returns the DP object iself.
+     * @return Object
+     */
+    public Object getBaseValue() {
+<span class="fc" id="L101">        return bean;</span>
+    }
+
+    public boolean isLeaf() {
+<span class="fc" id="L105">        Object value = getNode();</span>
+<span class="pc bpc" id="L106" title="2 of 4 branches missed.">        return value == null || JXPathIntrospector.getBeanInfo(value.getClass()).isAtomic();</span>
+    }
+
+    public boolean isCollection() {
+<span class="nc" id="L110">        return false;</span>
+    }
+
+    /**
+     * Returns 1.
+     * @return int
+     */
+    public int getLength() {
+<span class="fc" id="L118">        return 1;</span>
+    }
+
+    public String asPath() {
+<span class="fc bfc" id="L122" title="All 2 branches covered.">        return parent == null ? &quot;/&quot; : super.asPath();</span>
+    }
+
+    public int hashCode() {
+<span class="fc" id="L126">        return System.identityHashCode(bean) + name.hashCode();</span>
+    }
+
+    public boolean equals(Object object) {
+<span class="pc bpc" id="L130" title="1 of 2 branches missed.">        if (object == this) {</span>
+<span class="nc" id="L131">            return true;</span>
+        }
+
+<span class="fc bfc" id="L134" title="All 2 branches covered.">        if (!(object instanceof DynamicPointer)) {</span>
+<span class="fc" id="L135">            return false;</span>
+        }
+
+<span class="fc" id="L138">        DynamicPointer other = (DynamicPointer) object;</span>
+<span class="pc bpc" id="L139" title="2 of 4 branches missed.">        return bean == other.bean &amp;&amp; name.equals(other.name);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

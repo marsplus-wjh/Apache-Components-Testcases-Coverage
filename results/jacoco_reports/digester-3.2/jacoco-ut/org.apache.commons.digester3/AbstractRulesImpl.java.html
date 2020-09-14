@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractRulesImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester3</a> &gt; <span class="el_source">AbstractRulesImpl.java</span></div><h1>AbstractRulesImpl.java</h1><pre class="source lang-java linenums">package org.apache.commons.digester3;
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+
+/**
+ * &lt;p&gt;
+ * &lt;code&gt;AbstractRuleImpl&lt;/code&gt; provides basic services for &lt;code&gt;Rules&lt;/code&gt; implementations. Extending this class
+ * should make it easier to create a &lt;code&gt;Rules&lt;/code&gt; implementation.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * &lt;code&gt;AbstractRuleImpl&lt;/code&gt; manages the &lt;code&gt;Digester&lt;/code&gt; and &lt;code&gt;namespaceUri&lt;/code&gt; properties. If the
+ * subclass overrides {@link #registerRule} (rather than {@link #add}), then the &lt;code&gt;Digester&lt;/code&gt; and
+ * &lt;code&gt;namespaceURI&lt;/code&gt; of the &lt;code&gt;Rule&lt;/code&gt; will be set correctly before it is passed to
+ * &lt;code&gt;registerRule&lt;/code&gt;. The subclass can then perform whatever it needs to do to register the rule.
+ * &lt;/p&gt;
+ * 
+ * @since 1.5
+ */
+<span class="fc" id="L37">public abstract class AbstractRulesImpl</span>
+    implements Rules
+{
+
+    // ------------------------------------------------------------- Fields
+
+    /** Digester using this &lt;code&gt;Rules&lt;/code&gt; implementation */
+    private Digester digester;
+
+    /** Namespace uri to assoicate with subsequent &lt;code&gt;Rule&lt;/code&gt;'s */
+    private String namespaceURI;
+
+    // ------------------------------------------------------------- Properties
+
+    /**
+     * {@inheritDoc}
+     */
+    public Digester getDigester()
+    {
+<span class="fc" id="L56">        return digester;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void setDigester( Digester digester )
+    {
+<span class="fc" id="L64">        this.digester = digester;</span>
+<span class="fc" id="L65">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    public String getNamespaceURI()
+    {
+<span class="fc" id="L72">        return namespaceURI;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void setNamespaceURI( String namespaceURI )
+    {
+<span class="fc" id="L80">        this.namespaceURI = namespaceURI;</span>
+<span class="fc" id="L81">    }</span>
+
+    // --------------------------------------------------------- Public Methods
+
+    /**
+     * {@inheritDoc}
+     */
+    public final void add( String pattern, Rule rule )
+    {
+        // set up rule
+<span class="fc bfc" id="L91" title="All 2 branches covered.">        if ( this.digester != null )</span>
+        {
+<span class="fc" id="L93">            rule.setDigester( this.digester );</span>
+        }
+
+<span class="fc bfc" id="L96" title="All 2 branches covered.">        if ( this.namespaceURI != null )</span>
+        {
+<span class="fc" id="L98">            rule.setNamespaceURI( this.namespaceURI );</span>
+        }
+
+<span class="fc" id="L101">        registerRule( pattern, rule );</span>
+<span class="fc" id="L102">    }</span>
+
+    /**
+     * Register rule at given pattern. The the Digester and namespaceURI properties of the given &lt;code&gt;Rule&lt;/code&gt; can
+     * be assumed to have been set properly before this method is called.
+     * 
+     * @param pattern Nesting pattern to be matched for this Rule
+     * @param rule Rule instance to be registered
+     */
+    protected abstract void registerRule( String pattern, Rule rule );
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

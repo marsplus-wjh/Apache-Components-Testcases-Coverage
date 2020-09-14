@@ -1,0 +1,5 @@
+In maven programs, runs these commands in terminal.
+mvn clean test
+Or
+mvn clean install -fn
+

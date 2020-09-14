@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FromAnnotationsRuleModule.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester3.annotations</a> &gt; <span class="el_source">FromAnnotationsRuleModule.java</span></div><h1>FromAnnotationsRuleModule.java</h1><pre class="source lang-java linenums">package org.apache.commons.digester3.annotations;
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import static org.apache.commons.digester3.annotations.utils.AnnotationUtils.getAnnotationsArrayValue;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
+import org.apache.commons.digester3.Rule;
+import org.apache.commons.digester3.annotations.reflect.MethodArgument;
+import org.apache.commons.digester3.binder.AbstractRulesModule;
+
+/**
+ * {@link org.apache.commons.digester3.binder.RulesModule} implementation that allows loading rules from
+ * annotated classes.
+ *
+ * @since 3.0
+ */
+<span class="fc" id="L42">public abstract class FromAnnotationsRuleModule</span>
+    extends AbstractRulesModule
+{
+
+    private static final String JAVA_PACKAGE = &quot;java&quot;;
+
+<span class="fc" id="L48">    private static final AnnotationHandlerFactory DEFAULT_HANDLER_FACTORY = new DefaultAnnotationHandlerFactory();</span>
+
+<span class="fc" id="L50">    private AnnotationHandlerFactory annotationHandlerFactory = DEFAULT_HANDLER_FACTORY;</span>
+
+    private WithMemoryRulesBinder rulesBinder;
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected final void configure()
+    {
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">        if ( rulesBinder == null )</span>
+        {
+<span class="fc" id="L62">            rulesBinder = new WithMemoryRulesBinder( rulesBinder() );</span>
+        }
+
+        try
+        {
+<span class="fc" id="L67">            configureRules();</span>
+        }
+        finally
+        {
+<span class="pc" id="L71">            rulesBinder = null;</span>
+<span class="pc" id="L72">        }</span>
+<span class="fc" id="L73">    }</span>
+
+    /**
+     * Configures a {@link org.apache.commons.digester3.binder.RulesBinder} via the exposed methods.
+     */
+    protected abstract void configureRules();
+
+    /**
+     * Allows users plug a different {@link AnnotationHandlerFactory} to create {@link AnnotationHandler} instances.
+     *
+     * @param annotationHandlerFactory A custom {@link AnnotationHandlerFactory} to create
+     *        {@link AnnotationHandler} instances
+     */
+    protected final void useAnnotationHandlerFactory( AnnotationHandlerFactory annotationHandlerFactory )
+    {
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">        if ( annotationHandlerFactory == null )</span>
+        {
+<span class="nc" id="L90">            throw new IllegalArgumentException( &quot;Argument 'annotationHandlerFactory' must be not null&quot; );</span>
+        }
+
+<span class="fc" id="L93">        this.annotationHandlerFactory = annotationHandlerFactory;</span>
+<span class="fc" id="L94">    }</span>
+
+    /**
+     * Allows users to switch back to the default {@link AnnotationHandlerFactory} implementation.
+     */
+    protected final void useDefaultAnnotationHandlerFactory()
+    {
+<span class="nc" id="L101">        useAnnotationHandlerFactory( DEFAULT_HANDLER_FACTORY );</span>
+<span class="nc" id="L102">    }</span>
+
+    /**
+     * Scan the input Class, looking for Digester rules expressed via annotations, and binds them.
+     *
+     * @param type the type has to be analyzed
+     * @see DigesterRule
+     */
+    protected final void bindRulesFrom( final Class&lt;?&gt; type )
+    {
+<span class="pc bpc" id="L112" title="1 of 4 branches missed.">        if ( type == null || type.getPackage().getName().startsWith( JAVA_PACKAGE )</span>
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">            || rulesBinder.isAlreadyBound( type ) )</span>
+        {
+<span class="fc" id="L115">            return;</span>
+        }
+
+        // TYPE
+<span class="fc" id="L119">        visitElements( type );</span>
+
+<span class="pc bpc" id="L121" title="1 of 2 branches missed.">        if ( !type.isInterface() )</span>
+        {
+            // CONSTRUCTOR
+<span class="fc" id="L124">            visitElements( new PrivilegedAction&lt;Constructor&lt;?&gt;[]&gt;()</span>
+<span class="fc" id="L125">            {</span>
+                public Constructor&lt;?&gt;[] run()
+                {
+<span class="fc" id="L128">                    return type.getDeclaredConstructors();</span>
+                }
+            } );
+
+            // FIELD
+<span class="fc" id="L133">            visitElements( new PrivilegedAction&lt;Field[]&gt;()</span>
+<span class="fc" id="L134">            {</span>
+                public Field[] run()
+                {
+<span class="fc" id="L137">                    return type.getDeclaredFields();</span>
+                }
+            } );
+        }
+
+        // METHOD
+<span class="fc" id="L143">        visitElements( new PrivilegedAction&lt;Method[]&gt;()</span>
+<span class="fc" id="L144">        {</span>
+            public Method[] run()
+            {
+<span class="fc" id="L147">                return type.getDeclaredMethods();</span>
+            }
+        } );
+
+<span class="fc" id="L151">        rulesBinder.markAsBound( type );</span>
+<span class="fc" id="L152">        bindRulesFrom( type.getSuperclass() );</span>
+<span class="fc" id="L153">    }</span>
+
+    /**
+     *
+     *
+     * @param &lt;AE&gt;
+     * @param action
+     */
+    private &lt;AE extends AnnotatedElement&gt; void visitElements( PrivilegedAction&lt;AE[]&gt; action )
+    {
+<span class="fc" id="L163">        AE[] annotatedElements = null;</span>
+<span class="pc bpc" id="L164" title="1 of 2 branches missed.">        if ( System.getSecurityManager() != null )</span>
+        {
+<span class="nc" id="L166">            annotatedElements = AccessController.doPrivileged( action );</span>
+        }
+        else
+        {
+<span class="fc" id="L170">            annotatedElements = action.run();</span>
+        }
+<span class="fc" id="L172">        visitElements( annotatedElements );</span>
+<span class="fc" id="L173">    }</span>
+
+    /**
+     *
+     *
+     * @param annotatedElements
+     */
+    private void visitElements( AnnotatedElement... annotatedElements )
+    {
+<span class="fc bfc" id="L182" title="All 2 branches covered.">        for ( AnnotatedElement element : annotatedElements )</span>
+        {
+<span class="fc bfc" id="L184" title="All 2 branches covered.">            for ( Annotation annotation : element.getAnnotations() )</span>
+            {
+<span class="fc" id="L186">                handle( annotation, element );</span>
+            }
+
+<span class="fc bfc" id="L189" title="All 4 branches covered.">            if ( element instanceof Constructor || element instanceof Method )</span>
+            {
+                Annotation[][] parameterAnnotations;
+                Class&lt;?&gt;[] parameterTypes;
+
+<span class="fc bfc" id="L194" title="All 2 branches covered.">                if ( element instanceof Constructor )</span>
+                {
+                    // constructor args
+<span class="fc" id="L197">                    Constructor&lt;?&gt; construcotr = (Constructor&lt;?&gt;) element;</span>
+<span class="fc" id="L198">                    parameterAnnotations = construcotr.getParameterAnnotations();</span>
+<span class="fc" id="L199">                    parameterTypes = construcotr.getParameterTypes();</span>
+<span class="fc" id="L200">                }</span>
+                else
+                {
+                    // method args
+<span class="fc" id="L204">                    Method method = (Method) element;</span>
+<span class="fc" id="L205">                    parameterAnnotations = method.getParameterAnnotations();</span>
+<span class="fc" id="L206">                    parameterTypes = method.getParameterTypes();</span>
+                }
+
+<span class="fc bfc" id="L209" title="All 2 branches covered.">                for ( int i = 0; i &lt; parameterTypes.length; i++ )</span>
+                {
+<span class="fc" id="L211">                    visitElements( new MethodArgument( i, parameterTypes[i], parameterAnnotations[i] ) );</span>
+                }
+            }
+        }
+<span class="fc" id="L215">    }</span>
+
+    /**
+     * Handles the current visited element and related annotation, invoking the
+     * right handler putting the rule provider in the rule set.
+     *
+     * @param annotation the current visited annotation.
+     * @param element the current visited element.
+     */
+    @SuppressWarnings( &quot;unchecked&quot; )
+    private &lt;A extends Annotation, E extends AnnotatedElement, R extends Rule&gt; void handle( A annotation, E element )
+    {
+<span class="fc" id="L227">        Class&lt;?&gt; annotationType = annotation.annotationType();</span>
+
+        // check if it is one of the @*.List annotation
+<span class="fc bfc" id="L230" title="All 2 branches covered.">        if ( annotationType.isAnnotationPresent( DigesterRuleList.class ) )</span>
+        {
+<span class="fc" id="L232">            Annotation[] annotations = getAnnotationsArrayValue( annotation );</span>
+<span class="pc bpc" id="L233" title="2 of 4 branches missed.">            if ( annotations != null &amp;&amp; annotations.length &gt; 0 )</span>
+            {
+                // if it is an annotations array, process them
+<span class="fc bfc" id="L236" title="All 2 branches covered.">                for ( Annotation ptr : annotations )</span>
+                {
+<span class="fc" id="L238">                    handle( ptr, element );</span>
+                }
+            }
+<span class="fc" id="L241">        }</span>
+<span class="pc bpc" id="L242" title="1 of 2 branches missed.">        else if ( annotationType.isAnnotationPresent( DigesterRule.class ) )</span>
+        {
+<span class="fc" id="L244">            DigesterRule digesterRule = annotationType.getAnnotation( DigesterRule.class );</span>
+
+            // the default behavior if the handler is not specified
+<span class="fc" id="L247">            Class&lt;? extends AnnotationHandler&lt;Annotation, AnnotatedElement&gt;&gt; handlerType =</span>
+<span class="fc" id="L248">                (Class&lt;? extends AnnotationHandler&lt;Annotation, AnnotatedElement&gt;&gt;) digesterRule.handledBy();</span>
+            try
+            {
+<span class="fc" id="L251">                AnnotationHandler&lt;Annotation, AnnotatedElement&gt; handler =</span>
+<span class="fc" id="L252">                    annotationHandlerFactory.newInstance( handlerType );</span>
+
+                // run!
+<span class="fc" id="L255">                handler.handle( annotation, element, this.rulesBinder );</span>
+            }
+<span class="fc" id="L257">            catch ( Exception e )</span>
+            {
+<span class="fc" id="L259">                rulesBinder.addError( e );</span>
+<span class="fc" id="L260">            }</span>
+        }
+<span class="fc" id="L262">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DynamicPropertyPointer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri.model.dynamic</a> &gt; <span class="el_source">DynamicPropertyPointer.java</span></div><h1>DynamicPropertyPointer.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri.model.dynamic;
+
+import java.util.Arrays;
+import java.util.Map;
+
+import org.apache.commons.jxpath.AbstractFactory;
+import org.apache.commons.jxpath.DynamicPropertyHandler;
+import org.apache.commons.jxpath.JXPathAbstractFactoryException;
+import org.apache.commons.jxpath.JXPathContext;
+import org.apache.commons.jxpath.JXPathInvalidAccessException;
+import org.apache.commons.jxpath.ri.model.NodePointer;
+import org.apache.commons.jxpath.ri.model.beans.PropertyPointer;
+import org.apache.commons.jxpath.util.ValueUtils;
+
+/**
+ * Pointer pointing to a property of an object with dynamic properties.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision: 652845 $ $Date: 2008-05-02 12:46:46 -0500 (Fri, 02 May 2008) $
+ */
+public class DynamicPropertyPointer extends PropertyPointer {
+
+    private static final long serialVersionUID = -5720585681149150822L;
+
+    private DynamicPropertyHandler handler;
+    private String name;
+    private String[] names;
+    private String requiredPropertyName;
+
+    /**
+     * Create a new DynamicPropertyPointer.
+     * @param parent pointer
+     * @param handler DynamicPropertyHandler
+     */
+    public DynamicPropertyPointer(NodePointer parent,
+            DynamicPropertyHandler handler) {
+<span class="fc" id="L53">        super(parent);</span>
+<span class="fc" id="L54">        this.handler = handler;</span>
+<span class="fc" id="L55">    }</span>
+
+    /**
+     * This type of node is auxiliary.
+     * @return true
+     */
+    public boolean isContainer() {
+<span class="fc" id="L62">        return true;</span>
+    }
+
+    /**
+     * Number of the DP object's properties.
+     * @return int
+     */
+    public int getPropertyCount() {
+<span class="fc" id="L70">        return getPropertyNames().length;</span>
+    }
+
+    /**
+     * Names of all properties, sorted alphabetically.
+     * @return String[]
+     */
+    public String[] getPropertyNames() {
+<span class="fc bfc" id="L78" title="All 2 branches covered.">        if (names == null) {</span>
+<span class="fc" id="L79">            String[] allNames = handler.getPropertyNames(getBean());</span>
+<span class="fc" id="L80">            names = new String[allNames.length];</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">            for (int i = 0; i &lt; names.length; i++) {</span>
+<span class="fc" id="L82">                names[i] = allNames[i];</span>
+            }
+<span class="fc" id="L84">            Arrays.sort(names);</span>
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">            if (requiredPropertyName != null) {</span>
+<span class="nc" id="L86">                int inx = Arrays.binarySearch(names, requiredPropertyName);</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">                if (inx &lt; 0) {</span>
+<span class="nc" id="L88">                    allNames = names;</span>
+<span class="nc" id="L89">                    names = new String[allNames.length + 1];</span>
+<span class="nc" id="L90">                    names[0] = requiredPropertyName;</span>
+<span class="nc" id="L91">                    System.arraycopy(allNames, 0, names, 1, allNames.length);</span>
+<span class="nc" id="L92">                    Arrays.sort(names);</span>
+                }
+            }
+        }
+<span class="fc" id="L96">        return names;</span>
+    }
+
+    /**
+     * Returns the name of the currently selected property or &quot;*&quot;
+     * if none has been selected.
+     * @return String
+     */
+    public String getPropertyName() {
+<span class="fc bfc" id="L105" title="All 2 branches covered.">        if (name == null) {</span>
+<span class="fc" id="L106">            String[] names = getPropertyNames();</span>
+<span class="pc bpc" id="L107" title="2 of 4 branches missed.">            name = propertyIndex &gt;= 0 &amp;&amp; propertyIndex &lt; names.length ? names[propertyIndex] : &quot;*&quot;;</span>
+        }
+<span class="fc" id="L109">        return name;</span>
+    }
+
+    /**
+     * Select a property by name.  If the supplied name is
+     * not one of the object's existing properties, it implicitly
+     * adds this name to the object's property name list. It does not
+     * set the property value though. In order to set the property
+     * value, call setValue().
+     * @param propertyName to set
+     */
+    public void setPropertyName(String propertyName) {
+<span class="fc" id="L121">        setPropertyIndex(UNSPECIFIED_PROPERTY);</span>
+<span class="fc" id="L122">        this.name = propertyName;</span>
+<span class="fc" id="L123">        requiredPropertyName = propertyName;</span>
+<span class="pc bpc" id="L124" title="1 of 4 branches missed.">        if (names != null &amp;&amp; Arrays.binarySearch(names, propertyName) &lt; 0) {</span>
+<span class="nc" id="L125">            names = null;</span>
+        }
+<span class="fc" id="L127">    }</span>
+
+    /**
+     * Index of the currently selected property in the list of all
+     * properties sorted alphabetically.
+     * @return int
+     */
+    public int getPropertyIndex() {
+<span class="pc bpc" id="L135" title="1 of 2 branches missed.">        if (propertyIndex == UNSPECIFIED_PROPERTY) {</span>
+<span class="nc" id="L136">            String[] names = getPropertyNames();</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">            for (int i = 0; i &lt; names.length; i++) {</span>
+<span class="nc bnc" id="L138" title="All 2 branches missed.">                if (names[i].equals(name)) {</span>
+<span class="nc" id="L139">                    setPropertyIndex(i);</span>
+<span class="nc" id="L140">                    break;</span>
+                }
+            }
+        }
+<span class="fc" id="L144">        return super.getPropertyIndex();</span>
+    }
+
+    /**
+     * Index a property by its index in the list of all
+     * properties sorted alphabetically.
+     * @param index to set
+     */
+    public void setPropertyIndex(int index) {
+<span class="fc bfc" id="L153" title="All 2 branches covered.">        if (propertyIndex != index) {</span>
+<span class="fc" id="L154">            super.setPropertyIndex(index);</span>
+<span class="fc" id="L155">            name = null;</span>
+        }
+<span class="fc" id="L157">    }</span>
+
+    /**
+     * Returns the value of the property, not an element of the collection
+     * represented by the property, if any.
+     * @return Object
+     */
+    public Object getBaseValue() {
+<span class="fc" id="L165">        return handler.getProperty(getBean(), getPropertyName());</span>
+    }
+
+    /**
+     * If index == WHOLE_COLLECTION, the value of the property, otherwise
+     * the value of the index'th element of the collection represented by the
+     * property. If the property is not a collection, index should be zero
+     * and the value will be the property itself.
+     * @return Object
+     */
+    public Object getImmediateNode() {
+        Object value;
+<span class="fc bfc" id="L177" title="All 2 branches covered.">        if (index == WHOLE_COLLECTION) {</span>
+<span class="fc" id="L178">            value = ValueUtils.getValue(handler.getProperty(</span>
+<span class="fc" id="L179">                    getBean(),</span>
+<span class="fc" id="L180">                    getPropertyName()));</span>
+        }
+        else {
+<span class="fc" id="L183">            value = ValueUtils.getValue(handler.getProperty(</span>
+<span class="fc" id="L184">                    getBean(),</span>
+<span class="fc" id="L185">                    getPropertyName()), index);</span>
+        }
+<span class="fc" id="L187">        return value;</span>
+    }
+
+    /**
+     * A dynamic property is always considered actual - all keys are apparently
+     * existing with possibly the value of null.
+     * @return boolean
+     */
+    protected boolean isActualProperty() {
+<span class="fc" id="L196">        return true;</span>
+    }
+
+    /**
+     * If index == WHOLE_COLLECTION, change the value of the property, otherwise
+     * change the value of the index'th element of the collection
+     * represented by the property.
+     * @param value to set
+     */
+    public void setValue(Object value) {
+<span class="fc bfc" id="L206" title="All 2 branches covered.">        if (index == WHOLE_COLLECTION) {</span>
+<span class="fc" id="L207">            handler.setProperty(getBean(), getPropertyName(), value);</span>
+        }
+        else {
+<span class="fc" id="L210">            ValueUtils.setValue(</span>
+<span class="fc" id="L211">                handler.getProperty(getBean(), getPropertyName()),</span>
+                index,
+                value);
+        }
+<span class="fc" id="L215">    }</span>
+
+    public NodePointer createPath(JXPathContext context) {
+        // Ignore the name passed to us, use our own data
+<span class="fc" id="L219">        Object collection = getBaseValue();</span>
+<span class="fc bfc" id="L220" title="All 2 branches covered.">        if (collection == null) {</span>
+<span class="fc" id="L221">            AbstractFactory factory = getAbstractFactory(context);</span>
+<span class="fc" id="L222">            boolean success =</span>
+<span class="fc" id="L223">                factory.createObject(</span>
+                    context,
+                    this,
+<span class="fc" id="L226">                    getBean(),</span>
+<span class="fc" id="L227">                    getPropertyName(),</span>
+                    0);
+<span class="pc bpc" id="L229" title="1 of 2 branches missed.">            if (!success) {</span>
+<span class="nc" id="L230">                throw new JXPathAbstractFactoryException(</span>
+<span class="nc" id="L231">                    &quot;Factory could not create an object for path: &quot; + asPath());</span>
+            }
+<span class="fc" id="L233">            collection = getBaseValue();</span>
+        }
+
+<span class="fc bfc" id="L236" title="All 2 branches covered.">        if (index != WHOLE_COLLECTION) {</span>
+<span class="pc bpc" id="L237" title="1 of 2 branches missed.">            if (index &lt; 0) {</span>
+<span class="nc" id="L238">                throw new JXPathInvalidAccessException(&quot;Index is less than 1: &quot;</span>
+<span class="nc" id="L239">                        + asPath());</span>
+            }
+
+<span class="fc bfc" id="L242" title="All 2 branches covered.">            if (index &gt;= getLength()) {</span>
+<span class="fc" id="L243">                collection = ValueUtils.expandCollection(collection, index + 1);</span>
+<span class="fc" id="L244">                handler.setProperty(getBean(), getPropertyName(), collection);</span>
+            }
+        }
+
+<span class="fc" id="L248">        return this;</span>
+    }
+
+    public NodePointer createPath(JXPathContext context, Object value) {
+<span class="fc bfc" id="L252" title="All 2 branches covered.">        if (index == WHOLE_COLLECTION) {</span>
+<span class="fc" id="L253">            handler.setProperty(getBean(), getPropertyName(), value);</span>
+        }
+        else {
+<span class="fc" id="L256">            createPath(context);</span>
+<span class="fc" id="L257">            ValueUtils.setValue(getBaseValue(), index, value);</span>
+        }
+<span class="fc" id="L259">        return this;</span>
+    }
+
+    public void remove() {
+<span class="fc bfc" id="L263" title="All 2 branches covered.">        if (index == WHOLE_COLLECTION) {</span>
+<span class="fc" id="L264">            removeKey();</span>
+        }
+<span class="fc bfc" id="L266" title="All 2 branches covered.">        else if (isCollection()) {</span>
+<span class="fc" id="L267">            Object collection = ValueUtils.remove(getBaseValue(), index);</span>
+<span class="fc" id="L268">            handler.setProperty(getBean(), getPropertyName(), collection);</span>
+<span class="fc" id="L269">        }</span>
+<span class="pc bpc" id="L270" title="1 of 2 branches missed.">        else if (index == 0) {</span>
+<span class="fc" id="L271">            removeKey();</span>
+        }
+<span class="fc" id="L273">    }</span>
+
+    /**
+     * Remove the current property.
+     */
+    private void removeKey() {
+<span class="fc" id="L279">        Object bean = getBean();</span>
+<span class="pc bpc" id="L280" title="1 of 2 branches missed.">        if (bean instanceof Map) {</span>
+<span class="fc" id="L281">            ((Map) bean).remove(getPropertyName());</span>
+        }
+        else {
+<span class="nc" id="L284">            handler.setProperty(bean, getPropertyName(), null);</span>
+        }
+<span class="fc" id="L286">    }</span>
+
+    public String asPath() {
+<span class="fc" id="L289">        StringBuffer buffer = new StringBuffer();</span>
+<span class="fc" id="L290">        buffer.append(getImmediateParentPointer().asPath());</span>
+<span class="pc bpc" id="L291" title="1 of 2 branches missed.">        if (buffer.length() == 0) {</span>
+<span class="nc" id="L292">            buffer.append(&quot;/.&quot;);</span>
+        }
+<span class="fc bfc" id="L294" title="All 2 branches covered.">        else if (buffer.charAt(buffer.length() - 1) == '/') {</span>
+<span class="fc" id="L295">            buffer.append('.');</span>
+        }
+<span class="fc" id="L297">        buffer.append(&quot;[@name='&quot;);</span>
+<span class="fc" id="L298">        buffer.append(escape(getPropertyName()));</span>
+<span class="fc" id="L299">        buffer.append(&quot;']&quot;);</span>
+<span class="fc bfc" id="L300" title="All 4 branches covered.">        if (index != WHOLE_COLLECTION &amp;&amp; isCollection()) {</span>
+<span class="fc" id="L301">            buffer.append('[').append(index + 1).append(']');</span>
+        }
+<span class="fc" id="L303">        return buffer.toString();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

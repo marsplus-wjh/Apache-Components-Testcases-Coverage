@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DOMAttributeIterator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri.model.dom</a> &gt; <span class="el_source">DOMAttributeIterator.java</span></div><h1>DOMAttributeIterator.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri.model.dom;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.commons.jxpath.ri.QName;
+import org.apache.commons.jxpath.ri.model.NodeIterator;
+import org.apache.commons.jxpath.ri.model.NodePointer;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+
+/**
+ * An iterator of attributes of a DOM Node.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision: 652845 $ $Date: 2008-05-02 12:46:46 -0500 (Fri, 02 May 2008) $
+ */
+public class DOMAttributeIterator implements NodeIterator {
+    private NodePointer parent;
+    private QName name;
+    private List attributes;
+<span class="fc" id="L40">    private int position = 0;</span>
+
+    /**
+     * Create a new DOMAttributeIterator.
+     * @param parent pointer
+     * @param name to test
+     */
+<span class="fc" id="L47">    public DOMAttributeIterator(NodePointer parent, QName name) {</span>
+<span class="fc" id="L48">        this.parent = parent;</span>
+<span class="fc" id="L49">        this.name = name;</span>
+<span class="fc" id="L50">        attributes = new ArrayList();</span>
+<span class="fc" id="L51">        Node node = (Node) parent.getNode();</span>
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">        if (node.getNodeType() == Node.ELEMENT_NODE) {</span>
+<span class="fc" id="L53">            String lname = name.getName();</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">            if (!lname.equals(&quot;*&quot;)) {</span>
+<span class="fc" id="L55">                Attr attr = getAttribute((Element) node, name);</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">                if (attr != null) {</span>
+<span class="fc" id="L57">                    attributes.add(attr);</span>
+                }
+<span class="fc" id="L59">            }</span>
+            else {
+<span class="fc" id="L61">                NamedNodeMap map = node.getAttributes();</span>
+<span class="fc" id="L62">                int count = map.getLength();</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">                for (int i = 0; i &lt; count; i++) {</span>
+<span class="fc" id="L64">                    Attr attr = (Attr) map.item(i);</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">                    if (testAttr(attr)) {</span>
+<span class="fc" id="L66">                        attributes.add(attr);</span>
+                    }
+                }
+            }
+        }
+<span class="fc" id="L71">    }</span>
+
+    /**
+     * Test an attribute.
+     * @param attr to test
+     * @return whether test succeeded
+     */
+    private boolean testAttr(Attr attr) {
+<span class="fc" id="L79">        String nodePrefix = DOMNodePointer.getPrefix(attr);</span>
+<span class="fc" id="L80">        String nodeLocalName = DOMNodePointer.getLocalName(attr);</span>
+
+<span class="pc bpc" id="L82" title="1 of 4 branches missed.">        if (nodePrefix != null &amp;&amp; nodePrefix.equals(&quot;xmlns&quot;)) {</span>
+<span class="nc" id="L83">            return false;</span>
+        }
+
+<span class="fc bfc" id="L86" title="All 4 branches covered.">        if (nodePrefix == null &amp;&amp; nodeLocalName.equals(&quot;xmlns&quot;)) {</span>
+<span class="fc" id="L87">            return false;</span>
+        }
+
+<span class="fc" id="L90">        String testLocalName = name.getName();</span>
+<span class="fc bfc" id="L91" title="All 4 branches covered.">        if (testLocalName.equals(&quot;*&quot;) || testLocalName.equals(nodeLocalName)) {</span>
+<span class="fc" id="L92">            String testPrefix = name.getPrefix();</span>
+
+<span class="fc bfc" id="L94" title="All 4 branches covered.">            if (testPrefix == null || equalStrings(testPrefix, nodePrefix)) {</span>
+<span class="fc" id="L95">                return true;</span>
+            }
+<span class="pc bpc" id="L97" title="1 of 2 branches missed.">            if (nodePrefix == null) {</span>
+<span class="fc" id="L98">                return false;</span>
+            }
+<span class="nc" id="L100">            return equalStrings(parent.getNamespaceURI(testPrefix), parent</span>
+<span class="nc" id="L101">                    .getNamespaceURI(nodePrefix));</span>
+        }
+<span class="fc" id="L103">        return false;</span>
+    }
+
+    /**
+     * Test whether two strings are == or .equals()
+     * @param s1 first string
+     * @param s2 second string
+     * @return boolean
+     */
+    private static boolean equalStrings(String s1, String s2) {
+<span class="pc bpc" id="L113" title="2 of 6 branches missed.">        return s1 == s2 || s1 != null &amp;&amp; s1.equals(s2);</span>
+    }
+
+    /**
+     * Get the named attribute.
+     * @param element to search
+     * @param name to match
+     * @return Attr found
+     */
+    private Attr getAttribute(Element element, QName name) {
+<span class="fc" id="L123">        String testPrefix = name.getPrefix();</span>
+<span class="fc" id="L124">        String testNS = null;</span>
+
+<span class="fc bfc" id="L126" title="All 2 branches covered.">        if (testPrefix != null) {</span>
+<span class="fc" id="L127">            testNS = parent.getNamespaceResolver().getNamespaceURI(testPrefix);</span>
+        }
+
+<span class="fc bfc" id="L130" title="All 2 branches covered.">        if (testNS != null) {</span>
+<span class="fc" id="L131">            Attr attr = element.getAttributeNodeNS(testNS, name.getName());</span>
+<span class="fc bfc" id="L132" title="All 2 branches covered.">            if (attr != null) {</span>
+<span class="fc" id="L133">                return attr;</span>
+            }
+
+            // This may mean that the parser does not support NS for
+            // attributes, example - the version of Crimson bundled
+            // with JDK 1.4.0
+<span class="fc" id="L139">            NamedNodeMap nnm = element.getAttributes();</span>
+<span class="fc bfc" id="L140" title="All 2 branches covered.">            for (int i = 0; i &lt; nnm.getLength(); i++) {</span>
+<span class="fc" id="L141">                attr = (Attr) nnm.item(i);</span>
+<span class="fc bfc" id="L142" title="All 2 branches covered.">                if (testAttr(attr)) {</span>
+<span class="fc" id="L143">                    return attr;</span>
+                }
+            }
+<span class="fc" id="L146">            return null;</span>
+        }
+<span class="fc" id="L148">        return element.getAttributeNode(name.getName());</span>
+    }
+
+    public NodePointer getNodePointer() {
+<span class="pc bpc" id="L152" title="1 of 2 branches missed.">        if (position == 0) {</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">            if (!setPosition(1)) {</span>
+<span class="nc" id="L154">                return null;</span>
+            }
+<span class="nc" id="L156">            position = 0;</span>
+        }
+<span class="fc" id="L158">        int index = position - 1;</span>
+<span class="pc bpc" id="L159" title="1 of 2 branches missed.">        if (index &lt; 0) {</span>
+<span class="nc" id="L160">            index = 0;</span>
+        }
+<span class="fc" id="L162">        return new DOMAttributePointer(parent, (Attr) attributes.get(index));</span>
+    }
+
+    public int getPosition() {
+<span class="fc" id="L166">        return position;</span>
+    }
+
+    public boolean setPosition(int position) {
+<span class="fc" id="L170">        this.position = position;</span>
+<span class="pc bpc" id="L171" title="1 of 4 branches missed.">        return position &gt;= 1 &amp;&amp; position &lt;= attributes.size();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

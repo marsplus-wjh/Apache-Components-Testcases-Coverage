@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>LoaderFromClass.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester.plugins.strategies</a> &gt; <span class="el_source">LoaderFromClass.java</span></div><h1>LoaderFromClass.java</h1><pre class="source lang-java linenums">/* $Id$
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.digester.plugins.strategies;
+
+import java.lang.reflect.Method;
+
+import org.apache.commons.digester.Digester;
+import org.apache.commons.beanutils.MethodUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.digester.plugins.RuleLoader;
+import org.apache.commons.digester.plugins.PluginException;
+
+/**
+ * A RuleLoader which invokes a static method on a target class, leaving that
+ * method to actually instantiate and add new rules to a Digester instance.
+ *
+ * @since 1.6
+ */
+
+public class LoaderFromClass extends RuleLoader {
+    
+    private Class&lt;?&gt; rulesClass;
+    private Method rulesMethod;
+    
+    /** Constructor. */
+<span class="fc" id="L41">    public LoaderFromClass(Class&lt;?&gt; rulesClass, Method rulesMethod) {</span>
+<span class="fc" id="L42">        this.rulesClass = rulesClass;</span>
+<span class="fc" id="L43">        this.rulesMethod = rulesMethod;</span>
+<span class="fc" id="L44">    }</span>
+    
+    /** Constructor. */
+    public LoaderFromClass(Class&lt;?&gt; rulesClass, String methodName)
+<span class="fc" id="L48">                throws PluginException {</span>
+
+<span class="fc" id="L50">        Method method = locateMethod(rulesClass, methodName);</span>
+
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">        if (method == null) {</span>
+<span class="nc" id="L53">            throw new PluginException(</span>
+<span class="nc" id="L54">                &quot;rule class &quot; + rulesClass.getName()</span>
+                + &quot; does not have method &quot; + methodName
+                + &quot; or that method has an invalid signature.&quot;);
+        }
+        
+<span class="fc" id="L59">        this.rulesClass = rulesClass;</span>
+<span class="fc" id="L60">        this.rulesMethod = method;        </span>
+<span class="fc" id="L61">    }</span>
+    
+    /**
+     * Just invoke the target method.
+     */
+    @Override
+    public void addRules(Digester d, String path) throws PluginException {
+<span class="fc" id="L68">        Log log = d.getLogger();</span>
+<span class="fc" id="L69">        boolean debug = log.isDebugEnabled();</span>
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">        if (debug) {</span>
+<span class="nc" id="L71">            log.debug(</span>
+                &quot;LoaderFromClass loading rules for plugin at path [&quot; 
+                + path + &quot;]&quot;);
+        }
+
+        try {
+<span class="fc" id="L77">            Object[] params = {d, path};</span>
+<span class="fc" id="L78">            rulesMethod.invoke(null, params);</span>
+<span class="nc" id="L79">        } catch (Exception e) {</span>
+<span class="nc" id="L80">            throw new PluginException(</span>
+                &quot;Unable to invoke rules method &quot; + rulesMethod
+                + &quot; on rules class &quot; + rulesClass, e);
+<span class="fc" id="L83">        } </span>
+<span class="fc" id="L84">    }</span>
+    
+    /**
+     * Find a method on the specified class whose name matches methodName,
+     * and whose signature is:
+     * &lt;code&gt; public static void foo(Digester d, String patternPrefix);&lt;/code&gt;.
+     *
+     * @return null if no such method exists.
+     */
+    public static Method locateMethod(Class&lt;?&gt; rulesClass, String methodName) 
+                            throws PluginException {
+
+<span class="fc" id="L96">        Class&lt;?&gt;[] paramSpec = { Digester.class, String.class };</span>
+<span class="fc" id="L97">        Method rulesMethod = MethodUtils.getAccessibleMethod(</span>
+            rulesClass, methodName, paramSpec);
+            
+<span class="fc" id="L100">        return rulesMethod;</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

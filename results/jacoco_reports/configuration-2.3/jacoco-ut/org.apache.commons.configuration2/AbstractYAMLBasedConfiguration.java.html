@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>AbstractYAMLBasedConfiguration.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Configuration</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.configuration2</a> &gt; <span class="el_source">AbstractYAMLBasedConfiguration.java</span></div><h1>AbstractYAMLBasedConfiguration.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.configuration2;
+
+import org.apache.commons.configuration2.ex.ConfigurationException;
+import org.apache.commons.configuration2.io.ConfigurationLogger;
+import org.apache.commons.configuration2.tree.ImmutableNode;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * &lt;p&gt;
+ * A base class for configuration implementations based on YAML structures.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * This base class offers functionality related to YAML-like data structures
+ * based on maps. Such a map has strings as keys and arbitrary objects as
+ * values. The class offers methods to transform such a map into a hierarchy
+ * of {@link ImmutableNode} objects and vice versa.
+ * &lt;/p&gt;
+ *
+ * @since 2.2
+ */
+public class AbstractYAMLBasedConfiguration extends BaseHierarchicalConfiguration
+{
+    /**
+     * Creates a new instance of {@code AbstractYAMLBasedConfiguration}.
+     */
+    protected AbstractYAMLBasedConfiguration()
+<span class="fc" id="L50">    {</span>
+<span class="fc" id="L51">        initLogger(new ConfigurationLogger(getClass()));</span>
+<span class="fc" id="L52">    }</span>
+
+    /**
+     * Creates a new instance of {@code AbstractYAMLBasedConfiguration} as a
+     * copy of the specified configuration.
+     *
+     * @param c the configuration to be copied
+     */
+    protected AbstractYAMLBasedConfiguration(
+            HierarchicalConfiguration&lt;ImmutableNode&gt; c)
+    {
+<span class="fc" id="L63">        super(c);</span>
+<span class="fc" id="L64">        initLogger(new ConfigurationLogger(getClass()));</span>
+<span class="fc" id="L65">    }</span>
+
+    /**
+     * Loads this configuration from the content of the specified map. The data
+     * in the map is transformed into a hierarchy of {@link ImmutableNode}
+     * objects.
+     *
+     * @param map the map to be processed
+     */
+    protected void load(Map&lt;String, Object&gt; map)
+    {
+<span class="fc" id="L76">        List&lt;ImmutableNode&gt; roots = constructHierarchy(&quot;&quot;, map);</span>
+<span class="fc" id="L77">        getNodeModel().setRootNode(roots.get(0));</span>
+<span class="fc" id="L78">    }</span>
+
+    /**
+     * Constructs a YAML map, i.e. String -&amp;gt; Object from a given configuration
+     * node.
+     *
+     * @param node The configuration node to create a map from.
+     * @return A Map that contains the configuration node information.
+     */
+    protected Map&lt;String, Object&gt; constructMap(ImmutableNode node)
+    {
+<span class="fc" id="L89">        Map&lt;String, Object&gt; map = new HashMap&lt;&gt;(node.getChildren().size());</span>
+<span class="fc bfc" id="L90" title="All 2 branches covered.">        for (ImmutableNode cNode : node.getChildren())</span>
+        {
+<span class="fc bfc" id="L92" title="All 2 branches covered.">            Object value = cNode.getChildren().isEmpty() ? cNode.getValue()</span>
+<span class="fc" id="L93">                    : constructMap(cNode);</span>
+<span class="fc" id="L94">            addEntry(map, cNode.getNodeName(), value);</span>
+<span class="fc" id="L95">        }</span>
+<span class="fc" id="L96">        return map;</span>
+    }
+
+    /**
+     * Adds a key value pair to a map, taking list structures into account. If a
+     * key is added which is already present in the map, this method ensures
+     * that a list is created.
+     *
+     * @param map the map
+     * @param key the key
+     * @param value the value
+     */
+    private static void addEntry(Map&lt;String, Object&gt; map, String key,
+            Object value)
+    {
+<span class="fc" id="L111">        Object oldValue = map.get(key);</span>
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        if (oldValue == null)</span>
+        {
+<span class="fc" id="L114">            map.put(key, value);</span>
+        }
+<span class="fc bfc" id="L116" title="All 2 branches covered.">        else if (oldValue instanceof Collection)</span>
+        {
+            // safe case because the collection was created by ourselves
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L120">            Collection&lt;Object&gt; values = (Collection&lt;Object&gt;) oldValue;</span>
+<span class="fc" id="L121">            values.add(value);</span>
+<span class="fc" id="L122">        }</span>
+        else
+        {
+<span class="fc" id="L125">            Collection&lt;Object&gt; values = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L126">            values.add(oldValue);</span>
+<span class="fc" id="L127">            values.add(value);</span>
+<span class="fc" id="L128">            map.put(key, values);</span>
+        }
+<span class="fc" id="L130">    }</span>
+
+    /**
+     * Creates a part of the hierarchical nodes structure of the resulting
+     * configuration. The passed in element is converted into one or multiple
+     * configuration nodes. (If list structures are involved, multiple nodes are
+     * returned.)
+     *
+     * @param key the key of the new node(s)
+     * @param elem the element to be processed
+     * @return a list with configuration nodes representing the element
+     */
+    private static List&lt;ImmutableNode&gt; constructHierarchy(String key,
+            Object elem)
+    {
+<span class="fc bfc" id="L145" title="All 2 branches covered.">        if (elem instanceof Map)</span>
+        {
+<span class="fc" id="L147">            return parseMap((Map&lt;String, Object&gt;) elem, key);</span>
+        }
+<span class="fc bfc" id="L149" title="All 2 branches covered.">        else if (elem instanceof Collection)</span>
+        {
+<span class="fc" id="L151">            return parseCollection((Collection&lt;Object&gt;) elem, key);</span>
+        }
+        else
+        {
+<span class="fc" id="L155">            return Collections.singletonList(</span>
+<span class="fc" id="L156">                    new ImmutableNode.Builder().name(key).value(elem).create());</span>
+        }
+    }
+
+    /**
+     * Parses a map structure. The single keys of the map are processed
+     * recursively.
+     *
+     * @param map the map to be processed
+     * @param key the key under which this map is to be stored
+     * @return a node representing this map
+     */
+    private static List&lt;ImmutableNode&gt; parseMap(Map&lt;String, Object&gt; map, String key)
+    {
+<span class="fc" id="L170">        ImmutableNode.Builder subtree = new ImmutableNode.Builder().name(key);</span>
+<span class="fc bfc" id="L171" title="All 2 branches covered.">        for (Map.Entry&lt;String, Object&gt; entry : map.entrySet())</span>
+        {
+<span class="fc" id="L173">            List&lt;ImmutableNode&gt; children =</span>
+<span class="fc" id="L174">                    constructHierarchy(entry.getKey(), entry.getValue());</span>
+<span class="fc bfc" id="L175" title="All 2 branches covered.">            for (ImmutableNode child : children)</span>
+            {
+<span class="fc" id="L177">                subtree.addChild(child);</span>
+<span class="fc" id="L178">            }</span>
+<span class="fc" id="L179">        }</span>
+<span class="fc" id="L180">        return Collections.singletonList(subtree.create());</span>
+    }
+
+    /**
+     * Parses a collection structure. The elements of the collection are
+     * processed recursively.
+     *
+     * @param col the collection to be processed
+     * @param key the key under which this collection is to be stored
+     * @return a node representing this collection
+     */
+    private static List&lt;ImmutableNode&gt; parseCollection(Collection&lt;Object&gt; col, String key)
+    {
+<span class="fc" id="L193">        List&lt;ImmutableNode&gt; nodes = new ArrayList&lt;&gt;(col.size());</span>
+<span class="fc bfc" id="L194" title="All 2 branches covered.">        for (Object elem : col)</span>
+        {
+<span class="fc" id="L196">            nodes.addAll(constructHierarchy(key, elem));</span>
+<span class="fc" id="L197">        }</span>
+<span class="fc" id="L198">        return nodes;</span>
+    }
+
+    /**
+     * Internal helper method to wrap an exception in a
+     * {@code ConfigurationException}.
+     * @param e the exception to be wrapped
+     * @throws ConfigurationException the resulting exception
+     */
+    static void rethrowException(Exception e) throws ConfigurationException
+    {
+<span class="nc bnc" id="L209" title="All 2 branches missed.">        if (e instanceof ClassCastException)</span>
+        {
+<span class="nc" id="L211">            throw new ConfigurationException(&quot;Error parsing&quot;, e);</span>
+        }
+        else
+        {
+<span class="nc" id="L215">            throw new ConfigurationException(&quot;Unable to load the configuration&quot;,</span>
+                    e);
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

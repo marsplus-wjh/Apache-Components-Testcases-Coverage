@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SetPropertiesRule.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester3</a> &gt; <span class="el_source">SetPropertiesRule.java</span></div><h1>SetPropertiesRule.java</h1><pre class="source lang-java linenums">package org.apache.commons.digester3;
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import static java.lang.String.format;
+import static org.apache.commons.beanutils.BeanUtils.populate;
+import static org.apache.commons.beanutils.PropertyUtils.isWriteable;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.xml.sax.Attributes;
+
+/**
+ * &lt;p&gt;
+ * Rule implementation that sets properties on the object at the top of the stack, based on attributes with
+ * corresponding names.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * This rule supports custom mapping of attribute names to property names. The default mapping for particular attributes
+ * can be overridden by using {@link #SetPropertiesRule(String[] attributeNames, String[] propertyNames)}. This allows
+ * attributes to be mapped to properties with different names. Certain attributes can also be marked to be ignored.
+ * &lt;/p&gt;
+ */
+public class SetPropertiesRule
+    extends Rule
+{
+
+    // ----------------------------------------------------------- Constructors
+
+    /**
+     * Base constructor.
+     */
+    public SetPropertiesRule()
+<span class="fc" id="L52">    {</span>
+        // nothing to set up
+<span class="fc" id="L54">    }</span>
+
+    /**
+     * &lt;p&gt;
+     * Convenience constructor overrides the mapping for just one property.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * For details about how this works, see {@link #SetPropertiesRule(String[] attributeNames, String[] propertyNames)}
+     * .
+     * &lt;/p&gt;
+     *
+     * @param attributeName map this attribute
+     * @param propertyName to a property with this name
+     */
+    public SetPropertiesRule( String attributeName, String propertyName )
+<span class="fc" id="L69">    {</span>
+<span class="fc" id="L70">        aliases.put( attributeName, propertyName );</span>
+<span class="fc" id="L71">    }</span>
+
+    /**
+     * &lt;p&gt;
+     * Constructor allows attribute-&gt;property mapping to be overriden.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Two arrays are passed in. One contains the attribute names and the other the property names. The attribute name /
+     * property name pairs are match by position In order words, the first string in the attribute name list matches to
+     * the first string in the property name list and so on.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * If a property name is null or the attribute name has no matching property name, then this indicates that the
+     * attibute should be ignored.
+     * &lt;/p&gt;
+     * &lt;h5&gt;Example One&lt;/h5&gt;
+     * &lt;p&gt;
+     * The following constructs a rule that maps the &lt;code&gt;alt-city&lt;/code&gt; attribute to the &lt;code&gt;city&lt;/code&gt; property
+     * and the &lt;code&gt;alt-state&lt;/code&gt; to the &lt;code&gt;state&lt;/code&gt; property. All other attributes are mapped as usual using
+     * exact name matching. &lt;code&gt;&lt;pre&gt;
+     *      SetPropertiesRule(
+     *                new String[] {&quot;alt-city&quot;, &quot;alt-state&quot;},
+     *                new String[] {&quot;city&quot;, &quot;state&quot;});
+     * &lt;/pre&gt;&lt;/code&gt;
+     * &lt;h5&gt;Example Two&lt;/h5&gt;
+     * &lt;p&gt;
+     * The following constructs a rule that maps the &lt;code&gt;class&lt;/code&gt; attribute to the &lt;code&gt;className&lt;/code&gt;
+     * property. The attribute &lt;code&gt;ignore-me&lt;/code&gt; is not mapped. All other attributes are mapped as usual using
+     * exact name matching. &lt;code&gt;&lt;pre&gt;
+     *      SetPropertiesRule(
+     *                new String[] {&quot;class&quot;, &quot;ignore-me&quot;},
+     *                new String[] {&quot;className&quot;});
+     * &lt;/pre&gt;&lt;/code&gt;
+     *
+     * @param attributeNames names of attributes to map
+     * @param propertyNames names of properties mapped to
+     */
+    public SetPropertiesRule( String[] attributeNames, String[] propertyNames )
+<span class="fc" id="L109">    {</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">        for ( int i = 0, size = attributeNames.length; i &lt; size; i++ )</span>
+        {
+<span class="fc" id="L112">            String propName = null;</span>
+<span class="fc bfc" id="L113" title="All 2 branches covered.">            if ( i &lt; propertyNames.length )</span>
+            {
+<span class="fc" id="L115">                propName = propertyNames[i];</span>
+            }
+
+<span class="fc" id="L118">            aliases.put( attributeNames[i], propName );</span>
+        }
+<span class="fc" id="L120">    }</span>
+
+    /**
+     * Constructor allows attribute-&gt;property mapping to be overriden.
+     *
+     * @param aliases attribute-&gt;property mapping
+     * @since 3.0
+     */
+    public SetPropertiesRule( Map&lt;String, String&gt; aliases )
+<span class="fc" id="L129">    {</span>
+<span class="pc bpc" id="L130" title="1 of 4 branches missed.">        if ( aliases != null &amp;&amp; !aliases.isEmpty() )</span>
+        {
+<span class="fc" id="L132">            this.aliases.putAll( aliases );</span>
+        }
+<span class="fc" id="L134">    }</span>
+
+    // ----------------------------------------------------- Instance Variables
+
+<span class="fc" id="L138">    private final Map&lt;String, String&gt; aliases = new HashMap&lt;String, String&gt;();</span>
+
+    /**
+     * Used to determine whether the parsing should fail if an property specified in the XML is missing from the bean.
+     * Default is true for backward compatibility.
+     */
+<span class="fc" id="L144">    private boolean ignoreMissingProperty = true;</span>
+
+    // --------------------------------------------------------- Public Methods
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void begin( String namespace, String name, Attributes attributes )
+        throws Exception
+    {
+        // Build a set of attribute names and corresponding values
+<span class="fc" id="L156">        Map&lt;String, String&gt; values = new HashMap&lt;String, String&gt;();</span>
+
+<span class="fc bfc" id="L158" title="All 2 branches covered.">        for ( int i = 0; i &lt; attributes.getLength(); i++ )</span>
+        {
+<span class="fc" id="L160">            String attributeName = attributes.getLocalName( i );</span>
+<span class="pc bpc" id="L161" title="1 of 2 branches missed.">            if ( &quot;&quot;.equals( attributeName ) )</span>
+            {
+<span class="nc" id="L163">                attributeName = attributes.getQName( i );</span>
+            }
+<span class="fc" id="L165">            String value = attributes.getValue( i );</span>
+
+            // alias lookup has complexity O(1)
+<span class="fc bfc" id="L168" title="All 2 branches covered.">            if ( aliases.containsKey( attributeName ) )</span>
+            {
+<span class="fc" id="L170">                attributeName = aliases.get( attributeName );</span>
+            }
+
+<span class="pc bpc" id="L173" title="1 of 2 branches missed.">            if ( getDigester().getLogger().isDebugEnabled() )</span>
+            {
+<span class="nc" id="L175">                getDigester().getLogger().debug( format( &quot;[SetPropertiesRule]{%s} Setting property '%s' to '%s'&quot;,</span>
+<span class="nc" id="L176">                                                         getDigester().getMatch(),</span>
+                                                         attributeName,
+                                                         attributeName ) );
+            }
+
+<span class="fc bfc" id="L181" title="All 4 branches covered.">            if ( ( !ignoreMissingProperty ) &amp;&amp; ( attributeName != null ) )</span>
+            {
+                // The BeanUtils.populate method silently ignores items in
+                // the map (ie xml entities) which have no corresponding
+                // setter method, so here we check whether each xml attribute
+                // does have a corresponding property before calling the
+                // BeanUtils.populate method.
+                //
+                // Yes having the test and set as separate steps is ugly and
+                // inefficient. But BeanUtils.populate doesn't provide the
+                // functionality we need here, and changing the algorithm which
+                // determines the appropriate setter method to invoke is
+                // considered too risky.
+                //
+                // Using two different classes (PropertyUtils vs BeanUtils) to
+                // do the test and the set is also ugly; the codepaths
+                // are different which could potentially lead to trouble.
+                // However the BeanUtils/ProperyUtils code has been carefully
+                // compared and the PropertyUtils functionality does appear
+                // compatible so we'll accept the risk here.
+
+<span class="fc" id="L202">                Object top = getDigester().peek();</span>
+<span class="fc" id="L203">                boolean test = isWriteable( top, attributeName );</span>
+<span class="fc bfc" id="L204" title="All 2 branches covered.">                if ( !test )</span>
+                {
+<span class="fc" id="L206">                    throw new NoSuchMethodException( &quot;Property &quot; + attributeName + &quot; can't be set&quot; );</span>
+                }
+            }
+
+<span class="fc bfc" id="L210" title="All 2 branches covered.">            if ( attributeName != null )</span>
+            {
+<span class="fc" id="L212">                values.put( attributeName, value );</span>
+            }
+        }
+
+        // Populate the corresponding properties of the top object
+<span class="fc" id="L217">        Object top = getDigester().peek();</span>
+<span class="pc bpc" id="L218" title="1 of 2 branches missed.">        if ( getDigester().getLogger().isDebugEnabled() )</span>
+        {
+<span class="nc bnc" id="L220" title="All 2 branches missed.">            if ( top != null )</span>
+            {
+<span class="nc" id="L222">                getDigester().getLogger().debug( format( &quot;[SetPropertiesRule]{%s} Set '%s' properties&quot;,</span>
+<span class="nc" id="L223">                                                         getDigester().getMatch(),</span>
+<span class="nc" id="L224">                                                         top.getClass().getName() ) );</span>
+            }
+            else
+            {
+<span class="nc" id="L228">                getDigester().getLogger().debug( format( &quot;[SetPropertiesRule]{%s} Set NULL properties&quot;,</span>
+<span class="nc" id="L229">                                                         getDigester().getMatch() ) );</span>
+            }
+        }
+<span class="fc" id="L232">        populate( top, values );</span>
+<span class="fc" id="L233">    }</span>
+
+    /**
+     * Add an additional attribute name to property name mapping. This is intended to be used from the xml rules.
+     *
+     * @param attributeName the attribute name has to be mapped
+     * @param propertyName the target property name
+     */
+    public void addAlias( String attributeName, String propertyName )
+    {
+<span class="nc" id="L243">        aliases.put( attributeName, propertyName );</span>
+<span class="nc" id="L244">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString()
+    {
+<span class="nc" id="L252">        return format( &quot;SetPropertiesRule[aliases=%s, ignoreMissingProperty=%s]&quot;, aliases, ignoreMissingProperty );</span>
+    }
+
+    /**
+     * &lt;p&gt;
+     * Are attributes found in the xml without matching properties to be ignored?
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * If false, the parsing will interrupt with an &lt;code&gt;NoSuchMethodException&lt;/code&gt; if a property specified in the
+     * XML is not found. The default is true.
+     * &lt;/p&gt;
+     *
+     * @return true if skipping the unmatched attributes.
+     */
+    public boolean isIgnoreMissingProperty()
+    {
+<span class="nc" id="L268">        return this.ignoreMissingProperty;</span>
+    }
+
+    /**
+     * Sets whether attributes found in the xml without matching properties should be ignored. If set to false, the
+     * parsing will throw an &lt;code&gt;NoSuchMethodException&lt;/code&gt; if an unmatched attribute is found. This allows to trap
+     * misspellings in the XML file.
+     *
+     * @param ignoreMissingProperty false to stop the parsing on unmatched attributes.
+     */
+    public void setIgnoreMissingProperty( boolean ignoreMissingProperty )
+    {
+<span class="fc" id="L280">        this.ignoreMissingProperty = ignoreMissingProperty;</span>
+<span class="fc" id="L281">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>PackageFunctions.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath</a> &gt; <span class="el_source">PackageFunctions.java</span></div><h1>PackageFunctions.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Set;
+
+import org.apache.commons.jxpath.functions.ConstructorFunction;
+import org.apache.commons.jxpath.functions.MethodFunction;
+import org.apache.commons.jxpath.util.MethodLookupUtils;
+import org.apache.commons.jxpath.util.TypeUtils;
+
+/**
+ * Extension functions provided by Java classes.  The class prefix specified
+ * in the constructor is used when a constructor or a static method is called.
+ * Usually, a class prefix is a package name (hence the name of this class).
+ *
+ * Let's say, we declared a PackageFunction like this:
+ * &lt;blockquote&gt;&lt;pre&gt;
+ *     new PackageFunctions(&quot;java.util.&quot;, &quot;util&quot;)
+ * &lt;/pre&gt;&lt;/blockquote&gt;
+ *
+ * We can now use XPaths like:
+ * &lt;dl&gt;
+ *  &lt;dt&gt;&lt;code&gt;&quot;util:Date.new()&quot;&lt;/code&gt;&lt;/dt&gt;
+ *  &lt;dd&gt;Equivalent to &lt;code&gt;new java.util.Date()&lt;/code&gt;&lt;/dd&gt;
+ *  &lt;dt&gt;&lt;code&gt;&quot;util:Collections.singleton('foo')&quot;&lt;/code&gt;&lt;/dt&gt;
+ *  &lt;dd&gt;Equivalent to &lt;code&gt;java.util.Collections.singleton(&quot;foo&quot;)&lt;/code&gt;&lt;/dd&gt;
+ *  &lt;dt&gt;&lt;code&gt;&quot;util:substring('foo', 1, 2)&quot;&lt;/code&gt;&lt;/dt&gt;
+ *  &lt;dd&gt;Equivalent to &lt;code&gt;&quot;foo&quot;.substring(1, 2)&lt;/code&gt;.  Note that in
+ *  this case, the class prefix is not used. JXPath does not check that
+ *  the first parameter of the function (the method target) is in fact
+ *  a member of the package described by this PackageFunctions object.&lt;/dd&gt;
+ * &lt;/dl&gt;
+ *
+ * &lt;p&gt;
+ * If the first argument of a method or constructor is {@link ExpressionContext},
+ * the expression context in which the function is evaluated is passed to
+ * the method.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * There is one PackageFunctions object registered by default with each
+ * JXPathContext.  It does not have a namespace and uses no class prefix.
+ * The existence of this object allows us to use XPaths like:
+ * &lt;code&gt;&quot;java.util.Date.new()&quot;&lt;/code&gt; and &lt;code&gt;&quot;length('foo')&quot;&lt;/code&gt;
+ * without the explicit registration of any extension functions.
+ * &lt;/p&gt;
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision$ $Date$
+ */
+public class PackageFunctions implements Functions {
+    private String classPrefix;
+    private String namespace;
+<span class="fc" id="L73">    private static final Object[] EMPTY_ARRAY = new Object[0];</span>
+
+    /**
+     * Create a new PackageFunctions.
+     * @param classPrefix class prefix
+     * @param namespace namespace String
+     */
+<span class="fc" id="L80">    public PackageFunctions(String classPrefix, String namespace) {</span>
+<span class="fc" id="L81">        this.classPrefix = classPrefix;</span>
+<span class="fc" id="L82">        this.namespace = namespace;</span>
+<span class="fc" id="L83">    }</span>
+
+    /**
+     * Returns the namespace specified in the constructor
+     * @return (singleton) namespace Set
+     */
+    public Set getUsedNamespaces() {
+<span class="fc" id="L90">        return Collections.singleton(namespace);</span>
+    }
+
+    /**
+     * Returns a {@link Function}, if found, for the specified namespace,
+     * name and parameter types.
+     * &lt;p&gt;
+     * @param  namespace - if it is not the same as specified in the
+     * construction, this method returns null
+     * @param name - name of the method, which can one these forms:
+     * &lt;ul&gt;
+     * &lt;li&gt;&lt;b&gt;methodname&lt;/b&gt;, if invoking a method on an object passed as the
+     * first parameter&lt;/li&gt;
+     * &lt;li&gt;&lt;b&gt;Classname.new&lt;/b&gt;, if looking for a constructor&lt;/li&gt;
+     * &lt;li&gt;&lt;b&gt;subpackage.subpackage.Classname.new&lt;/b&gt;, if looking for a
+     * constructor in a subpackage&lt;/li&gt;
+     * &lt;li&gt;&lt;b&gt;Classname.methodname&lt;/b&gt;, if looking for a static method&lt;/li&gt;
+     * &lt;li&gt;&lt;b&gt;subpackage.subpackage.Classname.methodname&lt;/b&gt;, if looking for a
+     * static method of a class in a subpackage&lt;/li&gt;
+     * &lt;/ul&gt;
+     * @param parameters Object[] of parameters
+     * @return a MethodFunction, a ConstructorFunction or null if no function
+     * is found
+     */
+    public Function getFunction(
+        String namespace,
+        String name,
+        Object[] parameters) {
+<span class="pc bpc" id="L118" title="1 of 6 branches missed.">        if ((namespace == null &amp;&amp; this.namespace != null) //NOPMD</span>
+<span class="pc bpc" id="L119" title="1 of 2 branches missed.">            || (namespace != null &amp;&amp; !namespace.equals(this.namespace))) {</span>
+<span class="nc" id="L120">            return null;</span>
+        }
+
+<span class="fc bfc" id="L123" title="All 2 branches covered.">        if (parameters == null) {</span>
+<span class="fc" id="L124">            parameters = EMPTY_ARRAY;</span>
+        }
+
+<span class="fc bfc" id="L127" title="All 2 branches covered.">        if (parameters.length &gt;= 1) {</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">            Object target = TypeUtils.convert(parameters[0], Object.class);</span>
+<span class="pc bpc" id="L129" title="1 of 2 branches missed.">            if (target != null) {</span>
+<span class="fc" id="L130">                Method method =</span>
+<span class="fc" id="L131">                    MethodLookupUtils.lookupMethod(</span>
+<span class="fc" id="L132">                        target.getClass(),</span>
+                        name,
+                        parameters);
+<span class="fc bfc" id="L135" title="All 2 branches covered.">                if (method != null) {</span>
+<span class="fc" id="L136">                    return new MethodFunction(method);</span>
+                }
+
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">                if (target instanceof NodeSet) {</span>
+<span class="nc" id="L140">                    target = ((NodeSet) target).getPointers();</span>
+                }
+
+<span class="fc" id="L143">                method =</span>
+<span class="fc" id="L144">                    MethodLookupUtils.lookupMethod(</span>
+<span class="fc" id="L145">                        target.getClass(),</span>
+                        name,
+                        parameters);
+<span class="pc bpc" id="L148" title="1 of 2 branches missed.">                if (method != null) {</span>
+<span class="nc" id="L149">                    return new MethodFunction(method);</span>
+                }
+
+<span class="pc bpc" id="L152" title="1 of 2 branches missed.">                if (target instanceof Collection) {</span>
+<span class="nc" id="L153">                    Iterator iter = ((Collection) target).iterator();</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">                    if (iter.hasNext()) {</span>
+<span class="nc" id="L155">                        target = iter.next();</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">                        if (target instanceof Pointer) {</span>
+<span class="nc" id="L157">                            target = ((Pointer) target).getValue();</span>
+                        }
+                    }
+                    else {
+<span class="nc" id="L161">                        target = null;</span>
+                    }
+                }
+            }
+<span class="pc bpc" id="L165" title="1 of 2 branches missed.">            if (target != null) {</span>
+<span class="fc" id="L166">                Method method =</span>
+<span class="fc" id="L167">                    MethodLookupUtils.lookupMethod(</span>
+<span class="fc" id="L168">                        target.getClass(),</span>
+                        name,
+                        parameters);
+<span class="pc bpc" id="L171" title="1 of 2 branches missed.">                if (method != null) {</span>
+<span class="nc" id="L172">                    return new MethodFunction(method);</span>
+                }
+            }
+        }
+
+<span class="fc" id="L177">        String fullName = classPrefix + name;</span>
+<span class="fc" id="L178">        int inx = fullName.lastIndexOf('.');</span>
+<span class="pc bpc" id="L179" title="1 of 2 branches missed.">        if (inx == -1) {</span>
+<span class="nc" id="L180">            return null;</span>
+        }
+
+<span class="fc" id="L183">        String className = fullName.substring(0, inx);</span>
+<span class="fc" id="L184">        String methodName = fullName.substring(inx + 1);</span>
+
+        Class functionClass;
+        try {
+<span class="fc" id="L188">            functionClass = Class.forName(className);</span>
+        }
+<span class="nc" id="L190">        catch (ClassNotFoundException ex) {</span>
+<span class="nc bnc" id="L191" title="All 2 branches missed.">            throw new JXPathException(</span>
+                &quot;Cannot invoke extension function &quot;
+                    + (namespace != null ? namespace + &quot;:&quot; + name : name),
+                ex);
+<span class="fc" id="L195">        }</span>
+
+<span class="fc bfc" id="L197" title="All 2 branches covered.">        if (methodName.equals(&quot;new&quot;)) {</span>
+<span class="fc" id="L198">            Constructor constructor =</span>
+<span class="fc" id="L199">                MethodLookupUtils.lookupConstructor(functionClass, parameters);</span>
+<span class="pc bpc" id="L200" title="1 of 2 branches missed.">            if (constructor != null) {</span>
+<span class="fc" id="L201">                return new ConstructorFunction(constructor);</span>
+            }
+<span class="nc" id="L203">        }</span>
+        else {
+<span class="fc" id="L205">            Method method =</span>
+<span class="fc" id="L206">                MethodLookupUtils.lookupStaticMethod(</span>
+                    functionClass,
+                    methodName,
+                    parameters);
+<span class="pc bpc" id="L210" title="1 of 2 branches missed.">            if (method != null) {</span>
+<span class="fc" id="L211">                return new MethodFunction(method);</span>
+            }
+        }
+<span class="nc" id="L214">        return null;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

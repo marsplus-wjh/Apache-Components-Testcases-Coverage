@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>DefaultLookups.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Configuration</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.configuration2.interpol</a> &gt; <span class="el_source">DefaultLookups.java</span></div><h1>DefaultLookups.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.configuration2.interpol;
+
+/**
+ * &lt;p&gt;
+ * An enumeration class defining constants for the {@code Lookup} objects
+ * available for each {@code Configuration} object per default.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * When a new configuration object derived from {@code AbstractConfiguration} is
+ * created it installs a {@link ConfigurationInterpolator} with a default set of
+ * {@link Lookup} objects. These lookups are defined by this enumeration class.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * All the default {@code Lookup} classes are state-less, thus their instances
+ * can be shared between multiple configuration objects. Therefore, it makes
+ * sense to keep shared instances in this enumeration class.
+ * &lt;/p&gt;
+ *
+ * @version $Id$
+ * @since 2.0
+ */
+<span class="pc" id="L38">public enum DefaultLookups</span>
+{
+    /** The lookup for system properties. */
+<span class="fc" id="L41">    SYSTEM_PROPERTIES(&quot;sys&quot;, new SystemPropertiesLookup()),</span>
+
+    /** The lookup for environment properties. */
+<span class="fc" id="L44">    ENVIRONMENT(&quot;env&quot;, new EnvironmentLookup()),</span>
+
+    /** The lookup for constants. */
+<span class="fc" id="L47">    CONST(&quot;const&quot;, new ConstantLookup());</span>
+
+    /** The prefix under which the associated lookup object is registered. */
+    private final String prefix;
+
+    /** The associated lookup instance. */
+    private final Lookup lookup;
+
+    /**
+     * Creates a new instance of {@code DefaultLookups} and sets the prefix and
+     * the associated lookup instance.
+     *
+     * @param prfx the prefix
+     * @param look the {@code Lookup} instance
+     */
+    private DefaultLookups(String prfx, Lookup look)
+<span class="fc" id="L63">    {</span>
+<span class="fc" id="L64">        prefix = prfx;</span>
+<span class="fc" id="L65">        lookup = look;</span>
+<span class="fc" id="L66">    }</span>
+
+    /**
+     * Returns the standard prefix for the lookup object of this kind.
+     *
+     * @return the prefix
+     */
+    public String getPrefix()
+    {
+<span class="fc" id="L75">        return prefix;</span>
+    }
+
+    /**
+     * Returns the standard {@code Lookup} instance of this kind.
+     *
+     * @return the associated {@code Lookup} object
+     */
+    public Lookup getLookup()
+    {
+<span class="fc" id="L85">        return lookup;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

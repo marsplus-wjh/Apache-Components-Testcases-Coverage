@@ -1,0 +1,360 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LinkedRuleBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester3.binder</a> &gt; <span class="el_source">LinkedRuleBuilder.java</span></div><h1>LinkedRuleBuilder.java</h1><pre class="source lang-java linenums">package org.apache.commons.digester3.binder;
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import org.apache.commons.digester3.Rule;
+
+/**
+ * Builder invoked to bind one or more rules to a pattern.
+ *
+ * @since 3.0
+ */
+public final class LinkedRuleBuilder
+{
+
+    private final RulesBinder mainBinder;
+
+    private final FromBinderRuleSet fromBinderRuleSet;
+
+    private final ClassLoader classLoader;
+
+    private final String keyPattern;
+
+    private String namespaceURI;
+
+    LinkedRuleBuilder( final RulesBinder mainBinder, final FromBinderRuleSet fromBinderRuleSet,
+                       final ClassLoader classLoader, final String keyPattern )
+<span class="fc" id="L44">    {</span>
+<span class="fc" id="L45">        this.mainBinder = mainBinder;</span>
+<span class="fc" id="L46">        this.fromBinderRuleSet = fromBinderRuleSet;</span>
+<span class="fc" id="L47">        this.classLoader = classLoader;</span>
+<span class="fc" id="L48">        this.keyPattern = keyPattern;</span>
+<span class="fc" id="L49">    }</span>
+
+    /**
+     * Construct rule that automatically sets a property from the body text, taking the property
+     * name the same as the current element.
+     *
+     * @return a new {@link BeanPropertySetterBuilder} instance.
+     */
+    public BeanPropertySetterBuilder setBeanProperty()
+    {
+<span class="fc" id="L59">        return addProvider( new BeanPropertySetterBuilder( keyPattern, namespaceURI, mainBinder, this ) );</span>
+    }
+
+    /**
+     * Calls a method on an object on the stack (normally the top/parent object), passing arguments collected from
+     * subsequent {@link #callParam()} rule or from the body of this element.
+     *
+     * @param methodName Method name of the parent object to call
+     * @return a new {@link CallMethodBuilder} instance.
+     */
+    public CallMethodBuilder callMethod( String methodName )
+    {
+<span class="pc bpc" id="L71" title="2 of 4 branches missed.">        if ( methodName == null || methodName.length() == 0 )</span>
+        {
+<span class="nc" id="L73">            mainBinder.addError( &quot;{ forPattern( \&quot;%s\&quot; ).callMethod( String ) } empty 'methodName' not allowed&quot;,</span>
+                                 keyPattern );
+        }
+
+<span class="fc" id="L77">        return this.addProvider( new CallMethodBuilder( keyPattern, namespaceURI, mainBinder, this, methodName,</span>
+                                                        classLoader ) );
+    }
+
+    /**
+     * Saves a parameter for use by a surrounding {@link #callMethod(String)}.
+     *
+     * @return a new {@link CallParamBuilder} instance.
+     */
+    public CallParamBuilder callParam()
+    {
+<span class="fc" id="L88">        return this.addProvider( new CallParamBuilder( keyPattern, namespaceURI, mainBinder, this ) );</span>
+    }
+
+    /**
+     * Construct a &quot;call parameter&quot; rule that will save the body text of this element as the parameter value.
+     *
+     * @return a new {@link PathCallParamBuilder} instance.
+     */
+    public PathCallParamBuilder callParamPath()
+    {
+<span class="nc" id="L98">        return addProvider( new PathCallParamBuilder( keyPattern, namespaceURI, mainBinder, this ) );</span>
+    }
+
+    /**
+     * Uses an {@link org.apache.commons.digester3.ObjectCreationFactory} to create a new object which it
+     * pushes onto the object stack.
+     *
+     * When the element is complete, the object will be popped.
+     *
+     * @return a new {@link FactoryCreateBuilder} instance.
+     */
+    public FactoryCreateBuilder factoryCreate()
+    {
+<span class="fc" id="L111">        return addProvider( new FactoryCreateBuilder( keyPattern, namespaceURI, mainBinder, this, classLoader ) );</span>
+    }
+
+    /**
+     * Construct an object.
+     *
+     * @return a new {@link ObjectCreateBuilder} instance.
+     */
+    public ObjectCreateBuilder createObject()
+    {
+<span class="fc" id="L121">        return addProvider( new ObjectCreateBuilder( keyPattern, namespaceURI, mainBinder, this, classLoader ) );</span>
+    }
+
+    /**
+     * Saves a parameter for use by a surrounding {@link #callMethod(String)}.
+     *
+     * @param &lt;T&gt; The parameter type to pass along
+     * @param paramObj The parameter to pass along
+     * @return a new {@link ObjectParamBuilder} instance.
+     */
+    public &lt;T&gt; ObjectParamBuilder&lt;T&gt; objectParam( /* @Nullable */T paramObj )
+    {
+<span class="fc" id="L133">        return addProvider( new ObjectParamBuilder&lt;T&gt;( keyPattern, namespaceURI, mainBinder, this, paramObj ) );</span>
+    }
+
+    /**
+     * Sets properties on the object at the top of the stack,
+     * based on child elements with names matching properties on that  object.
+     *
+     * @return a new {@link NestedPropertiesBuilder} instance.
+     */
+    public NestedPropertiesBuilder setNestedProperties()
+    {
+        // that would be useful when adding rules via automatically generated rules binding (such annotations)
+<span class="fc" id="L145">        NestedPropertiesBuilder nestedPropertiesBuilder =</span>
+<span class="fc" id="L146">            fromBinderRuleSet.getProvider( keyPattern, namespaceURI, NestedPropertiesBuilder.class );</span>
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">        if ( nestedPropertiesBuilder != null )</span>
+        {
+<span class="nc" id="L149">            return nestedPropertiesBuilder;</span>
+        }
+
+<span class="fc" id="L152">        return addProvider( new NestedPropertiesBuilder( keyPattern, namespaceURI, mainBinder, this ) );</span>
+    }
+
+    /**
+     * Calls a method on the (top-1) (parent) object, passing the top object (child) as an argument,
+     * commonly used to establish parent-child relationships.
+     *
+     * @param methodName Method name of the parent method to call
+     * @return a new {@link SetNextBuilder} instance.
+     */
+    public SetNextBuilder setNext( String methodName )
+    {
+<span class="pc bpc" id="L164" title="2 of 4 branches missed.">        if ( methodName == null || methodName.length() == 0 )</span>
+        {
+<span class="nc" id="L166">            mainBinder.addError( &quot;{ forPattern( \&quot;%s\&quot; ).setNext( String ) } empty 'methodName' not allowed&quot;,</span>
+                                 keyPattern );
+        }
+<span class="fc" id="L169">        return this.addProvider( new SetNextBuilder( keyPattern, namespaceURI, mainBinder, this, methodName,</span>
+                                                     classLoader ) );
+    }
+
+    /**
+     * Sets properties on the object at the top of the stack, based on attributes with corresponding names.
+     *
+     * @return a new {@link SetPropertiesBuilder} instance.
+     */
+    public SetPropertiesBuilder setProperties()
+    {
+        // that would be useful when adding rules via automatically generated rules binding (such annotations)
+<span class="fc" id="L181">        SetPropertiesBuilder setPropertiesBuilder =</span>
+<span class="fc" id="L182">            fromBinderRuleSet.getProvider( keyPattern, namespaceURI, SetPropertiesBuilder.class );</span>
+<span class="fc bfc" id="L183" title="All 2 branches covered.">        if ( setPropertiesBuilder != null )</span>
+        {
+<span class="fc" id="L185">            return setPropertiesBuilder;</span>
+        }
+
+<span class="fc" id="L188">        return addProvider( new SetPropertiesBuilder( keyPattern, namespaceURI, mainBinder, this ) );</span>
+    }
+
+    /**
+     * Sets an individual property on the object at the top of the stack, based on attributes with specified names.
+     *
+     * @param attributePropertyName Name of the attribute that will contain the name of the property to be set
+     * @return a new {@link SetPropertyBuilder} instance.
+     */
+    public SetPropertyBuilder setProperty( String attributePropertyName )
+    {
+<span class="pc bpc" id="L199" title="2 of 4 branches missed.">        if ( attributePropertyName == null || attributePropertyName.length() == 0 )</span>
+        {
+<span class="nc" id="L201">            mainBinder</span>
+<span class="nc" id="L202">                .addError( &quot;{ forPattern( \&quot;%s\&quot; ).setProperty( String ) } empty 'attributePropertyName' not allowed&quot;,</span>
+                           keyPattern );
+        }
+
+<span class="fc" id="L206">        return addProvider( new SetPropertyBuilder( keyPattern,</span>
+                                                    namespaceURI,
+                                                    mainBinder,
+                                                    this,
+                                                    attributePropertyName ) );
+    }
+
+    /**
+     * Calls a method on the root object on the stack, passing the top object (child) as an argument.
+     *
+     * @param methodName Method name of the parent method to call
+     * @return a new {@link SetRootBuilder} instance.
+     */
+    public SetRootBuilder setRoot( String methodName )
+    {
+<span class="pc bpc" id="L221" title="2 of 4 branches missed.">        if ( methodName == null || methodName.length() == 0 )</span>
+        {
+<span class="nc" id="L223">            mainBinder.addError( &quot;{ forPattern( \&quot;%s\&quot; ).setRoot( String ) } empty 'methodName' not allowed&quot;,</span>
+                                 keyPattern );
+        }
+
+<span class="fc" id="L227">        return addProvider( new SetRootBuilder( keyPattern, namespaceURI, mainBinder, this, methodName, classLoader ) );</span>
+    }
+
+    /**
+     * Calls a &quot;set top&quot; method on the top (child) object, passing the (top-1) (parent) object as an argument.
+     *
+     * @param methodName Method name of the &quot;set parent&quot; method to call
+     * @return a new {@link SetTopBuilder} instance.
+     */
+    public SetTopBuilder setTop( String methodName )
+    {
+<span class="pc bpc" id="L238" title="2 of 4 branches missed.">        if ( methodName == null || methodName.length() == 0 )</span>
+        {
+<span class="nc" id="L240">            mainBinder.addError( &quot;{ forPattern( \&quot;%s\&quot; ).setTop( String ) } empty 'methodName' not allowed&quot;,</span>
+                                 keyPattern );
+        }
+
+<span class="fc" id="L244">        return addProvider( new SetTopBuilder( keyPattern, namespaceURI, mainBinder, this, methodName, classLoader ) );</span>
+    }
+
+    /**
+     * A Digester rule which allows the user to pre-declare a class which is to
+     * be referenced later at a plugin point by a PluginCreateRule.
+     *
+     * NOTE: when using this rule, make sure {@link org.apache.commons.digester3.Digester} instances
+     * will be created using {@link org.apache.commons.digester3.plugins.PluginRules} rules strategy.
+     *
+     * @return a new {@link PluginDeclarationRuleBuilder} instance.
+     */
+    public PluginDeclarationRuleBuilder declarePlugin()
+    {
+<span class="nc" id="L258">        return addProvider( new PluginDeclarationRuleBuilder( keyPattern, namespaceURI, mainBinder, this ) );</span>
+    }
+
+    /**
+     * A Digester rule which allows the user to declare a plugin.
+     *
+     * NOTE: when using this rule, make sure {@link org.apache.commons.digester3.Digester} instances
+     * will be created using {@link org.apache.commons.digester3.plugins.PluginRules} rules strategy.
+     *
+     * @return a new {@link PluginDeclarationRuleBuilder} instance.
+     */
+    public PluginCreateRuleBuilder createPlugin()
+    {
+<span class="nc" id="L271">        return addProvider( new PluginCreateRuleBuilder( keyPattern, namespaceURI, mainBinder, this ) );</span>
+    }
+
+    /**
+     * A rule implementation that creates a DOM Node containing the XML at the element that matched the rule.
+     *
+     * @return a new {@link NodeCreateRuleProvider} instance.
+     */
+    public NodeCreateRuleProvider createNode()
+    {
+<span class="fc" id="L281">        return addProvider( new NodeCreateRuleProvider( keyPattern, namespaceURI, mainBinder, this ) );</span>
+    }
+
+    /**
+     * Add a custom user rule in the specified pattern.
+     *
+     * &lt;b&gt;WARNING&lt;/b&gt; keep away from this method as much as you can, since there's the risk
+     * same input {@link Rule} instance is plugged to more than one Digester;
+     * use {@link #addRuleCreatedBy(RuleProvider)} instead!!!
+     *
+     * @see #addRuleCreatedBy(RuleProvider)
+     * @see Rule#setDigester(org.apache.commons.digester3.Digester)
+     * @param &lt;R&gt; The rule type
+     * @param rule The custom user rule
+     * @return a new {@link ByRuleBuilder} instance.
+     */
+    public &lt;R extends Rule&gt; ByRuleBuilder&lt;R&gt; addRule( R rule )
+    {
+<span class="pc bpc" id="L299" title="1 of 2 branches missed.">        if ( rule == null )</span>
+        {
+<span class="nc" id="L301">            mainBinder.addError( &quot;{ forPattern( \&quot;%s\&quot; ).addRule( R ) } NULL rule not valid&quot;, keyPattern );</span>
+        }
+
+<span class="fc" id="L304">        return this.addProvider( new ByRuleBuilder&lt;R&gt;( keyPattern, namespaceURI, mainBinder, this, rule ) );</span>
+    }
+
+    /**
+     * Add a custom user rule in the specified pattern built by the given provider.
+     *
+     * @param &lt;R&gt; The rule type
+     * @param provider The rule provider
+     * @return a new {@link ByRuleProviderBuilder} instance.
+     */
+    public &lt;R extends Rule&gt; ByRuleProviderBuilder&lt;R&gt; addRuleCreatedBy( RuleProvider&lt;R&gt; provider )
+    {
+<span class="pc bpc" id="L316" title="1 of 2 branches missed.">        if ( provider == null )</span>
+        {
+<span class="nc" id="L318">            mainBinder.addError( &quot;{ forPattern( \&quot;%s\&quot; ).addRuleCreatedBy() } null rule provider not valid&quot;,</span>
+                                 keyPattern );
+        }
+
+<span class="fc" id="L322">        return addProvider( new ByRuleProviderBuilder&lt;R&gt;( keyPattern, namespaceURI, mainBinder, this, provider ) );</span>
+    }
+
+    /**
+     * Sets the namespace URI for the current rule pattern.
+     *
+     * @param namespaceURI the namespace URI associated to the rule pattern.
+     * @return this {@link LinkedRuleBuilder} instance
+     */
+    public LinkedRuleBuilder withNamespaceURI( /* @Nullable */String namespaceURI )
+    {
+<span class="fc bfc" id="L333" title="All 4 branches covered.">        if ( namespaceURI == null || namespaceURI.length() &gt; 0 )</span>
+        {
+<span class="fc" id="L335">            this.namespaceURI = namespaceURI;</span>
+        }
+        else
+        {
+            // ignore empty namespaces, null is better
+<span class="fc" id="L340">            this.namespaceURI = null;</span>
+        }
+
+<span class="fc" id="L343">        return this;</span>
+    }
+
+    /**
+     * Add a provider in the data structure where storing the providers binding.
+     *
+     * @param &lt;R&gt; The rule will be created by the given provider
+     * @param provider The provider has to be stored in the data structure
+     * @return The provider itself has to be stored in the data structure
+     */
+    private &lt;R extends Rule, RB extends AbstractBackToLinkedRuleBuilder&lt;R&gt;&gt; RB addProvider( RB provider )
+    {
+<span class="fc" id="L355">        fromBinderRuleSet.registerProvider( provider );</span>
+<span class="fc" id="L356">        return provider;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

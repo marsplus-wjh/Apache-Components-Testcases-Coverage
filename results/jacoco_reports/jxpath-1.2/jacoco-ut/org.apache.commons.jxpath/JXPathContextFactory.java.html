@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>JXPathContextFactory.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath</a> &gt; <span class="el_source">JXPathContextFactory.java</span></div><h1>JXPathContextFactory.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.Properties;
+
+/**
+ * Defines a factory API that enables applications to obtain a
+ * {@link JXPathContext} instance.  To acquire a JXPathContext, first call the
+ * static {@link #newInstance} method of JXPathContextFactory.
+ * This method returns a concrete JXPathContextFactory.
+ * Then call {@link #newContext} on that instance.  You will rarely
+ * need to perform these steps explicitly: usually you can call one of the
+ * &lt;code&gt;JXPathContex.newContext&lt;/code&gt; methods, which will perform these steps
+ * for you.
+ *
+ * @see JXPathContext#newContext(Object)
+ * @see JXPathContext#newContext(JXPathContext,Object)
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision$ $Date$
+ */
+public abstract class JXPathContextFactory {
+
+    /** The default property */
+    public static final String FACTORY_NAME_PROPERTY =
+        &quot;org.apache.commons.jxpath.JXPathContextFactory&quot;;
+
+    /** The default factory class */
+    private static final String DEFAULT_FACTORY_CLASS =
+        &quot;org.apache.commons.jxpath.ri.JXPathContextFactoryReferenceImpl&quot;;
+
+    /** Avoid reading all the files when the findFactory
+        method is called the second time ( cache the result of
+        finding the default impl )
+    */
+<span class="fc" id="L57">    private static String factoryImplName = null;</span>
+
+    /**
+     * Create a new JXPathContextFactory.
+     */
+<span class="fc" id="L62">    protected JXPathContextFactory () {</span>
+
+<span class="fc" id="L64">    }</span>
+
+    /**
+     * Obtain a new instance of a &lt;code&gt;JXPathContextFactory&lt;/code&gt;.
+     * This static method creates a new factory instance.
+     * This method uses the following ordered lookup procedure to determine
+     * the &lt;code&gt;JXPathContextFactory&lt;/code&gt; implementation class to load:
+     * &lt;ul&gt;
+     * &lt;li&gt;
+     * Use  the &lt;code&gt;org.apache.commons.jxpath.JXPathContextFactory&lt;/code&gt;
+     * system property.
+     * &lt;/li&gt;
+     * &lt;li&gt;
+     * Alternatively, use the JAVA_HOME (the parent directory where jdk is
+     * installed)/lib/jxpath.properties for a property file that contains the
+     * name of the implementation class keyed on
+     * &lt;code&gt;org.apache.commons.jxpath.JXPathContextFactory&lt;/code&gt;.
+     * &lt;/li&gt;
+     * &lt;li&gt;
+     * Use the Services API (as detailed in the JAR specification), if
+     * available, to determine the classname. The Services API will look
+     * for a classname in the file
+     * &lt;code&gt;META- INF/services/&lt;i&gt;org.apache.commons.jxpath.
+     * JXPathContextFactory&lt;/i&gt;&lt;/code&gt; in jars available to the runtime.
+     * &lt;/li&gt;
+     * &lt;li&gt;
+     * Platform default &lt;code&gt;JXPathContextFactory&lt;/code&gt; instance.
+     * &lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * Once an application has obtained a reference to a
+     * &lt;code&gt;JXPathContextFactory&lt;/code&gt; it can use the factory to
+     * obtain JXPathContext instances.
+     *
+     * @return JXPathContextFactory
+     * @exception JXPathContextFactoryConfigurationError if the implementation
+     *            is not available or cannot be instantiated.
+     */
+    public static JXPathContextFactory newInstance() {
+<span class="fc bfc" id="L103" title="All 2 branches covered.">        if (factoryImplName == null) {</span>
+<span class="fc" id="L104">            factoryImplName =</span>
+<span class="fc" id="L105">                findFactory(FACTORY_NAME_PROPERTY, DEFAULT_FACTORY_CLASS);</span>
+        }
+
+        JXPathContextFactory factoryImpl;
+        try {
+<span class="fc" id="L110">            Class clazz = Class.forName(factoryImplName);</span>
+<span class="fc" id="L111">            factoryImpl = (JXPathContextFactory) clazz.newInstance();</span>
+        }
+<span class="nc" id="L113">        catch (ClassNotFoundException cnfe) {</span>
+<span class="nc" id="L114">            throw new JXPathContextFactoryConfigurationError(cnfe);</span>
+        }
+<span class="nc" id="L116">        catch (IllegalAccessException iae) {</span>
+<span class="nc" id="L117">            throw new JXPathContextFactoryConfigurationError(iae);</span>
+        }
+<span class="nc" id="L119">        catch (InstantiationException ie) {</span>
+<span class="nc" id="L120">            throw new JXPathContextFactoryConfigurationError(ie);</span>
+<span class="fc" id="L121">        }</span>
+<span class="fc" id="L122">        return factoryImpl;</span>
+    }
+
+    /**
+     * Creates a new instance of a JXPathContext using the
+     * currently configured parameters.
+     * @param parentContext parent context
+     * @param contextBean Object bean
+     * @return JXPathContext
+     * @exception JXPathContextFactoryConfigurationError if a JXPathContext
+     *            cannot be created which satisfies the configuration requested
+     */
+
+    public abstract JXPathContext newContext(
+        JXPathContext parentContext,
+        Object contextBean);
+
+    // -------------------- private methods --------------------
+    // This code is duplicated in all factories.
+    // Keep it in sync or move it to a common place
+    // Because it's small probably it's easier to keep it here
+
+    /** Temp debug code - this will be removed after we test everything
+     */
+<span class="fc" id="L146">    private static boolean debug = false;</span>
+    static {
+        try {
+<span class="pc bpc" id="L149" title="1 of 2 branches missed.">            debug = System.getProperty(&quot;jxpath.debug&quot;) != null;</span>
+        }
+<span class="nc" id="L151">        catch (SecurityException se) { //NOPMD</span>
+            // This is ok
+<span class="fc" id="L153">        }</span>
+<span class="fc" id="L154">    }</span>
+
+    /**
+     * Private implementation method - will find the implementation
+     * class in the specified order.
+     * @param property    Property name
+     * @param defaultFactory Default implementation, if nothing else is found
+     *
+     * @return class name of the JXPathContextFactory
+     */
+    private static String findFactory(String property, String defaultFactory) {
+        // Use the factory ID system property first
+        try {
+<span class="fc" id="L167">            String systemProp = System.getProperty(property);</span>
+<span class="pc bpc" id="L168" title="1 of 2 branches missed.">            if (systemProp != null) {</span>
+<span class="nc bnc" id="L169" title="All 2 branches missed.">                if (debug) {</span>
+<span class="nc" id="L170">                    System.err.println(</span>
+                        &quot;JXPath: found system property&quot; + systemProp);
+                }
+<span class="nc" id="L173">                return systemProp;</span>
+            }
+
+        }
+<span class="nc" id="L177">        catch (SecurityException se) { //NOPMD</span>
+            // Ignore
+<span class="fc" id="L179">       }</span>
+
+        // try to read from $java.home/lib/xml.properties
+        try {
+<span class="fc" id="L183">            String javah = System.getProperty(&quot;java.home&quot;);</span>
+<span class="fc" id="L184">            String configFile =</span>
+                javah
+                    + File.separator
+                    + &quot;lib&quot;
+                    + File.separator
+                    + &quot;jxpath.properties&quot;;
+<span class="fc" id="L190">            File f = new File(configFile);</span>
+<span class="pc bpc" id="L191" title="1 of 2 branches missed.">            if (f.exists()) {</span>
+<span class="nc" id="L192">                Properties props = new Properties();</span>
+<span class="nc" id="L193">                FileInputStream fis = new FileInputStream(f);</span>
+                try {
+<span class="nc" id="L195">                    props.load(fis);</span>
+                }
+                finally {
+<span class="nc bnc" id="L198" title="All 4 branches missed.">                    if (fis != null) {</span>
+                        try {
+<span class="nc" id="L200">                            fis.close();</span>
+                        }
+<span class="nc" id="L202">                        catch (IOException e) { //NOPMD</span>
+                            //swallow
+<span class="nc" id="L204">                        }</span>
+                    }
+                }
+<span class="nc" id="L207">                String factory = props.getProperty(property);</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">                if (factory != null) {</span>
+<span class="nc bnc" id="L209" title="All 2 branches missed.">                    if (debug) {</span>
+<span class="nc" id="L210">                        System.err.println(</span>
+                            &quot;JXPath: found java.home property &quot; + factory);
+                    }
+<span class="nc" id="L213">                    return factory;</span>
+                }
+            }
+        }
+<span class="nc" id="L217">        catch (IOException ex) {</span>
+<span class="nc bnc" id="L218" title="All 2 branches missed.">            if (debug) {</span>
+<span class="nc" id="L219">                ex.printStackTrace();</span>
+            }
+<span class="fc" id="L221">        }</span>
+
+<span class="fc" id="L223">        String serviceId = &quot;META-INF/services/&quot; + property;</span>
+        // try to find services in CLASSPATH
+        try {
+<span class="pc bpc" id="L226" title="1 of 2 branches missed.">            ClassLoader cl = JXPathContextFactory.class.getClassLoader();</span>
+<span class="fc" id="L227">            InputStream is = null;</span>
+<span class="pc bpc" id="L228" title="1 of 2 branches missed.">            if (cl == null) {</span>
+<span class="nc" id="L229">                is = ClassLoader.getSystemResourceAsStream(serviceId);</span>
+            }
+            else {
+<span class="fc" id="L232">                is = cl.getResourceAsStream(serviceId);</span>
+            }
+
+<span class="pc bpc" id="L235" title="1 of 2 branches missed.">            if (is != null) {</span>
+<span class="nc bnc" id="L236" title="All 2 branches missed.">                if (debug) {</span>
+<span class="nc" id="L237">                    System.err.println(&quot;JXPath: found  &quot; + serviceId);</span>
+                }
+<span class="nc" id="L239">                BufferedReader rd =</span>
+                    new BufferedReader(new InputStreamReader(is));
+
+<span class="nc" id="L242">                String factory = null;</span>
+                try {
+<span class="nc" id="L244">                    factory = rd.readLine();</span>
+                }
+                finally {
+<span class="nc" id="L247">                    try {</span>
+<span class="nc" id="L248">                        rd.close();</span>
+                    }
+<span class="nc" id="L250">                    catch (IOException e) { //NOPMD</span>
+                        //swallow
+<span class="nc" id="L252">                    }</span>
+<span class="nc" id="L253">                }</span>
+
+<span class="nc bnc" id="L255" title="All 4 branches missed.">                if (factory != null &amp;&amp; !&quot;&quot;.equals(factory)) {</span>
+<span class="nc bnc" id="L256" title="All 2 branches missed.">                    if (debug) {</span>
+<span class="nc" id="L257">                        System.err.println(</span>
+                            &quot;JXPath: loaded from services: &quot; + factory);
+                    }
+<span class="nc" id="L260">                    return factory;</span>
+                }
+            }
+        }
+<span class="nc" id="L264">        catch (Exception ex) {</span>
+<span class="nc bnc" id="L265" title="All 2 branches missed.">            if (debug) {</span>
+<span class="nc" id="L266">                ex.printStackTrace();</span>
+            }
+<span class="fc" id="L268">        }</span>
+<span class="fc" id="L269">        return defaultFactory;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

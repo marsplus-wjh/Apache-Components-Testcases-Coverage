@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BeanPropertySetterRule.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester3</a> &gt; <span class="el_source">BeanPropertySetterRule.java</span></div><h1>BeanPropertySetterRule.java</h1><pre class="source lang-java linenums">package org.apache.commons.digester3;
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import static java.lang.String.format;
+import static org.apache.commons.beanutils.BeanUtils.setProperty;
+import static org.apache.commons.beanutils.PropertyUtils.getPropertyDescriptor;
+
+import java.beans.PropertyDescriptor;
+
+import org.apache.commons.beanutils.DynaBean;
+import org.apache.commons.beanutils.DynaProperty;
+import org.xml.sax.Attributes;
+
+/**
+ * &lt;p&gt;
+ * Rule implements sets a bean property on the top object to the body text.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * The property set:
+ * &lt;/p&gt;
+ * &lt;ul&gt;
+ * &lt;li&gt;can be specified when the rule is created&lt;/li&gt;
+ * &lt;li&gt;or can match the current element when the rule is called.&lt;/li&gt;
+ * &lt;/ul&gt;
+ * &lt;p&gt;
+ * Using the second method and the {@link ExtendedBaseRules} child match pattern, all the child elements can be
+ * automatically mapped to properties on the parent object.
+ * &lt;/p&gt;
+ */
+public class BeanPropertySetterRule
+    extends Rule
+{
+
+    // ----------------------------------------------------------- Constructors
+
+    /**
+     * &lt;p&gt;
+     * Construct rule that sets the given property from the body text.
+     * &lt;/p&gt;
+     * 
+     * @param propertyName name of property to set
+     */
+    public BeanPropertySetterRule( String propertyName )
+<span class="fc" id="L62">    {</span>
+<span class="fc" id="L63">        this.propertyName = propertyName;</span>
+<span class="fc" id="L64">    }</span>
+
+    /**
+     * &lt;p&gt;
+     * Construct rule that automatically sets a property from the body text.
+     * &lt;p&gt;
+     * This construct creates a rule that sets the property on the top object named the same as the current element.
+     */
+    public BeanPropertySetterRule()
+    {
+<span class="nc" id="L74">        this( null );</span>
+<span class="nc" id="L75">    }</span>
+
+    // ----------------------------------------------------- Instance Variables
+
+    /**
+     * Set this property on the top object.
+     */
+    private String propertyName;
+
+    /**
+     * Extract the property name from attribute
+     */
+    private String propertyNameFromAttribute;
+
+    /**
+     * The body text used to set the property.
+     */
+<span class="fc" id="L92">    private String bodyText = null;</span>
+
+    // --------------------------------------------------------- Public Methods
+
+    /**
+     * Returns the property name associated to this setter rule.
+     *
+     * @return The property name associated to this setter rule
+     */
+    public String getPropertyName()
+    {
+<span class="nc" id="L103">        return propertyName;</span>
+    }
+
+    /**
+     * Sets the attribute name from which the property name has to be extracted.
+     *
+     * @param propertyNameFromAttribute the attribute name from which the property name has to be extracted.
+     * @since 3.0
+     */
+    public void setPropertyNameFromAttribute( String propertyNameFromAttribute )
+    {
+<span class="fc" id="L114">        this.propertyNameFromAttribute = propertyNameFromAttribute;</span>
+<span class="fc" id="L115">    }</span>
+
+    /**
+     * Returns the body text used to set the property.
+     *
+     * @return The body text used to set the property
+     */
+    protected String getBodyText()
+    {
+<span class="nc" id="L124">        return bodyText;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void begin( String namespace, String name, Attributes attributes )
+        throws Exception
+    {
+<span class="fc bfc" id="L134" title="All 2 branches covered.">        if ( propertyNameFromAttribute != null )</span>
+        {
+<span class="fc" id="L136">            propertyName = attributes.getValue( propertyNameFromAttribute );</span>
+
+<span class="fc" id="L138">            getDigester().getLogger().warn( format( &quot;[BeanPropertySetterRule]{%s} Attribute '%s' not found in matching element '%s'&quot;,</span>
+<span class="fc" id="L139">                                                    getDigester().getMatch(), propertyNameFromAttribute, name ) );</span>
+        }
+<span class="fc" id="L141">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void body( String namespace, String name, String text )
+        throws Exception
+    {
+        // log some debugging information
+<span class="pc bpc" id="L151" title="1 of 2 branches missed.">        if ( getDigester().getLogger().isDebugEnabled() )</span>
+        {
+<span class="nc" id="L153">            getDigester().getLogger().debug( format( &quot;[BeanPropertySetterRule]{%s} Called with text '%s'&quot;,</span>
+<span class="nc" id="L154">                                                     getDigester().getMatch(),</span>
+                                                     text ) );
+        }
+
+<span class="fc" id="L158">        bodyText = text.trim();</span>
+<span class="fc" id="L159">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void end( String namespace, String name )
+        throws Exception
+    {
+<span class="fc" id="L168">        String property = propertyName;</span>
+
+<span class="fc bfc" id="L170" title="All 2 branches covered.">        if ( property == null )</span>
+        {
+            // If we don't have a specific property name,
+            // use the element name.
+<span class="fc" id="L174">            property = name;</span>
+        }
+
+        // Get a reference to the top object
+<span class="fc" id="L178">        Object top = getDigester().peek();</span>
+
+        // log some debugging information
+<span class="pc bpc" id="L181" title="1 of 2 branches missed.">        if ( getDigester().getLogger().isDebugEnabled() )</span>
+        {
+<span class="nc" id="L183">            getDigester().getLogger().debug( format( &quot;[BeanPropertySetterRule]{%s} Set %s property %s with text %s&quot;,</span>
+<span class="nc" id="L184">                                                     getDigester().getMatch(),</span>
+<span class="nc" id="L185">                                                     top.getClass().getName(),</span>
+                                                     property,
+                                                     bodyText ) );
+        }
+
+        // Force an exception if the property does not exist
+        // (BeanUtils.setProperty() silently returns in this case)
+<span class="pc bpc" id="L192" title="1 of 2 branches missed.">        if ( top instanceof DynaBean )</span>
+        {
+<span class="nc" id="L194">            DynaProperty desc = ( (DynaBean) top ).getDynaClass().getDynaProperty( property );</span>
+<span class="nc bnc" id="L195" title="All 2 branches missed.">            if ( desc == null )</span>
+            {
+<span class="nc" id="L197">                throw new NoSuchMethodException( &quot;Bean has no property named &quot; + property );</span>
+            }
+<span class="nc" id="L199">        }</span>
+        else
+        /* this is a standard JavaBean */
+        {
+<span class="fc" id="L203">            PropertyDescriptor desc = getPropertyDescriptor( top, property );</span>
+<span class="fc bfc" id="L204" title="All 2 branches covered.">            if ( desc == null )</span>
+            {
+<span class="fc" id="L206">                throw new NoSuchMethodException( &quot;Bean has no property named &quot; + property );</span>
+            }
+        }
+
+        // Set the property (with conversion as necessary)
+<span class="fc" id="L211">        setProperty( top, property, bodyText );</span>
+<span class="fc" id="L212">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void finish()
+        throws Exception
+    {
+<span class="fc" id="L221">        bodyText = null;</span>
+<span class="fc" id="L222">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString()
+    {
+<span class="nc" id="L230">        return format( &quot;BeanPropertySetterRule[propertyName=%s]&quot;, propertyName );</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

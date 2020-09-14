@@ -1,0 +1,585 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>PluginCreateRule.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester.plugins</a> &gt; <span class="el_source">PluginCreateRule.java</span></div><h1>PluginCreateRule.java</h1><pre class="source lang-java linenums">/* $Id$
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.digester.plugins;
+
+import java.util.List;
+
+import org.apache.commons.digester.Rule;
+import org.apache.commons.logging.Log;
+
+/**
+ * Allows the original rules for parsing the configuration file to define
+ * points at which plugins are allowed, by configuring a PluginCreateRule
+ * with the appropriate pattern.
+ *
+ * @since 1.6
+ */
+public class PluginCreateRule extends Rule implements InitializableRule {
+
+    // see setPluginClassAttribute
+<span class="pc" id="L35">    private String pluginClassAttrNs = null;</span>
+<span class="pc" id="L36">    private String pluginClassAttr = null;</span>
+    
+    // see setPluginIdAttribute
+<span class="pc" id="L39">    private String pluginIdAttrNs = null;</span>
+<span class="pc" id="L40">    private String pluginIdAttr = null;</span>
+    
+    /**
+     * In order to invoke the addRules method on the plugin class correctly,
+     * we need to know the pattern which this rule is matched by.
+     */
+    private String pattern;
+
+    /** A base class that any plugin must derive from. */
+<span class="pc" id="L49">    private Class&lt;?&gt; baseClass = null;</span>
+
+    /**
+     * Info about optional default plugin to be used if no plugin-id is
+     * specified in the input data. This can simplify the syntax where one
+     * particular plugin is usually used.
+     */
+    private Declaration defaultPlugin;
+
+    /**
+     * Currently, none of the Rules methods allow exceptions to be thrown.
+     * Therefore if this class cannot initialise itself properly, it cannot
+     * cause the digester to stop. Instead, we cache the exception and throw
+     * it the first time the begin() method is called.
+     */
+    private PluginConfigurationException initException;
+
+    //-------------------- constructors -------------------------------------
+
+    /**
+     * Create a plugin rule where the user &lt;i&gt;must&lt;/i&gt; specify a plugin-class
+     * or plugin-id.
+     * 
+     * @param baseClass is the class which any specified plugin &lt;i&gt;must&lt;/i&gt; be
+     * descended from.
+     */
+<span class="fc" id="L75">    public PluginCreateRule(Class&lt;?&gt; baseClass) {</span>
+<span class="fc" id="L76">        this.baseClass = baseClass;</span>
+<span class="fc" id="L77">    }</span>
+
+    /**
+     * Create a plugin rule where the user &lt;i&gt;may&lt;/i&gt; specify a plugin.
+     * If the user doesn't specify a plugin, then the default class specified 
+     * in this constructor is used.
+     * 
+     * @param baseClass is the class which any specified plugin &lt;i&gt;must&lt;/i&gt; be
+     * descended from.
+     * @param dfltPluginClass is the class which will be used if the user
+     * doesn't specify any plugin-class or plugin-id. This class will have
+     * custom rules installed for it just like a declared plugin.
+     */
+<span class="fc" id="L90">    public PluginCreateRule(Class&lt;?&gt; baseClass, Class&lt;?&gt; dfltPluginClass) {</span>
+<span class="fc" id="L91">        this.baseClass = baseClass;</span>
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">        if (dfltPluginClass != null) {</span>
+<span class="fc" id="L93">            defaultPlugin = new Declaration(dfltPluginClass);</span>
+        }
+<span class="fc" id="L95">    }</span>
+
+    /**
+     * Create a plugin rule where the user &lt;i&gt;may&lt;/i&gt; specify a plugin.
+     * If the user doesn't specify a plugin, then the default class specified 
+     * in this constructor is used.
+     * 
+     * @param baseClass is the class which any specified plugin &lt;i&gt;must&lt;/i&gt; be
+     * descended from.
+     * @param dfltPluginClass is the class which will be used if the user
+     * doesn't specify any plugin-class or plugin-id. This class will have
+     * custom rules installed for it just like a declared plugin.
+     * @param dfltPluginRuleLoader is a RuleLoader instance which knows how
+     * to load the custom rules associated with this default plugin.
+     */
+    public PluginCreateRule(Class&lt;?&gt; baseClass, Class&lt;?&gt; dfltPluginClass,
+<span class="nc" id="L111">                    RuleLoader dfltPluginRuleLoader) {</span>
+
+<span class="nc" id="L113">        this.baseClass = baseClass;</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        if (dfltPluginClass != null) {</span>
+<span class="nc" id="L115">            defaultPlugin = </span>
+                new Declaration(dfltPluginClass, dfltPluginRuleLoader);
+        }
+<span class="nc" id="L118">    }</span>
+
+    //------------------- properties ---------------------------------------
+    
+    /**
+     * Sets the xml attribute which the input xml uses to indicate to a 
+     * PluginCreateRule which class should be instantiated.
+     * &lt;p&gt;
+     * See {@link PluginRules#setPluginClassAttribute} for more info.
+     */
+    public void setPluginClassAttribute(String namespaceUri, String attrName) {
+<span class="fc" id="L129">        pluginClassAttrNs = namespaceUri;</span>
+<span class="fc" id="L130">        pluginClassAttr = attrName;</span>
+<span class="fc" id="L131">    }</span>
+
+    /**
+     * Sets the xml attribute which the input xml uses to indicate to a 
+     * PluginCreateRule which plugin declaration is being referenced.
+     * &lt;p&gt;
+     * See {@link PluginRules#setPluginIdAttribute} for more info.
+     */
+    public void setPluginIdAttribute(String namespaceUri, String attrName) {
+<span class="fc" id="L140">        pluginIdAttrNs = namespaceUri;</span>
+<span class="fc" id="L141">        pluginIdAttr = attrName;</span>
+<span class="fc" id="L142">    }</span>
+
+    //------------------- methods --------------------------------------------
+
+    /**
+     * Invoked after this rule has been added to the set of digester rules,
+     * associated with the specified pattern. Check all configuration data is
+     * valid and remember the pattern for later.
+     * 
+     * @param matchPattern is the digester match pattern that is associated 
+     * with this rule instance, eg &quot;root/widget&quot;.
+     * @exception PluginConfigurationException
+     */
+    public void postRegisterInit(String matchPattern)
+                                 throws PluginConfigurationException {
+<span class="fc" id="L157">        Log log = LogUtils.getLogger(digester);</span>
+<span class="fc" id="L158">        boolean debug = log.isDebugEnabled();</span>
+<span class="pc bpc" id="L159" title="1 of 2 branches missed.">        if (debug) {</span>
+<span class="nc" id="L160">            log.debug(&quot;PluginCreateRule.postRegisterInit&quot; + </span>
+                      &quot;: rule registered for pattern [&quot; + matchPattern + &quot;]&quot;);
+        }
+
+<span class="pc bpc" id="L164" title="1 of 2 branches missed.">        if (digester == null) {</span>
+            // We require setDigester to be called before this method.
+            // Note that this means that PluginCreateRule cannot be added
+            // to a Rules object which has not yet been added to a
+            // Digester object.
+<span class="nc" id="L169">            initException = new PluginConfigurationException(</span>
+                 &quot;Invalid invocation of postRegisterInit&quot; + 
+                 &quot;: digester not set.&quot;);
+<span class="nc" id="L172">            throw initException;</span>
+        }
+
+<span class="pc bpc" id="L175" title="1 of 2 branches missed.">        if (pattern != null) {</span>
+            // We have been called twice, ie a single instance has been
+            // associated with multiple patterns.
+            //
+            // Generally, Digester Rule instances can be associated with 
+            // multiple patterns. However for plugins, this creates some 
+            // complications. Some day this may be supported; however for 
+            // now we just reject this situation.
+<span class="nc" id="L183">            initException = new PluginConfigurationException(</span>
+               &quot;A single PluginCreateRule instance has been mapped to&quot; + 
+                 &quot; multiple patterns; this is not supported.&quot;);
+<span class="nc" id="L186">            throw initException;</span>
+        }
+
+<span class="pc bpc" id="L189" title="1 of 2 branches missed.">        if (matchPattern.indexOf('*') != -1) {</span>
+            // having wildcards in patterns is extremely difficult to
+            // deal with. For now, we refuse to allow this.
+            //
+            // TODO: check for any chars not valid in xml element name
+            // rather than just *.
+            //
+            // Reasons include:
+            // (a) handling recursive plugins, and
+            // (b) determining whether one pattern is &quot;below&quot; another,
+            //     as done by PluginRules. Without wildcards, &quot;below&quot;
+            //     just means startsWith, which is easy to check.
+<span class="nc" id="L201">            initException = new PluginConfigurationException(</span>
+                 &quot;A PluginCreateRule instance has been mapped to&quot; + 
+                 &quot; pattern [&quot; + matchPattern + &quot;].&quot; + 
+                 &quot; This pattern includes a wildcard character.&quot; + 
+                 &quot; This is not supported by the plugin architecture.&quot;);
+<span class="nc" id="L206">            throw initException;</span>
+        }
+
+<span class="pc bpc" id="L209" title="1 of 2 branches missed.">        if (baseClass == null) {</span>
+<span class="nc" id="L210">            baseClass = Object.class;</span>
+        }
+        
+<span class="fc" id="L213">        PluginRules rules = (PluginRules) digester.getRules();</span>
+<span class="fc" id="L214">        PluginManager pm = rules.getPluginManager();</span>
+
+        // check default class is valid
+<span class="fc bfc" id="L217" title="All 2 branches covered.">        if (defaultPlugin != null) {</span>
+<span class="pc bpc" id="L218" title="1 of 2 branches missed.">            if (!baseClass.isAssignableFrom(defaultPlugin.getPluginClass())) {</span>
+<span class="nc" id="L219">                initException = new PluginConfigurationException(</span>
+                     &quot;Default class [&quot; + 
+<span class="nc" id="L221">                     defaultPlugin.getPluginClass().getName() + </span>
+                     &quot;] does not inherit from [&quot; + 
+<span class="nc" id="L223">                     baseClass.getName() + &quot;].&quot;);</span>
+<span class="nc" id="L224">                throw initException;</span>
+            }
+
+            try {
+<span class="fc" id="L228">                defaultPlugin.init(digester, pm);</span>
+                
+<span class="nc" id="L230">            } catch(PluginException pwe) {</span>
+            
+<span class="nc" id="L232">                throw new PluginConfigurationException(</span>
+<span class="nc" id="L233">                    pwe.getMessage(), pwe.getCause());</span>
+<span class="fc" id="L234">            }</span>
+        }
+
+        // remember the pattern for later
+<span class="fc" id="L238">        pattern = matchPattern;</span>
+        
+<span class="fc bfc" id="L240" title="All 2 branches covered.">        if (pluginClassAttr ==  null) {</span>
+            // the user hasn't set explicit xml attr names on this rule,
+            // so fetch the default values
+<span class="fc" id="L243">            pluginClassAttrNs = rules.getPluginClassAttrNs();</span>
+<span class="fc" id="L244">            pluginClassAttr = rules.getPluginClassAttr();</span>
+            
+<span class="pc bpc" id="L246" title="1 of 2 branches missed.">            if (debug) {</span>
+<span class="nc" id="L247">                log.debug(</span>
+                    &quot;init: pluginClassAttr set to per-digester values [&quot;
+                    + &quot;ns=&quot; + pluginClassAttrNs 
+                    + &quot;, name=&quot; + pluginClassAttr + &quot;]&quot;);
+            }
+        } else {
+<span class="pc bpc" id="L253" title="1 of 2 branches missed.">            if (debug) {</span>
+<span class="nc" id="L254">                log.debug(</span>
+                    &quot;init: pluginClassAttr set to rule-specific values [&quot;
+                    + &quot;ns=&quot; + pluginClassAttrNs 
+                    + &quot;, name=&quot; + pluginClassAttr + &quot;]&quot;);
+            }
+        }
+        
+<span class="fc bfc" id="L261" title="All 2 branches covered.">        if (pluginIdAttr ==  null) {</span>
+            // the user hasn't set explicit xml attr names on this rule,
+            // so fetch the default values
+<span class="fc" id="L264">            pluginIdAttrNs = rules.getPluginIdAttrNs();</span>
+<span class="fc" id="L265">            pluginIdAttr = rules.getPluginIdAttr();</span>
+            
+<span class="pc bpc" id="L267" title="1 of 2 branches missed.">            if (debug) {</span>
+<span class="nc" id="L268">                log.debug(</span>
+                    &quot;init: pluginIdAttr set to per-digester values [&quot;
+                    + &quot;ns=&quot; + pluginIdAttrNs 
+                    + &quot;, name=&quot; + pluginIdAttr + &quot;]&quot;);
+            }
+        } else {
+<span class="pc bpc" id="L274" title="1 of 2 branches missed.">            if (debug) {</span>
+<span class="nc" id="L275">                log.debug(</span>
+                    &quot;init: pluginIdAttr set to rule-specific values [&quot;
+                    + &quot;ns=&quot; + pluginIdAttrNs 
+                    + &quot;, name=&quot; + pluginIdAttr + &quot;]&quot;);
+            }
+        }
+<span class="fc" id="L281">    }</span>
+
+    /**
+     * Invoked when the Digester matches this rule against an xml element.
+     * &lt;p&gt;
+     * A new instance of the target class is created, and pushed onto the
+     * stack. A new &quot;private&quot; PluginRules object is then created and set as
+     * the digester's default Rules object. Any custom rules associated with
+     * the plugin class are then loaded into that new Rules object.
+     * Finally, any custom rules that are associated with the current pattern
+     * (such as SetPropertiesRules) have their begin methods executed.
+     * 
+     * @param namespace 
+     * @param name 
+     * @param attributes
+     *
+     * @throws ClassNotFoundException
+     * @throws PluginInvalidInputException
+     * @throws PluginConfigurationException
+     */
+    @Override
+    public void begin(String namespace, String name,
+                      org.xml.sax.Attributes attributes)
+                      throws java.lang.Exception {
+<span class="fc" id="L305">        Log log = digester.getLogger();</span>
+<span class="fc" id="L306">        boolean debug = log.isDebugEnabled();</span>
+<span class="pc bpc" id="L307" title="1 of 2 branches missed.">        if (debug) {</span>
+<span class="nc" id="L308">            log.debug(&quot;PluginCreateRule.begin&quot; + &quot;: pattern=[&quot; + pattern + &quot;]&quot; + </span>
+<span class="nc" id="L309">                  &quot; match=[&quot; + digester.getMatch() + &quot;]&quot;);</span>
+        }
+
+<span class="pc bpc" id="L312" title="1 of 2 branches missed.">        if (initException != null) {</span>
+            // we had a problem during initialisation that we could
+            // not report then; report it now.
+<span class="nc" id="L315">            throw initException;</span>
+        }
+        
+        // load any custom rules associated with the plugin
+<span class="fc" id="L319">        PluginRules oldRules = (PluginRules) digester.getRules();</span>
+<span class="fc" id="L320">        PluginManager pluginManager = oldRules.getPluginManager();</span>
+<span class="fc" id="L321">        Declaration currDeclaration = null;</span>
+            
+        String pluginClassName; 
+<span class="fc bfc" id="L324" title="All 2 branches covered.">        if (pluginClassAttrNs == null) {</span>
+            // Yep, this is ugly.
+            //
+            // In a namespace-aware parser, the one-param version will 
+            // return attributes with no namespace.
+            //
+            // In a non-namespace-aware parser, the two-param version will 
+            // never return any attributes, ever.
+<span class="fc" id="L332">            pluginClassName = attributes.getValue(pluginClassAttr);</span>
+        } else {
+<span class="fc" id="L334">            pluginClassName = </span>
+<span class="fc" id="L335">                attributes.getValue(pluginClassAttrNs, pluginClassAttr);</span>
+        }
+
+        String pluginId; 
+<span class="fc bfc" id="L339" title="All 2 branches covered.">        if (pluginIdAttrNs == null) {</span>
+<span class="fc" id="L340">            pluginId = attributes.getValue(pluginIdAttr);</span>
+        } else {
+<span class="fc" id="L342">            pluginId = </span>
+<span class="fc" id="L343">                attributes.getValue(pluginIdAttrNs, pluginIdAttr);</span>
+        }
+        
+<span class="fc bfc" id="L346" title="All 2 branches covered.">        if (pluginClassName != null) {</span>
+            // The user is using a plugin &quot;inline&quot;, ie without a previous
+            // explicit declaration. If they have used the same plugin class
+            // before, we have already gone to the effort of creating a 
+            // Declaration object, so retrieve it. If there is no existing
+            // declaration object for this class, then create one.
+
+<span class="fc" id="L353">            currDeclaration = pluginManager.getDeclarationByClass(</span>
+                pluginClassName);
+
+<span class="fc bfc" id="L356" title="All 2 branches covered.">            if (currDeclaration == null) {</span>
+<span class="fc" id="L357">                currDeclaration = new Declaration(pluginClassName);</span>
+                try {
+<span class="fc" id="L359">                    currDeclaration.init(digester, pluginManager);</span>
+<span class="nc" id="L360">                } catch(PluginException pwe) {</span>
+<span class="nc" id="L361">                    throw new PluginInvalidInputException(</span>
+<span class="nc" id="L362">                        pwe.getMessage(), pwe.getCause());</span>
+<span class="fc" id="L363">                }</span>
+<span class="fc" id="L364">                pluginManager.addDeclaration(currDeclaration);</span>
+            }
+<span class="fc bfc" id="L366" title="All 2 branches covered.">        } else if (pluginId != null) {</span>
+<span class="fc" id="L367">            currDeclaration = pluginManager.getDeclarationById(pluginId);</span>
+                
+<span class="pc bpc" id="L369" title="1 of 2 branches missed.">            if (currDeclaration == null) {</span>
+<span class="nc" id="L370">                throw new PluginInvalidInputException(</span>
+                    &quot;Plugin id [&quot; + pluginId + &quot;] is not defined.&quot;);
+            }
+<span class="pc bpc" id="L373" title="1 of 2 branches missed.">        } else if (defaultPlugin != null) {</span>
+<span class="fc" id="L374">            currDeclaration = defaultPlugin;</span>
+        } else {
+<span class="nc" id="L376">            throw new PluginInvalidInputException(</span>
+                &quot;No plugin class specified for element &quot; +
+                pattern);
+        }
+            
+        // get the class of the user plugged-in type
+<span class="fc" id="L382">        Class&lt;?&gt; pluginClass = currDeclaration.getPluginClass();</span>
+        
+<span class="fc" id="L384">        String path = digester.getMatch();</span>
+
+        // create a new Rules object and effectively push it onto a stack of
+        // rules objects. The stack is actually a linked list; using the
+        // PluginRules constructor below causes the new instance to link
+        // to the previous head-of-stack, then the Digester.setRules() makes
+        // the new instance the new head-of-stack.
+<span class="fc" id="L391">        PluginRules newRules = new PluginRules(digester, path, oldRules, pluginClass);</span>
+<span class="fc" id="L392">        digester.setRules(newRules);</span>
+        
+<span class="pc bpc" id="L394" title="1 of 2 branches missed.">        if (debug) {</span>
+<span class="nc" id="L395">            log.debug(&quot;PluginCreateRule.begin: installing new plugin: &quot; +</span>
+<span class="nc" id="L396">                &quot;oldrules=&quot; + oldRules.toString() +</span>
+<span class="nc" id="L397">                &quot;, newrules=&quot; + newRules.toString());</span>
+        }
+              
+        // load up the custom rules
+<span class="fc" id="L401">        currDeclaration.configure(digester, pattern);</span>
+
+        // create an instance of the plugin class
+<span class="fc" id="L404">        Object instance = pluginClass.newInstance();</span>
+<span class="fc" id="L405">        getDigester().push(instance);</span>
+<span class="pc bpc" id="L406" title="1 of 2 branches missed.">        if (debug) {</span>
+<span class="nc" id="L407">            log.debug(</span>
+                &quot;PluginCreateRule.begin&quot; + &quot;: pattern=[&quot; + pattern + &quot;]&quot; + 
+<span class="nc" id="L409">                &quot; match=[&quot; + digester.getMatch() + &quot;]&quot; + </span>
+<span class="nc" id="L410">                &quot; pushed instance of plugin [&quot; + pluginClass.getName() + &quot;]&quot;);</span>
+        }
+        
+        // and now we have to fire any custom rules which would have
+        // been matched by the same path that matched this rule, had
+        // they been loaded at that time.
+<span class="fc" id="L416">        List&lt;Rule&gt; rules = newRules.getDecoratedRules().match(namespace, path);</span>
+<span class="fc" id="L417">        fireBeginMethods(rules, namespace, name, attributes); </span>
+<span class="fc" id="L418">    }</span>
+
+    /**
+     * Process the body text of this element.
+     *
+     * @param text The body text of this element
+     */
+    @Override
+    public void body(String namespace, String name, String text)
+        throws Exception {
+
+        // While this class itself has no work to do in the body method,
+        // we do need to fire the body methods of all dynamically-added
+        // rules matching the same path as this rule. During begin, we had
+        // to manually execute the dynamic rules' begin methods because they
+        // didn't exist in the digester's Rules object when the match begin.
+        // So in order to ensure consistent ordering of rule execution, the
+        // PluginRules class deliberately avoids returning any such rules
+        // in later calls to the match method, instead relying on this
+        // object to execute them at the appropriate time.
+        //
+        // Note that this applies only to rules matching exactly the path
+        // which is also matched by this PluginCreateRule. 
+
+<span class="fc" id="L442">        String path = digester.getMatch();</span>
+<span class="fc" id="L443">        PluginRules newRules = (PluginRules) digester.getRules();</span>
+<span class="fc" id="L444">        List&lt;Rule&gt; rules = newRules.getDecoratedRules().match(namespace, path);</span>
+<span class="fc" id="L445">        fireBodyMethods(rules, namespace, name, text);</span>
+<span class="fc" id="L446">    }</span>
+
+    /**
+     * Invoked by the digester when the closing tag matching this Rule's
+     * pattern is encountered.
+     * &lt;/p&gt;
+     * 
+     * @param namespace Description of the Parameter
+     * @param name Description of the Parameter
+     * @exception Exception Description of the Exception
+     *
+     * @see #begin
+     */
+    @Override
+    public void end(String namespace, String name)
+                    throws Exception {
+
+
+        // see body method for more info
+<span class="fc" id="L465">        String path = digester.getMatch();</span>
+<span class="fc" id="L466">        PluginRules newRules = (PluginRules) digester.getRules();</span>
+<span class="fc" id="L467">        List&lt;Rule&gt; rules = newRules.getDecoratedRules().match(namespace, path);</span>
+<span class="fc" id="L468">        fireEndMethods(rules, namespace, name);</span>
+        
+        // pop the stack of PluginRules instances, which
+        // discards all custom rules associated with this plugin
+<span class="fc" id="L472">        digester.setRules(newRules.getParent());</span>
+        
+        // and get rid of the instance of the plugin class from the
+        // digester object stack.
+<span class="fc" id="L476">        digester.pop();</span>
+<span class="fc" id="L477">    }</span>
+
+    /**
+     * Return the pattern that this Rule is associated with.
+     * &lt;p&gt;
+     * In general, Rule instances &lt;i&gt;can&lt;/i&gt; be associated with multiple
+     * patterns. A PluginCreateRule, however, will only function correctly
+     * when associated with a single pattern. It is possible to fix this, but
+     * I can't be bothered just now because this feature is unlikely to be
+     * used.
+     * &lt;/p&gt;
+     * 
+     * @return The pattern value
+     */
+    public String getPattern() {
+<span class="nc" id="L492">        return pattern;</span>
+    }
+    
+    /**
+     * Duplicate the processing that the Digester does when firing the
+     * begin methods of rules. It would be really nice if the Digester
+     * class provided a way for this functionality to just be invoked
+     * directly.
+     */
+    public void fireBeginMethods(List&lt;Rule&gt; rules,
+                      String namespace, String name,
+                      org.xml.sax.Attributes list)
+                      throws java.lang.Exception {
+        
+<span class="pc bpc" id="L506" title="1 of 4 branches missed.">        if ((rules != null) &amp;&amp; (rules.size() &gt; 0)) {</span>
+<span class="fc" id="L507">            Log log = digester.getLogger();</span>
+<span class="fc" id="L508">            boolean debug = log.isDebugEnabled();</span>
+<span class="fc bfc" id="L509" title="All 2 branches covered.">            for (int i = 0; i &lt; rules.size(); i++) {</span>
+                try {
+<span class="fc" id="L511">                    Rule rule = rules.get(i);</span>
+<span class="pc bpc" id="L512" title="1 of 2 branches missed.">                    if (debug) {</span>
+<span class="nc" id="L513">                        log.debug(&quot;  Fire begin() for &quot; + rule);</span>
+                    }
+<span class="fc" id="L515">                    rule.begin(namespace, name, list);</span>
+<span class="nc" id="L516">                } catch (Exception e) {</span>
+<span class="nc" id="L517">                    throw digester.createSAXException(e);</span>
+<span class="nc" id="L518">                } catch (Error e) {</span>
+<span class="nc" id="L519">                    throw e;</span>
+<span class="fc" id="L520">                }</span>
+            }
+        }
+<span class="fc" id="L523">    }</span>
+
+    /**
+     * Duplicate the processing that the Digester does when firing the
+     * body methods of rules. It would be really nice if the Digester
+     * class provided a way for this functionality to just be invoked
+     * directly.
+     */
+    private void fireBodyMethods(List&lt;Rule&gt; rules,
+                    String namespaceURI, String name,
+                    String text) throws Exception {
+
+<span class="pc bpc" id="L535" title="1 of 4 branches missed.">        if ((rules != null) &amp;&amp; (rules.size() &gt; 0)) {</span>
+<span class="fc" id="L536">            Log log = digester.getLogger();</span>
+<span class="fc" id="L537">            boolean debug = log.isDebugEnabled();</span>
+<span class="fc bfc" id="L538" title="All 2 branches covered.">            for (int i = 0; i &lt; rules.size(); i++) {</span>
+                try {
+<span class="fc" id="L540">                    Rule rule = rules.get(i);</span>
+<span class="pc bpc" id="L541" title="1 of 2 branches missed.">                    if (debug) {</span>
+<span class="nc" id="L542">                        log.debug(&quot;  Fire body() for &quot; + rule);</span>
+                    }
+<span class="fc" id="L544">                    rule.body(namespaceURI, name, text);</span>
+<span class="nc" id="L545">                } catch (Exception e) {</span>
+<span class="nc" id="L546">                    throw digester.createSAXException(e);</span>
+<span class="nc" id="L547">                } catch (Error e) {</span>
+<span class="nc" id="L548">                    throw e;</span>
+<span class="fc" id="L549">                }</span>
+            }
+        }
+<span class="fc" id="L552">    }</span>
+    
+    /**
+     * Duplicate the processing that the Digester does when firing the
+     * end methods of rules. It would be really nice if the Digester
+     * class provided a way for this functionality to just be invoked
+     * directly.
+     */
+    public void fireEndMethods(List&lt;Rule&gt; rules,
+                    String namespaceURI, String name)
+                    throws Exception {
+
+        // Fire &quot;end&quot; events for all relevant rules in reverse order
+<span class="pc bpc" id="L565" title="1 of 2 branches missed.">        if (rules != null) {</span>
+<span class="fc" id="L566">            Log log = digester.getLogger();</span>
+<span class="fc" id="L567">            boolean debug = log.isDebugEnabled();</span>
+<span class="fc bfc" id="L568" title="All 2 branches covered.">            for (int i = 0; i &lt; rules.size(); i++) {</span>
+<span class="fc" id="L569">                int j = (rules.size() - i) - 1;</span>
+                try {
+<span class="fc" id="L571">                    Rule rule = rules.get(j);</span>
+<span class="pc bpc" id="L572" title="1 of 2 branches missed.">                    if (debug) {</span>
+<span class="nc" id="L573">                        log.debug(&quot;  Fire end() for &quot; + rule);</span>
+                    }
+<span class="fc" id="L575">                    rule.end(namespaceURI, name);</span>
+<span class="nc" id="L576">                } catch (Exception e) {</span>
+<span class="nc" id="L577">                    throw digester.createSAXException(e);</span>
+<span class="nc" id="L578">                } catch (Error e) {</span>
+<span class="nc" id="L579">                    throw e;</span>
+<span class="fc" id="L580">                }</span>
+            }
+        }
+<span class="fc" id="L583">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

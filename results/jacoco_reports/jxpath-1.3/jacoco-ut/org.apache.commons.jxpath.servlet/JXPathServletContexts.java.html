@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JXPathServletContexts.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.servlet</a> &gt; <span class="el_source">JXPathServletContexts.java</span></div><h1>JXPathServletContexts.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.servlet;
+
+import javax.servlet.ServletContext;
+import javax.servlet.ServletRequest;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import javax.servlet.jsp.PageContext;
+import org.apache.commons.jxpath.JXPathContext;
+import org.apache.commons.jxpath.JXPathContextFactory;
+import org.apache.commons.jxpath.JXPathIntrospector;
+
+/**
+ * Static methods that allocate and cache JXPathContexts bound to
+ * {@link PageContext}, {@link ServletRequest}, {@link HttpSession}
+ * and {@link ServletContext}.
+ * &lt;p&gt;
+ * The {@link JXPathContext} returned by {@link #getPageContext getPageContext()}
+ * provides access to all scopes via the PageContext.findAttribute()
+ * method.  Thus, an expression like &quot;foo&quot; will first look for the attribute
+ * named &quot;foo&quot; in the &quot;page&quot; context, then the &quot;request&quot; context, then
+ * the &quot;session&quot; one and finally in the &quot;application&quot; context.
+ * &lt;p&gt;
+ * If you need to limit the attibute lookup to just one scope, you can use the
+ * pre-definded variables &quot;page&quot;, &quot;request&quot;, &quot;session&quot; and &quot;application&quot;.
+ * For example, the expression &quot;$session/foo&quot; extracts the value of the
+ * session attribute named &quot;foo&quot;.
+ * &lt;p&gt;
+ * Following are some implementation details. There is a separate JXPathContext
+ * for each of the four scopes. These contexts are chained according to the
+ * nesting of the scopes.  So, the parent of the &quot;page&quot; JXPathContext is a
+ * &quot;request&quot; JXPathContext, whose parent is a &quot;session&quot; JXPathContext (that is
+ * if there is a session), whose parent is an &quot;application&quot; context.
+ * &lt;p&gt;
+ * The  XPath context node for each context is the corresponding object:
+ * PageContext, ServletRequest, HttpSession or ServletContext.  This feature can
+ * be used by servlets.  A servlet can use one of the methods declared by this
+ * class and work with a specific JXPathContext for any scope.
+ * &lt;p&gt;
+ * Since JXPath chains lookups for variables and extension functions, variables
+ * and extension function declared in the outer scopes are also available in
+ * the inner scopes.
+ * &lt;p&gt;
+ * Each  of the four context declares exactly one variable, the value of which
+ * is the corresponding object: PageContext, etc.
+ * &lt;p&gt;
+ * The  &quot;session&quot; variable will be undefined if there is no session for this
+ * servlet. JXPath does not automatically create sessions.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision: 652845 $ $Date: 2008-05-02 12:46:46 -0500 (Fri, 02 May 2008) $
+ */
+<span class="nc" id="L68">public final class JXPathServletContexts {</span>
+
+    private static JXPathContextFactory factory;
+
+    static {
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">        JXPathIntrospector.registerDynamicClass(</span>
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">                PageScopeContext.class,</span>
+<span class="pc" id="L75">                PageScopeContextHandler.class);</span>
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">        JXPathIntrospector.registerDynamicClass(</span>
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">                PageContext.class,</span>
+<span class="pc" id="L78">                PageContextHandler.class);</span>
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">        JXPathIntrospector.registerDynamicClass(</span>
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">                ServletContext.class,</span>
+<span class="pc" id="L81">                ServletContextHandler.class);</span>
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">        JXPathIntrospector.registerDynamicClass(</span>
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">                ServletRequestAndContext.class,</span>
+<span class="pc" id="L84">                ServletRequestHandler.class);</span>
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">        JXPathIntrospector.registerDynamicClass(</span>
+<span class="pc bpc" id="L86" title="1 of 2 branches missed.">                HttpSessionAndServletContext.class,</span>
+<span class="pc" id="L87">                HttpSessionHandler.class);</span>
+<span class="fc" id="L88">        factory = JXPathContextFactory.newInstance();</span>
+<span class="fc" id="L89">    }</span>
+
+    /**
+     * Returns a JXPathContext bound to the &quot;page&quot; scope. Caches that context
+     * within the PageContext itself.
+     * @param pageContext as described
+     * @return JXPathContext
+     */
+    public static JXPathContext getPageContext(PageContext pageContext) {
+<span class="fc" id="L98">        JXPathContext context =</span>
+<span class="fc" id="L99">            (JXPathContext) pageContext.getAttribute(Constants.JXPATH_CONTEXT);</span>
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">        if (context == null) {</span>
+<span class="fc" id="L101">            JXPathContext parentContext =</span>
+<span class="fc" id="L102">                getRequestContext(</span>
+<span class="fc" id="L103">                    pageContext.getRequest(),</span>
+<span class="fc" id="L104">                    pageContext.getServletContext());</span>
+<span class="fc" id="L105">            context = factory.newContext(parentContext, pageContext);</span>
+<span class="fc" id="L106">            context.setVariables(</span>
+                new KeywordVariables(
+                    Constants.PAGE_SCOPE,
+                    new PageScopeContext(pageContext)));
+<span class="fc" id="L110">            pageContext.setAttribute(Constants.JXPATH_CONTEXT, context);</span>
+        }
+<span class="fc" id="L112">        return context;</span>
+    }
+
+    /**
+     * Returns a JXPathContext bound to the &quot;request&quot; scope. Caches that context
+     * within the request itself.
+     * @param request as described
+     * @param servletContext operative
+     * @return JXPathContext
+     */
+    public static JXPathContext getRequestContext(ServletRequest request,
+            ServletContext servletContext) {
+<span class="fc" id="L124">        JXPathContext context =</span>
+<span class="fc" id="L125">            (JXPathContext) request.getAttribute(Constants.JXPATH_CONTEXT);</span>
+        // If we are in an included JSP or Servlet, the request parameter
+        // will represent the included URL, but the JXPathContext we have
+        // just acquired will represent the outer request.
+<span class="fc bfc" id="L129" title="All 2 branches covered.">        if (context != null) {</span>
+<span class="fc" id="L130">            ServletRequestAndContext handle =</span>
+<span class="fc" id="L131">                (ServletRequestAndContext) context.getContextBean();</span>
+<span class="pc bpc" id="L132" title="1 of 2 branches missed.">            if (handle.getServletRequest() == request) {</span>
+<span class="fc" id="L133">                return context;</span>
+            }
+        }
+
+<span class="fc" id="L137">        JXPathContext parentContext = null;</span>
+<span class="pc bpc" id="L138" title="1 of 2 branches missed.">        if (request instanceof HttpServletRequest) {</span>
+<span class="fc" id="L139">            HttpSession session =</span>
+<span class="fc" id="L140">                ((HttpServletRequest) request).getSession(false);</span>
+<span class="fc bfc" id="L141" title="All 2 branches covered.">            if (session != null) {</span>
+<span class="fc" id="L142">                parentContext = getSessionContext(session, servletContext);</span>
+            }
+            else {
+<span class="fc" id="L145">                parentContext = getApplicationContext(servletContext);</span>
+            }
+        }
+<span class="fc" id="L148">        ServletRequestAndContext handle =</span>
+            new ServletRequestAndContext(request, servletContext);
+<span class="fc" id="L150">        context = factory.newContext(parentContext, handle);</span>
+<span class="fc" id="L151">        context.setVariables(</span>
+            new KeywordVariables(Constants.REQUEST_SCOPE, handle));
+<span class="fc" id="L153">        request.setAttribute(Constants.JXPATH_CONTEXT, context);</span>
+<span class="fc" id="L154">        return context;</span>
+    }
+
+    /**
+     * Returns a JXPathContext bound to the &quot;session&quot; scope. Caches that context
+     * within the session itself.
+     * @param session as described
+     * @param servletContext operative
+     * @return JXPathContext
+     */
+    public static JXPathContext getSessionContext(HttpSession session,
+            ServletContext servletContext) {
+<span class="fc" id="L166">        JXPathContext context =</span>
+<span class="fc" id="L167">            (JXPathContext) session.getAttribute(Constants.JXPATH_CONTEXT);</span>
+<span class="fc bfc" id="L168" title="All 2 branches covered.">        if (context == null) {</span>
+<span class="fc" id="L169">            JXPathContext parentContext = getApplicationContext(servletContext);</span>
+<span class="fc" id="L170">            HttpSessionAndServletContext handle =</span>
+                new HttpSessionAndServletContext(session, servletContext);
+<span class="fc" id="L172">            context = factory.newContext(parentContext, handle);</span>
+<span class="fc" id="L173">            context.setVariables(</span>
+                new KeywordVariables(Constants.SESSION_SCOPE, handle));
+<span class="fc" id="L175">            session.setAttribute(Constants.JXPATH_CONTEXT, context);</span>
+        }
+<span class="fc" id="L177">        return context;</span>
+    }
+
+    /**
+     * Returns  a JXPathContext bound to the &quot;application&quot; scope. Caches that
+     * context within the servlet context itself.
+     * @param servletContext operative
+     * @return JXPathContext
+     */
+    public static JXPathContext getApplicationContext(
+            ServletContext servletContext) {
+<span class="fc" id="L188">        JXPathContext context =</span>
+<span class="fc" id="L189">            (JXPathContext) servletContext.getAttribute(</span>
+                Constants.JXPATH_CONTEXT);
+<span class="fc bfc" id="L191" title="All 2 branches covered.">        if (context == null) {</span>
+<span class="fc" id="L192">            context = factory.newContext(null, servletContext);</span>
+<span class="fc" id="L193">            context.setVariables(</span>
+                new KeywordVariables(
+                    Constants.APPLICATION_SCOPE,
+                    servletContext));
+<span class="fc" id="L197">            servletContext.setAttribute(Constants.JXPATH_CONTEXT, context);</span>
+        }
+<span class="fc" id="L199">        return context;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

@@ -1,0 +1,662 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ValueUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.util</a> &gt; <span class="el_source">ValueUtils.java</span></div><h1>ValueUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.util;
+
+import java.beans.IndexedPropertyDescriptor;
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.jxpath.Container;
+import org.apache.commons.jxpath.DynamicPropertyHandler;
+import org.apache.commons.jxpath.JXPathException;
+
+/**
+ * Collection and property access utilities.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision: 670728 $ $Date: 2008-06-23 15:12:44 -0500 (Mon, 23 Jun 2008) $
+ */
+<span class="nc" id="L43">public class ValueUtils {</span>
+<span class="fc" id="L44">    private static Map dynamicPropertyHandlerMap = new HashMap();</span>
+    private static final int UNKNOWN_LENGTH_MAX_COUNT = 16000;
+
+    /**
+     * Returns true if the object is an array or a Collection.
+     * @param value to test
+     * @return boolean
+     */
+    public static boolean isCollection(Object value) {
+<span class="fc" id="L53">        value = getValue(value);</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        if (value == null) {</span>
+<span class="fc" id="L55">            return false;</span>
+        }
+<span class="fc bfc" id="L57" title="All 2 branches covered.">        if (value.getClass().isArray()) {</span>
+<span class="fc" id="L58">            return true;</span>
+        }
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        if (value instanceof Collection) {</span>
+<span class="fc" id="L61">            return true;</span>
+        }
+<span class="fc" id="L63">        return false;</span>
+    }
+
+    /**
+     * Returns 1 if the type is a collection,
+     * -1 if it is definitely not
+     * and 0 if it may be a collection in some cases.
+     * @param clazz to test
+     * @return int
+     */
+    public static int getCollectionHint(Class clazz) {
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        if (clazz.isArray()) {</span>
+<span class="fc" id="L75">            return 1;</span>
+        }
+
+<span class="fc bfc" id="L78" title="All 4 branches covered.">        if (Collection.class.isAssignableFrom(clazz)) {</span>
+<span class="fc" id="L79">            return 1;</span>
+        }
+
+<span class="fc bfc" id="L82" title="All 2 branches covered.">        if (clazz.isPrimitive()) {</span>
+<span class="fc" id="L83">            return -1;</span>
+        }
+
+<span class="fc bfc" id="L86" title="All 2 branches covered.">        if (clazz.isInterface()) {</span>
+<span class="fc" id="L87">            return 0;</span>
+        }
+
+<span class="fc bfc" id="L90" title="All 2 branches covered.">        if (Modifier.isFinal(clazz.getModifiers())) {</span>
+<span class="fc" id="L91">            return -1;</span>
+        }
+
+<span class="fc" id="L94">        return 0;</span>
+    }
+
+    /**
+     * If there is a regular non-indexed read method for this property,
+     * uses this method to obtain the collection and then returns its
+     * length.
+     * Otherwise, attempts to guess the length of the collection by
+     * calling the indexed get method repeatedly.  The method is supposed
+     * to throw an exception if the index is out of bounds.
+     * @param object collection
+     * @param pd IndexedPropertyDescriptor
+     * @return int
+     */
+    public static int getIndexedPropertyLength(Object object,
+            IndexedPropertyDescriptor pd) {
+<span class="fc bfc" id="L110" title="All 2 branches covered.">        if (pd.getReadMethod() != null) {</span>
+<span class="fc" id="L111">            return getLength(getValue(object, pd));</span>
+        }
+
+<span class="fc" id="L114">        Method readMethod = pd.getIndexedReadMethod();</span>
+<span class="pc bpc" id="L115" title="1 of 2 branches missed.">        if (readMethod == null) {</span>
+<span class="nc" id="L116">            throw new JXPathException(</span>
+<span class="nc" id="L117">                &quot;No indexed read method for property &quot; + pd.getName());</span>
+        }
+
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">        for (int i = 0; i &lt; UNKNOWN_LENGTH_MAX_COUNT; i++) {</span>
+            try {
+<span class="fc" id="L122">                readMethod.invoke(object, new Object[] { new Integer(i)});</span>
+            }
+<span class="fc" id="L124">            catch (Throwable t) {</span>
+<span class="fc" id="L125">                return i;</span>
+<span class="fc" id="L126">            }</span>
+        }
+
+<span class="nc" id="L129">        throw new JXPathException(</span>
+            &quot;Cannot determine the length of the indexed property &quot;
+<span class="nc" id="L131">                + pd.getName());</span>
+    }
+
+    /**
+     * Returns the length of the supplied collection. If the supplied object
+     * is not a collection, returns 1. If collection is null, returns 0.
+     * @param collection to check
+     * @return int
+     */
+    public static int getLength(Object collection) {
+<span class="fc bfc" id="L141" title="All 2 branches covered.">        if (collection == null) {</span>
+<span class="fc" id="L142">            return 0;</span>
+        }
+<span class="fc" id="L144">        collection = getValue(collection);</span>
+<span class="fc bfc" id="L145" title="All 2 branches covered.">        if (collection.getClass().isArray()) {</span>
+<span class="fc" id="L146">            return Array.getLength(collection);</span>
+        }
+<span class="fc bfc" id="L148" title="All 2 branches covered.">        if (collection instanceof Collection) {</span>
+<span class="fc" id="L149">            return ((Collection) collection).size();</span>
+        }
+<span class="fc" id="L151">        return 1;</span>
+    }
+
+    /**
+     * Returns an iterator for the supplied collection. If the argument
+     * is null, returns an empty iterator. If the argument is not
+     * a collection, returns an iterator that produces just that one object.
+     * @param collection to iterate
+     * @return Iterator
+     */
+    public static Iterator iterate(Object collection) {
+<span class="pc bpc" id="L162" title="1 of 2 branches missed.">        if (collection == null) {</span>
+<span class="nc" id="L163">            return Collections.EMPTY_LIST.iterator();</span>
+        }
+<span class="pc bpc" id="L165" title="1 of 2 branches missed.">        if (collection.getClass().isArray()) {</span>
+<span class="nc" id="L166">            int length = Array.getLength(collection);</span>
+<span class="nc bnc" id="L167" title="All 2 branches missed.">            if (length == 0) {</span>
+<span class="nc" id="L168">                return Collections.EMPTY_LIST.iterator();</span>
+            }
+<span class="nc" id="L170">            ArrayList list = new ArrayList();</span>
+<span class="nc bnc" id="L171" title="All 2 branches missed.">            for (int i = 0; i &lt; length; i++) {</span>
+<span class="nc" id="L172">                list.add(Array.get(collection, i));</span>
+            }
+<span class="nc" id="L174">            return list.iterator();</span>
+        }
+<span class="pc bpc" id="L176" title="1 of 2 branches missed.">        if (collection instanceof Collection) {</span>
+<span class="nc" id="L177">            return ((Collection) collection).iterator();</span>
+        }
+<span class="fc" id="L179">        return Collections.singletonList(collection).iterator();</span>
+    }
+
+    /**
+     * Grows the collection if necessary to the specified size. Returns
+     * the new, expanded collection.
+     * @param collection to expand
+     * @param size desired size
+     * @return collection or array
+     */
+    public static Object expandCollection(Object collection, int size) {
+<span class="pc bpc" id="L190" title="1 of 2 branches missed.">        if (collection == null) {</span>
+<span class="nc" id="L191">            return null;</span>
+        }
+<span class="pc bpc" id="L193" title="1 of 2 branches missed.">        if (size &lt; getLength(collection)) {</span>
+<span class="nc" id="L194">            throw new JXPathException(&quot;adjustment of &quot; + collection</span>
+                    + &quot; to size &quot; + size + &quot; is not an expansion&quot;);
+        }
+<span class="fc bfc" id="L197" title="All 2 branches covered.">        if (collection.getClass().isArray()) {</span>
+<span class="fc" id="L198">            Object bigger =</span>
+<span class="fc" id="L199">                Array.newInstance(</span>
+<span class="fc" id="L200">                    collection.getClass().getComponentType(),</span>
+                    size);
+<span class="fc" id="L202">            System.arraycopy(</span>
+                collection,
+                0,
+                bigger,
+                0,
+<span class="fc" id="L207">                Array.getLength(collection));</span>
+<span class="fc" id="L208">            return bigger;</span>
+        }
+<span class="pc bpc" id="L210" title="1 of 2 branches missed.">        if (collection instanceof Collection) {</span>
+<span class="fc bfc" id="L211" title="All 2 branches covered.">            while (((Collection) collection).size() &lt; size) {</span>
+<span class="fc" id="L212">                ((Collection) collection).add(null);</span>
+            }
+<span class="fc" id="L214">            return collection;</span>
+        }
+<span class="nc" id="L216">        throw new JXPathException(</span>
+            &quot;Cannot turn &quot;
+<span class="nc" id="L218">                + collection.getClass().getName()</span>
+                + &quot; into a collection of size &quot;
+                + size);
+    }
+
+    /**
+     * Remove the index'th element from the supplied collection.
+     * @param collection to edit
+     * @param index int
+     * @return the resulting collection
+     */
+    public static Object remove(Object collection, int index) {
+<span class="fc" id="L230">        collection = getValue(collection);</span>
+<span class="pc bpc" id="L231" title="1 of 2 branches missed.">        if (collection == null) {</span>
+<span class="nc" id="L232">            return null;</span>
+        }
+<span class="pc bpc" id="L234" title="1 of 2 branches missed.">        if (index &gt;= getLength(collection)) {</span>
+<span class="nc" id="L235">            throw new JXPathException(&quot;No such element at index &quot; + index);</span>
+        }
+<span class="fc bfc" id="L237" title="All 2 branches covered.">        if (collection.getClass().isArray()) {</span>
+<span class="fc" id="L238">            int length = Array.getLength(collection);</span>
+<span class="fc" id="L239">            Object smaller =</span>
+<span class="fc" id="L240">                Array.newInstance(</span>
+<span class="fc" id="L241">                    collection.getClass().getComponentType(),</span>
+                    length - 1);
+<span class="fc bfc" id="L243" title="All 2 branches covered.">            if (index &gt; 0) {</span>
+<span class="fc" id="L244">                System.arraycopy(collection, 0, smaller, 0, index);</span>
+            }
+<span class="fc bfc" id="L246" title="All 2 branches covered.">            if (index &lt; length - 1) {</span>
+<span class="fc" id="L247">                System.arraycopy(</span>
+                    collection,
+                    index + 1,
+                    smaller,
+                    index,
+                    length - index - 1);
+            }
+<span class="fc" id="L254">            return smaller;</span>
+        }
+<span class="pc bpc" id="L256" title="1 of 2 branches missed.">        if (collection instanceof List) {</span>
+<span class="fc" id="L257">            int size = ((List) collection).size();</span>
+<span class="pc bpc" id="L258" title="1 of 2 branches missed.">            if (index &lt; size) {</span>
+<span class="fc" id="L259">                ((List) collection).remove(index);</span>
+            }
+<span class="fc" id="L261">            return collection;</span>
+        }
+<span class="nc bnc" id="L263" title="All 2 branches missed.">        if (collection instanceof Collection) {</span>
+<span class="nc" id="L264">            Iterator it = ((Collection) collection).iterator();</span>
+<span class="nc bnc" id="L265" title="All 2 branches missed.">            for (int i = 0; i &lt; index; i++) {</span>
+<span class="nc bnc" id="L266" title="All 2 branches missed.">                if (!it.hasNext()) {</span>
+<span class="nc" id="L267">                    break;</span>
+                }
+<span class="nc" id="L269">                it.next();</span>
+            }
+<span class="nc bnc" id="L271" title="All 2 branches missed.">            if (it.hasNext()) {</span>
+<span class="nc" id="L272">                it.next();</span>
+<span class="nc" id="L273">                it.remove();</span>
+            }
+<span class="nc" id="L275">            return collection;</span>
+        }
+<span class="nc" id="L277">        throw new JXPathException(</span>
+            &quot;Cannot remove &quot;
+<span class="nc" id="L279">                + collection.getClass().getName()</span>
+                + &quot;[&quot;
+                + index
+                + &quot;]&quot;);
+    }
+
+    /**
+     * Returns the index'th element of the supplied collection.
+     * @param collection to read
+     * @param index int
+     * @return collection[index]
+     */
+    public static Object getValue(Object collection, int index) {
+<span class="fc" id="L292">        collection = getValue(collection);</span>
+<span class="fc" id="L293">        Object value = collection;</span>
+<span class="fc bfc" id="L294" title="All 2 branches covered.">        if (collection != null) {</span>
+<span class="fc bfc" id="L295" title="All 2 branches covered.">            if (collection.getClass().isArray()) {</span>
+<span class="pc bpc" id="L296" title="1 of 4 branches missed.">                if (index &lt; 0 || index &gt;= Array.getLength(collection)) {</span>
+<span class="fc" id="L297">                    return null;</span>
+                }
+<span class="fc" id="L299">                value = Array.get(collection, index);</span>
+            }
+<span class="fc bfc" id="L301" title="All 2 branches covered.">            else if (collection instanceof List) {</span>
+<span class="pc bpc" id="L302" title="2 of 4 branches missed.">                if (index &lt; 0 || index &gt;= ((List) collection).size()) {</span>
+<span class="nc" id="L303">                    return null;</span>
+                }
+<span class="fc" id="L305">                value = ((List) collection).get(index);</span>
+            }
+<span class="fc bfc" id="L307" title="All 2 branches covered.">            else if (collection instanceof Collection) {</span>
+<span class="fc" id="L308">                int i = 0;</span>
+<span class="fc" id="L309">                Iterator it = ((Collection) collection).iterator();</span>
+<span class="fc bfc" id="L310" title="All 2 branches covered.">                for (; i &lt; index; i++) {</span>
+<span class="fc" id="L311">                    it.next();</span>
+                }
+<span class="pc bpc" id="L313" title="1 of 2 branches missed.">                if (it.hasNext()) {</span>
+<span class="fc" id="L314">                    value = it.next();</span>
+                }
+                else {
+<span class="nc" id="L317">                    value = null;</span>
+                }
+            }
+        }
+<span class="fc" id="L321">        return value;</span>
+    }
+
+    /**
+     * Modifies the index'th element of the supplied collection.
+     * Converts the value to the required type if necessary.
+     * @param collection to edit
+     * @param index to replace
+     * @param value new value
+     */
+    public static void setValue(Object collection, int index, Object value) {
+<span class="fc" id="L332">        collection = getValue(collection);</span>
+<span class="pc bpc" id="L333" title="1 of 2 branches missed.">        if (collection != null) {</span>
+<span class="fc bfc" id="L334" title="All 2 branches covered.">            if (collection.getClass().isArray()) {</span>
+<span class="fc" id="L335">                Array.set(</span>
+                    collection,
+                    index,
+<span class="fc" id="L338">                    convert(value, collection.getClass().getComponentType()));</span>
+            }
+<span class="pc bpc" id="L340" title="1 of 2 branches missed.">            else if (collection instanceof List) {</span>
+<span class="fc" id="L341">                ((List) collection).set(index, value);</span>
+            }
+<span class="nc bnc" id="L343" title="All 2 branches missed.">            else if (collection instanceof Collection) {</span>
+<span class="nc" id="L344">                throw new UnsupportedOperationException(</span>
+                        &quot;Cannot set value of an element of a &quot;
+<span class="nc" id="L346">                                + collection.getClass().getName());</span>
+            }
+        }
+<span class="fc" id="L349">    }</span>
+
+    /**
+     * Returns the value of the bean's property represented by
+     * the supplied property descriptor.
+     * @param bean to read
+     * @param propertyDescriptor indicating what to read
+     * @return Object value
+     */
+    public static Object getValue(Object bean,
+            PropertyDescriptor propertyDescriptor) {
+        Object value;
+        try {
+<span class="fc" id="L362">            Method method =</span>
+<span class="fc" id="L363">                getAccessibleMethod(propertyDescriptor.getReadMethod());</span>
+<span class="pc bpc" id="L364" title="1 of 2 branches missed.">            if (method == null) {</span>
+<span class="nc" id="L365">                throw new JXPathException(&quot;No read method&quot;);</span>
+            }
+<span class="fc" id="L367">            value = method.invoke(bean, new Object[0]);</span>
+        }
+<span class="fc" id="L369">        catch (Exception ex) {</span>
+<span class="pc bpc" id="L370" title="1 of 2 branches missed.">            throw new JXPathException(</span>
+                &quot;Cannot access property: &quot;
+<span class="fc" id="L372">                    + (bean == null ? &quot;null&quot; : bean.getClass().getName())</span>
+                    + &quot;.&quot;
+<span class="fc" id="L374">                    + propertyDescriptor.getName(),</span>
+                ex);
+<span class="fc" id="L376">        }</span>
+<span class="fc" id="L377">        return value;</span>
+    }
+
+    /**
+     * Modifies the value of the bean's property represented by
+     * the supplied property descriptor.
+     * @param bean to read
+     * @param propertyDescriptor indicating what to read
+     * @param value to set
+     */
+    public static void setValue(Object bean,
+            PropertyDescriptor propertyDescriptor, Object value) {
+        try {
+<span class="fc" id="L390">            Method method =</span>
+<span class="fc" id="L391">                getAccessibleMethod(propertyDescriptor.getWriteMethod());</span>
+<span class="pc bpc" id="L392" title="1 of 2 branches missed.">            if (method == null) {</span>
+<span class="nc" id="L393">                throw new JXPathException(&quot;No write method&quot;);</span>
+            }
+<span class="fc" id="L395">            value = convert(value, propertyDescriptor.getPropertyType());</span>
+<span class="fc" id="L396">            method.invoke(bean, new Object[] { value });</span>
+        }
+<span class="nc" id="L398">        catch (Exception ex) {</span>
+<span class="nc bnc" id="L399" title="All 2 branches missed.">            throw new JXPathException(</span>
+                &quot;Cannot modify property: &quot;
+<span class="nc" id="L401">                    + (bean == null ? &quot;null&quot; : bean.getClass().getName())</span>
+                    + &quot;.&quot;
+<span class="nc" id="L403">                    + propertyDescriptor.getName(),</span>
+                ex);
+<span class="fc" id="L405">        }</span>
+<span class="fc" id="L406">    }</span>
+
+    /**
+     * Convert value to type.
+     * @param value Object
+     * @param type destination
+     * @return conversion result
+     */
+    private static Object convert(Object value, Class type) {
+        try {
+<span class="fc" id="L416">            return TypeUtils.convert(value, type);</span>
+        }
+<span class="nc" id="L418">        catch (Exception ex) {</span>
+<span class="nc bnc" id="L419" title="All 2 branches missed.">            throw new JXPathException(</span>
+                &quot;Cannot convert value of class &quot;
+<span class="nc" id="L421">                    + (value == null ? &quot;null&quot; : value.getClass().getName())</span>
+                    + &quot; to type &quot;
+                    + type,
+                ex);
+        }
+    }
+
+    /**
+     * Returns the index'th element of the bean's property represented by
+     * the supplied property descriptor.
+     * @param bean to read
+     * @param propertyDescriptor indicating what to read
+     * @param index int
+     * @return Object
+     */
+    public static Object getValue(Object bean,
+            PropertyDescriptor propertyDescriptor, int index) {
+<span class="fc bfc" id="L438" title="All 2 branches covered.">        if (propertyDescriptor instanceof IndexedPropertyDescriptor) {</span>
+            try {
+<span class="fc" id="L440">                IndexedPropertyDescriptor ipd =</span>
+                    (IndexedPropertyDescriptor) propertyDescriptor;
+<span class="fc" id="L442">                Method method = ipd.getIndexedReadMethod();</span>
+<span class="pc bpc" id="L443" title="1 of 2 branches missed.">                if (method != null) {</span>
+<span class="fc" id="L444">                    return method.invoke(</span>
+                        bean,
+                        new Object[] { new Integer(index)});
+                }
+            }
+<span class="fc" id="L449">            catch (InvocationTargetException ex) {</span>
+<span class="fc" id="L450">                Throwable t = ex.getTargetException();</span>
+<span class="pc bpc" id="L451" title="1 of 2 branches missed.">                if (t instanceof IndexOutOfBoundsException) {</span>
+<span class="fc" id="L452">                    return null;</span>
+                }
+<span class="nc" id="L454">                throw new JXPathException(</span>
+<span class="nc" id="L455">                    &quot;Cannot access property: &quot; + propertyDescriptor.getName(),</span>
+                    t);
+            }
+<span class="nc" id="L458">            catch (Throwable ex) {</span>
+<span class="nc" id="L459">                throw new JXPathException(</span>
+<span class="nc" id="L460">                    &quot;Cannot access property: &quot; + propertyDescriptor.getName(),</span>
+                    ex);
+<span class="nc" id="L462">            }</span>
+        }
+
+        // We will fall through if there is no indexed read
+
+<span class="fc" id="L467">        return getValue(getValue(bean, propertyDescriptor), index);</span>
+    }
+
+    /**
+     * Modifies the index'th element of the bean's property represented by
+     * the supplied property descriptor. Converts the value to the required
+     * type if necessary.
+     * @param bean to edit
+     * @param propertyDescriptor indicating what to set
+     * @param index int
+     * @param value to set
+     */
+    public static void setValue(Object bean,
+            PropertyDescriptor propertyDescriptor, int index, Object value) {
+<span class="fc bfc" id="L481" title="All 2 branches covered.">        if (propertyDescriptor instanceof IndexedPropertyDescriptor) {</span>
+            try {
+<span class="fc" id="L483">                IndexedPropertyDescriptor ipd =</span>
+                    (IndexedPropertyDescriptor) propertyDescriptor;
+<span class="fc" id="L485">                Method method = ipd.getIndexedWriteMethod();</span>
+<span class="pc bpc" id="L486" title="1 of 2 branches missed.">                if (method != null) {</span>
+<span class="fc" id="L487">                    method.invoke(</span>
+                        bean,
+                        new Object[] {
+                            new Integer(index),
+<span class="fc" id="L491">                            convert(value, ipd.getIndexedPropertyType())});</span>
+<span class="fc" id="L492">                    return;</span>
+                }
+            }
+<span class="nc" id="L495">            catch (Exception ex) {</span>
+<span class="nc" id="L496">                throw new RuntimeException(</span>
+                    &quot;Cannot access property: &quot;
+<span class="nc" id="L498">                        + propertyDescriptor.getName()</span>
+                        + &quot;, &quot;
+<span class="nc" id="L500">                        + ex.getMessage());</span>
+<span class="nc" id="L501">            }</span>
+        }
+        // We will fall through if there is no indexed read
+<span class="fc" id="L504">        Object collection = getValue(bean, propertyDescriptor);</span>
+<span class="pc bpc" id="L505" title="1 of 2 branches missed.">        if (isCollection(collection)) {</span>
+<span class="fc" id="L506">            setValue(collection, index, value);</span>
+        }
+<span class="nc bnc" id="L508" title="All 2 branches missed.">        else if (index == 0) {</span>
+<span class="nc" id="L509">            setValue(bean, propertyDescriptor, value);</span>
+        }
+        else {
+<span class="nc" id="L512">            throw new RuntimeException(</span>
+<span class="nc" id="L513">                &quot;Not a collection: &quot; + propertyDescriptor.getName());</span>
+        }
+<span class="fc" id="L515">    }</span>
+
+    /**
+     * If the parameter is a container, opens the container and
+     * return the contents.  The method is recursive.
+     * @param object to read
+     * @return Object
+     */
+    public static Object getValue(Object object) {
+<span class="fc bfc" id="L524" title="All 2 branches covered.">        while (object instanceof Container) {</span>
+<span class="fc" id="L525">            object = ((Container) object).getValue();</span>
+        }
+<span class="fc" id="L527">        return object;</span>
+    }
+
+    /**
+     * Returns a shared instance of the dynamic property handler class
+     * returned by &lt;code&gt;getDynamicPropertyHandlerClass()&lt;/code&gt;.
+     * @param clazz to handle
+     * @return DynamicPropertyHandler
+     */
+    public static DynamicPropertyHandler getDynamicPropertyHandler(Class clazz) {
+<span class="fc" id="L537">        DynamicPropertyHandler handler =</span>
+<span class="fc" id="L538">            (DynamicPropertyHandler) dynamicPropertyHandlerMap.get(clazz);</span>
+<span class="fc bfc" id="L539" title="All 2 branches covered.">        if (handler == null) {</span>
+            try {
+<span class="fc" id="L541">                handler = (DynamicPropertyHandler) clazz.newInstance();</span>
+            }
+<span class="nc" id="L543">            catch (Exception ex) {</span>
+<span class="nc" id="L544">                throw new JXPathException(</span>
+                    &quot;Cannot allocate dynamic property handler of class &quot;
+<span class="nc" id="L546">                        + clazz.getName(),</span>
+                    ex);
+<span class="fc" id="L548">            }</span>
+<span class="fc" id="L549">            dynamicPropertyHandlerMap.put(clazz, handler);</span>
+        }
+<span class="fc" id="L551">        return handler;</span>
+    }
+
+    // -------------------------------------------------------- Private Methods
+    //
+    //  The rest of the code in this file was copied FROM
+    //  org.apache.commons.beanutils.PropertyUtil. We don't want to introduce
+    //  a dependency on BeanUtils yet - DP.
+    //
+
+    /**
+     * Return an accessible method (that is, one that can be invoked via
+     * reflection) that implements the specified Method.  If no such method
+     * can be found, return &lt;code&gt;null&lt;/code&gt;.
+     *
+     * @param method The method that we wish to call
+     * @return Method
+     */
+    public static Method getAccessibleMethod(Method method) {
+
+        // Make sure we have a method to check
+<span class="pc bpc" id="L572" title="1 of 2 branches missed.">        if (method == null) {</span>
+<span class="nc" id="L573">            return (null);</span>
+        }
+
+        // If the requested method is not public we cannot call it
+<span class="pc bpc" id="L577" title="1 of 2 branches missed.">        if (!Modifier.isPublic(method.getModifiers())) {</span>
+<span class="nc" id="L578">            return (null);</span>
+        }
+
+        // If the declaring class is public, we are done
+<span class="fc" id="L582">        Class clazz = method.getDeclaringClass();</span>
+<span class="fc bfc" id="L583" title="All 2 branches covered.">        if (Modifier.isPublic(clazz.getModifiers())) {</span>
+<span class="fc" id="L584">            return (method);</span>
+        }
+
+<span class="fc" id="L587">        String name = method.getName();</span>
+<span class="fc" id="L588">        Class[] parameterTypes = method.getParameterTypes();</span>
+<span class="pc bpc" id="L589" title="1 of 2 branches missed.">        while (clazz != null) {</span>
+            // Check the implemented interfaces and subinterfaces
+<span class="fc" id="L591">            Method aMethod = getAccessibleMethodFromInterfaceNest(clazz,</span>
+                    name, parameterTypes);
+<span class="pc bpc" id="L593" title="1 of 2 branches missed.">            if (aMethod != null) {</span>
+<span class="fc" id="L594">                return aMethod;</span>
+            }
+
+<span class="nc" id="L597">            clazz = clazz.getSuperclass();</span>
+<span class="nc bnc" id="L598" title="All 4 branches missed.">            if (clazz != null &amp;&amp; Modifier.isPublic(clazz.getModifiers())) {</span>
+                try {
+<span class="nc" id="L600">                    return clazz.getDeclaredMethod(name, parameterTypes);</span>
+                }
+<span class="nc" id="L602">                catch (NoSuchMethodException e) { //NOPMD</span>
+                    //ignore
+                }
+            }
+<span class="nc" id="L606">        }</span>
+<span class="nc" id="L607">        return null;</span>
+    }
+
+    /**
+     * Return an accessible method (that is, one that can be invoked via
+     * reflection) that implements the specified method, by scanning through
+     * all implemented interfaces and subinterfaces.  If no such Method
+     * can be found, return &lt;code&gt;null&lt;/code&gt;.
+     *
+     * @param clazz Parent class for the interfaces to be checked
+     * @param methodName Method name of the method we wish to call
+     * @param parameterTypes The parameter type signatures
+     * @return Method
+     */
+    private static Method getAccessibleMethodFromInterfaceNest(Class clazz,
+            String methodName, Class[] parameterTypes) {
+
+<span class="fc" id="L624">        Method method = null;</span>
+
+        // Check the implemented interfaces of the parent class
+<span class="fc" id="L627">        Class[] interfaces = clazz.getInterfaces();</span>
+<span class="pc bpc" id="L628" title="1 of 2 branches missed.">        for (int i = 0; i &lt; interfaces.length; i++) {</span>
+
+            // Is this interface public?
+<span class="pc bpc" id="L631" title="1 of 2 branches missed.">            if (!Modifier.isPublic(interfaces[i].getModifiers())) {</span>
+<span class="nc" id="L632">                continue;</span>
+            }
+
+            // Does the method exist on this interface?
+            try {
+<span class="fc" id="L637">                method =</span>
+<span class="fc" id="L638">                    interfaces[i].getDeclaredMethod(methodName, parameterTypes);</span>
+            }
+<span class="nc" id="L640">            catch (NoSuchMethodException e) { //NOPMD</span>
+                //ignore
+<span class="fc" id="L642">            }</span>
+<span class="pc bpc" id="L643" title="1 of 2 branches missed.">            if (method != null) {</span>
+<span class="fc" id="L644">                break;</span>
+            }
+
+            // Recursively check our parent interfaces
+<span class="nc" id="L648">            method =</span>
+<span class="nc" id="L649">                getAccessibleMethodFromInterfaceNest(</span>
+                    interfaces[i],
+                    methodName,
+                    parameterTypes);
+<span class="nc bnc" id="L653" title="All 2 branches missed.">            if (method != null) {</span>
+<span class="nc" id="L654">                break;</span>
+            }
+        }
+
+        // Return whatever we have found
+<span class="fc" id="L659">        return (method);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

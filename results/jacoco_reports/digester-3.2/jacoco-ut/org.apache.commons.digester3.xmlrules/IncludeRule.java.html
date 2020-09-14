@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IncludeRule.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester3.xmlrules</a> &gt; <span class="el_source">IncludeRule.java</span></div><h1>IncludeRule.java</h1><pre class="source lang-java linenums">package org.apache.commons.digester3.xmlrules;
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import java.net.MalformedURLException;
+import java.net.URL;
+
+import org.apache.commons.digester3.Rule;
+import org.apache.commons.digester3.binder.RulesBinder;
+import org.apache.commons.digester3.binder.RulesModule;
+import org.xml.sax.Attributes;
+
+/**
+ * A rule for including one rules XML file within another. Included files behave as if they are 'macro-expanded' within
+ * the includer. This means that the values of the pattern stack are prefixed to every pattern in the included rules.
+ * &lt;p&gt;
+ * This rule will detect 'circular' includes, which would result in infinite recursion. It throws a
+ * CircularIncludeException when a cycle is detected, which will terminate the parse.
+ */
+final class IncludeRule
+    extends Rule
+{
+
+    private static final String CLASSPATH_URL_PREFIX = &quot;classpath:&quot;;
+
+    private final WithMemoryRulesBinder memoryRulesBinder;
+
+    private final RulesBinder targetRulesBinder;
+
+    public IncludeRule( final WithMemoryRulesBinder memoryRulesBinder, final RulesBinder targetRulesBinder )
+<span class="fc" id="L48">    {</span>
+<span class="fc" id="L49">        this.memoryRulesBinder = memoryRulesBinder;</span>
+<span class="fc" id="L50">        this.targetRulesBinder = targetRulesBinder;</span>
+<span class="fc" id="L51">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void begin( String namespace, String name, Attributes attributes )
+        throws Exception
+    {
+        // The path attribute gives the URI to another digester rules xml file
+<span class="fc" id="L61">        String fileName = attributes.getValue( &quot;url&quot; );</span>
+<span class="pc bpc" id="L62" title="1 of 4 branches missed.">        if ( fileName != null &amp;&amp; fileName.length() &gt; 0 )</span>
+        {
+            final URL xmlRulesResource;
+
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">            if ( fileName.startsWith( CLASSPATH_URL_PREFIX ) )</span>
+            {
+<span class="fc" id="L68">                String path = fileName.substring( CLASSPATH_URL_PREFIX.length() );</span>
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">                if ( '/' == path.charAt( 0 ) )</span>
+                {
+<span class="nc" id="L71">                    path = path.substring( 1 );</span>
+                }
+<span class="fc" id="L73">                xmlRulesResource = this.targetRulesBinder.getContextClassLoader().getResource( path );</span>
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">                if ( xmlRulesResource == null )</span>
+                {
+<span class="nc" id="L76">                    targetRulesBinder.addError( &quot;Resource '%s' not found, please make sure it is in the classpath&quot;,</span>
+                                                path );
+<span class="nc" id="L78">                    return;</span>
+                }
+<span class="fc" id="L80">            }</span>
+            else
+            {
+                try
+                {
+<span class="nc" id="L85">                    xmlRulesResource = new URL( fileName );</span>
+                }
+<span class="nc" id="L87">                catch ( MalformedURLException e )</span>
+                {
+<span class="nc" id="L89">                    targetRulesBinder.addError( &quot;An error occurred while inculing file from '%s': %s&quot;, fileName,</span>
+<span class="nc" id="L90">                                                e.getMessage() );</span>
+<span class="nc" id="L91">                    return;</span>
+<span class="nc" id="L92">                }</span>
+            }
+
+<span class="fc bfc" id="L95" title="All 2 branches covered.">            if ( memoryRulesBinder.getIncludedFiles().add( xmlRulesResource.toString() ) )</span>
+            {
+<span class="fc" id="L97">                install( new FromXmlRulesModule()</span>
+<span class="fc" id="L98">                {</span>
+
+                    @Override
+                    protected void loadRules()
+                    {
+<span class="fc" id="L103">                        loadXMLRules( xmlRulesResource );</span>
+<span class="fc" id="L104">                    }</span>
+
+                } );
+            }
+            else
+            {
+<span class="fc" id="L110">                targetRulesBinder.addError( &quot;Circular file inclusion detected for XML rules: %s&quot;, xmlRulesResource );</span>
+            }
+        }
+
+        // The class attribute gives the name of a class that implements
+        // the DigesterRulesSource interface
+<span class="fc" id="L116">        String className = attributes.getValue( &quot;class&quot; );</span>
+<span class="pc bpc" id="L117" title="1 of 4 branches missed.">        if ( className != null &amp;&amp; className.length() &gt; 0 )</span>
+        {
+            try
+            {
+<span class="fc" id="L121">                Class&lt;?&gt; cls = Class.forName( className );</span>
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">                if ( !RulesModule.class.isAssignableFrom( cls ) )</span>
+                {
+<span class="nc" id="L124">                    targetRulesBinder.addError( &quot;Class '%s' if not a '%s' implementation&quot;, className,</span>
+<span class="nc" id="L125">                                                RulesModule.class.getName() );</span>
+<span class="nc" id="L126">                    return;</span>
+                }
+
+<span class="fc" id="L129">                RulesModule rulesSource = (RulesModule) cls.newInstance();</span>
+
+<span class="fc" id="L131">                install( rulesSource );</span>
+            }
+<span class="nc" id="L133">            catch ( Exception e )</span>
+            {
+<span class="nc" id="L135">                targetRulesBinder.addError( &quot;Impossible to include programmatic rules from class '%s': %s&quot;, className,</span>
+<span class="nc" id="L136">                                            e.getMessage() );</span>
+<span class="fc" id="L137">            }</span>
+        }
+<span class="fc" id="L139">    }</span>
+
+    private void install( RulesModule rulesModule )
+    {
+        // that's an hack, shall not be taken in consideration!!! :)
+<span class="fc" id="L144">        rulesModule.configure( new PrefixedRulesBinder( targetRulesBinder,</span>
+<span class="fc" id="L145">                                                        memoryRulesBinder.getPatternStack().toString() ) );</span>
+<span class="fc" id="L146">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

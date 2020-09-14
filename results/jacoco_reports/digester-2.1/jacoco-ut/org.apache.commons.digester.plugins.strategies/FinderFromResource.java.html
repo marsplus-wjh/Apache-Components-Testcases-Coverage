@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>FinderFromResource.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester.plugins.strategies</a> &gt; <span class="el_source">FinderFromResource.java</span></div><h1>FinderFromResource.java</h1><pre class="source lang-java linenums">/* $Id$
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.digester.plugins.strategies;
+
+import java.util.Properties;
+import java.io.InputStream;
+
+import org.apache.commons.digester.Digester;
+import org.apache.commons.digester.plugins.RuleFinder;
+import org.apache.commons.digester.plugins.RuleLoader;
+import org.apache.commons.digester.plugins.PluginException;
+
+/**
+ * A rule-finding algorithm which expects the user to specify a resource
+ * name (ie a file in the classpath). The file is expected to contain Digester
+ * rules in xmlrules format.
+ *
+ * @since 1.6
+ */
+
+public class FinderFromResource extends RuleFinder {
+    /** 
+     * Name of xml attribute on the plugin declaration which is used
+     * to configure rule-loading for that declaration. 
+     */
+<span class="fc" id="L41">    public static String DFLT_RESOURCE_ATTR = &quot;resource&quot;;</span>
+    
+    /** See {@link #findLoader}. */
+    private String resourceAttr;
+    
+    /** Constructor. */
+    public FinderFromResource() {
+<span class="fc" id="L48">        this(DFLT_RESOURCE_ATTR);</span>
+<span class="fc" id="L49">    }</span>
+
+    /** See {@link #findLoader}. */
+<span class="fc" id="L52">    public FinderFromResource(String resourceAttr) { </span>
+<span class="fc" id="L53">        this.resourceAttr = resourceAttr;</span>
+<span class="fc" id="L54">    }</span>
+    
+    /**
+     * If there exists a property with the name matching constructor param
+     * resourceAttr, then load that file, run it through the xmlrules
+     * module and return an object encapsulating those rules.
+     * &lt;p&gt;
+     * If there is no matching property provided, then just return null.
+     * &lt;p&gt;
+     * The returned object (when non-null) will add the selected rules to
+     * the digester whenever its addRules method is invoked.
+     */
+    @Override
+    public RuleLoader findLoader(Digester d, Class&lt;?&gt; pluginClass, Properties p)
+                        throws PluginException {
+
+<span class="fc" id="L70">        String resourceName = p.getProperty(resourceAttr);</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        if (resourceName == null) {</span>
+            // nope, user hasn't requested dynamic rules to be loaded
+            // from a specific file.
+<span class="fc" id="L74">            return null;</span>
+        }
+        
+<span class="fc" id="L77">        InputStream is = </span>
+<span class="fc" id="L78">            pluginClass.getClassLoader().getResourceAsStream(</span>
+                resourceName);
+
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">        if (is == null) {</span>
+<span class="nc" id="L82">            throw new PluginException(</span>
+                &quot;Resource &quot; + resourceName + &quot; not found.&quot;);
+        }
+        
+<span class="fc" id="L86">         return loadRules(d, pluginClass, is, resourceName);</span>
+    }
+    
+    /**
+     * Open the specified resource file (ie a file in the classpath, 
+     * including being within a jar in the classpath), run it through
+     * the xmlrules module and return an object encapsulating those rules.
+     * 
+     * @param d is the digester into which rules will eventually be loaded.
+     * @param pluginClass is the class whose xml params the rules are parsing.
+     * @param is is where the xmlrules will be read from, and must be non-null.
+     * @param resourceName is a string describing the source of the xmlrules,
+     *  for use in generating error messages.
+     */
+    public static RuleLoader loadRules(Digester d, Class&lt;?&gt; pluginClass, 
+                        InputStream is, String resourceName)
+                        throws PluginException {
+
+        try {
+<span class="fc" id="L105">            RuleLoader loader = new LoaderFromStream(is);</span>
+<span class="fc" id="L106">            return loader;</span>
+<span class="nc" id="L107">        } catch(Exception e) {</span>
+<span class="nc" id="L108">            throw new PluginException(</span>
+                &quot;Unable to load xmlrules from resource [&quot; + 
+                resourceName + &quot;]&quot;, e);
+        } finally {
+<span class="nc" id="L112">            try {</span>
+<span class="pc" id="L113">                is.close();</span>
+<span class="nc" id="L114">            } catch(java.io.IOException ioe) {</span>
+<span class="pc" id="L115">                throw new PluginException(</span>
+                    &quot;Unable to close stream for resource [&quot; + 
+                    resourceName + &quot;]&quot;, ioe);
+<span class="pc" id="L118">            }</span>
+        }
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

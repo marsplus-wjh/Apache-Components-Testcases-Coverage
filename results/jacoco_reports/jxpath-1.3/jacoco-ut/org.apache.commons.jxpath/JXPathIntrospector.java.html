@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JXPathIntrospector.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath</a> &gt; <span class="el_source">JXPathIntrospector.java</span></div><h1>JXPathIntrospector.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath;
+
+import java.util.Date;
+import java.util.Map;
+import java.util.HashMap;
+
+/**
+ * JXPathIntrospector  maintains a registry of {@link JXPathBeanInfo
+ * JXPathBeanInfo} objects for Java classes.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision: 670727 $ $Date: 2008-06-23 15:10:38 -0500 (Mon, 23 Jun 2008) $
+ */
+<span class="nc" id="L30">public class JXPathIntrospector {</span>
+
+<span class="fc" id="L32">    private static HashMap byClass = new HashMap();</span>
+<span class="fc" id="L33">    private static HashMap byInterface = new HashMap();</span>
+
+    static {
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">        registerAtomicClass(Class.class);</span>
+<span class="fc" id="L37">        registerAtomicClass(Boolean.TYPE);</span>
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">        registerAtomicClass(Boolean.class);</span>
+<span class="fc" id="L39">        registerAtomicClass(Byte.TYPE);</span>
+<span class="pc bpc" id="L40" title="1 of 2 branches missed.">        registerAtomicClass(Byte.class);</span>
+<span class="fc" id="L41">        registerAtomicClass(Character.TYPE);</span>
+<span class="pc bpc" id="L42" title="1 of 2 branches missed.">        registerAtomicClass(Character.class);</span>
+<span class="fc" id="L43">        registerAtomicClass(Short.TYPE);</span>
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">        registerAtomicClass(Short.class);</span>
+<span class="fc" id="L45">        registerAtomicClass(Integer.TYPE);</span>
+<span class="pc bpc" id="L46" title="1 of 2 branches missed.">        registerAtomicClass(Integer.class);</span>
+<span class="fc" id="L47">        registerAtomicClass(Long.TYPE);</span>
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">        registerAtomicClass(Long.class);</span>
+<span class="fc" id="L49">        registerAtomicClass(Float.TYPE);</span>
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">        registerAtomicClass(Float.class);</span>
+<span class="fc" id="L51">        registerAtomicClass(Double.TYPE);</span>
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">        registerAtomicClass(Double.class);</span>
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">        registerAtomicClass(String.class);</span>
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">        registerAtomicClass(Date.class);</span>
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">        registerAtomicClass(java.sql.Date.class);</span>
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">        registerAtomicClass(java.sql.Time.class);</span>
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">        registerAtomicClass(java.sql.Timestamp.class);</span>
+
+<span class="pc bpc" id="L59" title="2 of 4 branches missed.">        registerDynamicClass(Map.class, MapDynamicPropertyHandler.class);</span>
+<span class="fc" id="L60">    }</span>
+
+    /**
+     * Automatically creates and registers a JXPathBeanInfo object
+     * for the specified class. That object returns true to isAtomic().
+     * @param beanClass to register
+     */
+    public static void registerAtomicClass(Class beanClass) {
+<span class="fc" id="L68">        byClass.put(beanClass, new JXPathBasicBeanInfo(beanClass, true));</span>
+<span class="fc" id="L69">    }</span>
+
+    /**
+     * Automatically creates and registers a {@link JXPathBeanInfo} object
+     * for the specified class. That object returns true to
+     * {@link JXPathBeanInfo#isDynamic()}.
+     *
+     * @param beanClass to register
+     * @param dynamicPropertyHandlerClass to handle beanClass
+     */
+    public static void registerDynamicClass(Class beanClass,
+            Class dynamicPropertyHandlerClass) {
+<span class="fc" id="L81">        JXPathBasicBeanInfo bi =</span>
+            new JXPathBasicBeanInfo(beanClass, dynamicPropertyHandlerClass);
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        if (beanClass.isInterface()) {</span>
+<span class="fc" id="L84">            byInterface.put(beanClass, bi);</span>
+        }
+        else {
+<span class="fc" id="L87">            byClass.put(beanClass, bi);</span>
+        }
+<span class="fc" id="L89">    }</span>
+
+    /**
+     * Creates and registers a JXPathBeanInfo object for the supplied class. If
+     * the class has already been registered, returns the registered
+     * JXPathBeanInfo object.
+     * &lt;p&gt;
+     * The process of creation of JXPathBeanInfo is as follows:
+     * &lt;ul&gt;
+     * &lt;li&gt;If class named &lt;code&gt;&amp;lt;beanClass&amp;gt;XBeanInfo&lt;/code&gt; exists,
+     *     an instance of that class is allocated.
+     * &lt;li&gt;Otherwise, an instance of {@link JXPathBasicBeanInfo
+     *     JXPathBasicBeanInfo}  is allocated.
+     * &lt;/ul&gt;
+     * @param beanClass whose info to get
+     * @return JXPathBeanInfo
+     */
+    public static JXPathBeanInfo getBeanInfo(Class beanClass) {
+<span class="fc" id="L107">        JXPathBeanInfo beanInfo = (JXPathBeanInfo) byClass.get(beanClass);</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">        if (beanInfo == null) {</span>
+<span class="fc" id="L109">            beanInfo = findDynamicBeanInfo(beanClass);</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">            if (beanInfo == null) {</span>
+<span class="fc" id="L111">                beanInfo = findInformant(beanClass);</span>
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">                if (beanInfo == null) {</span>
+<span class="fc" id="L113">                    beanInfo = new JXPathBasicBeanInfo(beanClass);</span>
+                }
+            }
+<span class="fc" id="L116">            byClass.put(beanClass, beanInfo);</span>
+        }
+<span class="fc" id="L118">        return beanInfo;</span>
+    }
+
+    /**
+     * Find a dynamic bean info if available for any superclasses or
+     * interfaces.
+     * @param beanClass to search for
+     * @return JXPathBeanInfo
+     */
+    private static JXPathBeanInfo findDynamicBeanInfo(Class beanClass) {
+<span class="fc" id="L128">        JXPathBeanInfo beanInfo = null;</span>
+<span class="fc bfc" id="L129" title="All 2 branches covered.">        if (beanClass.isInterface()) {</span>
+<span class="fc" id="L130">            beanInfo = (JXPathBeanInfo) byInterface.get(beanClass);</span>
+<span class="pc bpc" id="L131" title="1 of 4 branches missed.">            if (beanInfo != null &amp;&amp; beanInfo.isDynamic()) {</span>
+<span class="fc" id="L132">                return beanInfo;</span>
+            }
+        }
+
+<span class="fc" id="L136">        Class[] interfaces = beanClass.getInterfaces();</span>
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">        if (interfaces != null) {</span>
+<span class="fc bfc" id="L138" title="All 2 branches covered.">            for (int i = 0; i &lt; interfaces.length; i++) {</span>
+<span class="fc" id="L139">                beanInfo = findDynamicBeanInfo(interfaces[i]);</span>
+<span class="pc bpc" id="L140" title="1 of 4 branches missed.">                if (beanInfo != null &amp;&amp; beanInfo.isDynamic()) {</span>
+<span class="fc" id="L141">                    return beanInfo;</span>
+                }
+            }
+        }
+
+<span class="fc" id="L146">        Class sup = beanClass.getSuperclass();</span>
+<span class="fc bfc" id="L147" title="All 2 branches covered.">        if (sup != null) {</span>
+<span class="fc" id="L148">            beanInfo = (JXPathBeanInfo) byClass.get(sup);</span>
+<span class="fc bfc" id="L149" title="All 4 branches covered.">            if (beanInfo != null &amp;&amp; beanInfo.isDynamic()) {</span>
+<span class="fc" id="L150">                return beanInfo;</span>
+            }
+<span class="fc" id="L152">            return findDynamicBeanInfo(sup);</span>
+        }
+<span class="fc" id="L154">        return null;</span>
+    }
+
+    /**
+     * find a JXPathBeanInfo instance for the specified class.
+     * Similar to javax.beans property handler discovery; search for a
+     * class with &quot;XBeanInfo&quot; appended to beanClass.name, then check
+     * whether beanClass implements JXPathBeanInfo for itself.
+     * Invokes the default constructor for any class it finds.
+     * @param beanClass for which to look for an info provider
+     * @return JXPathBeanInfo instance or null if none found
+     */
+    private static synchronized JXPathBeanInfo findInformant(Class beanClass) {
+<span class="fc" id="L167">        String name = beanClass.getName() + &quot;XBeanInfo&quot;;</span>
+        try {
+<span class="nc" id="L169">            return (JXPathBeanInfo) instantiate(beanClass, name);</span>
+        }
+<span class="fc" id="L171">        catch (Exception ex) { //NOPMD</span>
+            // Just drop through
+        }
+
+        // Now try checking if the bean is its own JXPathBeanInfo.
+        try {
+<span class="pc bpc" id="L177" title="1 of 4 branches missed.">            if (JXPathBeanInfo.class.isAssignableFrom(beanClass)) {</span>
+<span class="nc" id="L178">                return (JXPathBeanInfo) beanClass.newInstance();</span>
+            }
+        }
+<span class="nc" id="L181">        catch (Exception ex) { //NOPMD</span>
+            // Just drop through
+<span class="fc" id="L183">        }</span>
+
+<span class="fc" id="L185">        return null;</span>
+    }
+
+    /**
+     * Try to create an instance of a named class.
+     * First try the classloader of &quot;sibling&quot;, then try the system
+     * classloader.
+     * @param sibling Class
+     * @param className to instantiate
+     * @return new Object
+     * @throws Exception if instantiation fails
+     */
+    private static Object instantiate(Class sibling, String className)
+            throws Exception {
+
+        // First check with sibling's classloader (if any).
+<span class="fc" id="L201">        ClassLoader cl = sibling.getClassLoader();</span>
+<span class="pc bpc" id="L202" title="1 of 2 branches missed.">        if (cl != null) {</span>
+            try {
+<span class="nc" id="L204">                Class cls = cl.loadClass(className);</span>
+<span class="nc" id="L205">                return cls.newInstance();</span>
+            }
+<span class="fc" id="L207">            catch (Exception ex) { //NOPMD</span>
+                // Just drop through and try the system classloader.
+            }
+        }
+
+        // Now try the bootstrap classloader.
+<span class="nc" id="L213">        Class cls = Class.forName(className);</span>
+<span class="nc" id="L214">        return cls.newInstance();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

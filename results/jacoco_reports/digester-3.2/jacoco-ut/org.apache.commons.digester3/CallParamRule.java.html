@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CallParamRule.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester3</a> &gt; <span class="el_source">CallParamRule.java</span></div><h1>CallParamRule.java</h1><pre class="source lang-java linenums">package org.apache.commons.digester3;
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import static java.lang.String.format;
+import java.util.Stack;
+
+import org.xml.sax.Attributes;
+
+/**
+ * &lt;p&gt;
+ * Rule implementation that saves a parameter for use by a surrounding &lt;code&gt;CallMethodRule&lt;code&gt;.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * This parameter may be:
+ * &lt;ul&gt;
+ * &lt;li&gt;from an attribute of the current element See {@link #CallParamRule(int paramIndex, String attributeName)}
+ * &lt;li&gt;from current the element body See {@link #CallParamRule(int paramIndex)}
+ * &lt;li&gt;from the top object on the stack. See {@link #CallParamRule(int paramIndex, boolean fromStack)}
+ * &lt;li&gt;the current path being processed (separate &lt;code&gt;Rule&lt;/code&gt;). See {@link PathCallParamRule}
+ * &lt;/ul&gt;
+ * &lt;/p&gt;
+ */
+public class CallParamRule
+    extends Rule
+{
+
+    // ----------------------------------------------------------- Constructors
+
+    /**
+     * Construct a &quot;call parameter&quot; rule that will save the body text of this element as the parameter value.
+     * &lt;p&gt;
+     * Note that if the element is empty the an &lt;i&gt;empty string&lt;/i&gt; is passed to the target method, not null. And if
+     * automatic type conversion is being applied (ie if the target function takes something other than a string as a
+     * parameter) then the conversion will fail if the converter class does not accept an empty string as valid input.
+     * &lt;/p&gt;
+     * 
+     * @param paramIndex The zero-relative parameter number
+     */
+    public CallParamRule( int paramIndex )
+    {
+<span class="fc" id="L59">        this( paramIndex, null );</span>
+<span class="fc" id="L60">    }</span>
+
+    /**
+     * Construct a &quot;call parameter&quot; rule that will save the value of the specified attribute as the parameter value.
+     * 
+     * @param paramIndex The zero-relative parameter number
+     * @param attributeName The name of the attribute to save
+     */
+    public CallParamRule( int paramIndex, String attributeName )
+<span class="fc" id="L69">    {</span>
+<span class="fc" id="L70">        this.paramIndex = paramIndex;</span>
+<span class="fc" id="L71">        this.attributeName = attributeName;</span>
+<span class="fc" id="L72">    }</span>
+
+    /**
+     * Construct a &quot;call parameter&quot; rule.
+     * 
+     * @param paramIndex The zero-relative parameter number
+     * @param fromStack should this parameter be taken from the top of the stack?
+     */
+    public CallParamRule( int paramIndex, boolean fromStack )
+<span class="nc" id="L81">    {</span>
+<span class="nc" id="L82">        this.paramIndex = paramIndex;</span>
+<span class="nc" id="L83">        this.fromStack = fromStack;</span>
+<span class="nc" id="L84">    }</span>
+
+    /**
+     * Constructs a &quot;call parameter&quot; rule which sets a parameter from the stack. If the stack contains too few objects,
+     * then the parameter will be set to null.
+     * 
+     * @param paramIndex The zero-relative parameter number
+     * @param stackIndex the index of the object which will be passed as a parameter. The zeroth object is the top of
+     *            the stack, 1 is the next object down and so on.
+     */
+    public CallParamRule( int paramIndex, int stackIndex )
+<span class="fc" id="L95">    {</span>
+<span class="fc" id="L96">        this.paramIndex = paramIndex;</span>
+<span class="fc" id="L97">        this.fromStack = true;</span>
+<span class="fc" id="L98">        this.stackIndex = stackIndex;</span>
+<span class="fc" id="L99">    }</span>
+
+    // ----------------------------------------------------- Instance Variables
+
+    /**
+     * The attribute from which to save the parameter value
+     */
+<span class="pc" id="L106">    protected String attributeName = null;</span>
+
+    /**
+     * The zero-relative index of the parameter we are saving.
+     */
+<span class="pc" id="L111">    protected int paramIndex = 0;</span>
+
+    /**
+     * Is the parameter to be set from the stack?
+     */
+<span class="pc" id="L116">    protected boolean fromStack = false;</span>
+
+    /**
+     * The position of the object from the top of the stack
+     */
+<span class="pc" id="L121">    protected int stackIndex = 0;</span>
+
+    /**
+     * Stack is used to allow nested body text to be processed. Lazy creation.
+     */
+    protected Stack&lt;String&gt; bodyTextStack;
+
+    // --------------------------------------------------------- Public Methods
+
+    /**
+     * Set the attribute from which to save the parameter value.
+     *
+     * @param attributeName The attribute from which to save the parameter value
+     * @since 3.0
+     */
+    public void setAttributeName( String attributeName )
+    {
+<span class="fc" id="L138">        this.attributeName = attributeName;</span>
+<span class="fc" id="L139">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void begin( String namespace, String name, Attributes attributes )
+        throws Exception
+    {
+<span class="fc" id="L148">        Object param = null;</span>
+
+<span class="fc bfc" id="L150" title="All 2 branches covered.">        if ( attributeName != null )</span>
+        {
+
+<span class="fc" id="L153">            param = attributes.getValue( attributeName );</span>
+
+        }
+<span class="fc bfc" id="L156" title="All 2 branches covered.">        else if ( fromStack )</span>
+        {
+
+<span class="fc" id="L159">            param = getDigester().peek( stackIndex );</span>
+
+<span class="pc bpc" id="L161" title="1 of 2 branches missed.">            if ( getDigester().getLogger().isDebugEnabled() )</span>
+            {
+<span class="nc" id="L163">                getDigester()</span>
+<span class="nc" id="L164">                    .getLogger().debug( format( &quot;[CallParamRule]{%s} Save from stack; from stack?%s; object=%s&quot;,</span>
+<span class="nc" id="L165">                                                getDigester().getMatch(), fromStack, param ) );</span>
+            }
+        }
+
+        // Have to save the param object to the param stack frame here.
+        // Can't wait until end(). Otherwise, the object will be lost.
+        // We can't save the object as instance variables, as
+        // the instance variables will be overwritten
+        // if this CallParamRule is reused in subsequent nesting.
+
+<span class="fc bfc" id="L175" title="All 2 branches covered.">        if ( param != null )</span>
+        {
+<span class="fc" id="L177">            Object parameters[] = getDigester().peekParams();</span>
+<span class="fc" id="L178">            parameters[paramIndex] = param;</span>
+        }
+<span class="fc" id="L180">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void body( String namespace, String name, String text )
+        throws Exception
+    {
+<span class="fc bfc" id="L189" title="All 4 branches covered.">        if ( attributeName == null &amp;&amp; !fromStack )</span>
+        {
+            // We must wait to set the parameter until end
+            // so that we can make sure that the right set of parameters
+            // is at the top of the stack
+<span class="fc bfc" id="L194" title="All 2 branches covered.">            if ( bodyTextStack == null )</span>
+            {
+<span class="fc" id="L196">                bodyTextStack = new Stack&lt;String&gt;();</span>
+            }
+<span class="fc" id="L198">            bodyTextStack.push( text.trim() );</span>
+        }
+<span class="fc" id="L200">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void end( String namespace, String name )
+    {
+<span class="pc bpc" id="L208" title="1 of 4 branches missed.">        if ( bodyTextStack != null &amp;&amp; !bodyTextStack.empty() )</span>
+        {
+            // what we do now is push one parameter onto the top set of parameters
+<span class="fc" id="L211">            Object parameters[] = getDigester().peekParams();</span>
+<span class="fc" id="L212">            parameters[paramIndex] = bodyTextStack.pop();</span>
+        }
+<span class="fc" id="L214">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString()
+    {
+<span class="nc" id="L222">        return format( &quot;CallParamRule[paramIndex=%s, attributeName=%s, from stack=%s]&quot;,</span>
+<span class="nc" id="L223">                       paramIndex, attributeName, fromStack );</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>EvalContext.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri</a> &gt; <span class="el_source">EvalContext.java</span></div><h1>EvalContext.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
+
+import org.apache.commons.jxpath.BasicNodeSet;
+import org.apache.commons.jxpath.ExpressionContext;
+import org.apache.commons.jxpath.JXPathContext;
+import org.apache.commons.jxpath.JXPathException;
+import org.apache.commons.jxpath.NodeSet;
+import org.apache.commons.jxpath.Pointer;
+import org.apache.commons.jxpath.ri.axes.RootContext;
+import org.apache.commons.jxpath.ri.model.NodePointer;
+import org.apache.commons.jxpath.util.ReverseComparator;
+
+/**
+ * An XPath evaluation context.
+ *
+ * When  evaluating a path, a chain of EvalContexts is created, each context in
+ * the chain representing a step of the path. Subclasses of EvalContext
+ * implement behavior of various XPath axes: &quot;child::&quot;, &quot;parent::&quot; etc.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision$ $Date$
+ */
+public abstract class EvalContext implements ExpressionContext, Iterator {
+    /** parent context */
+    protected EvalContext parentContext;
+
+    /** root context */
+    protected RootContext rootContext;
+
+    /** position */
+<span class="fc" id="L54">    protected int position = 0;</span>
+
+<span class="fc" id="L56">    private boolean startedSetIteration = false;</span>
+<span class="fc" id="L57">    private boolean done = false;</span>
+<span class="fc" id="L58">    private boolean hasPerformedIteratorStep = false;</span>
+    private Iterator pointerIterator;
+
+    /**
+     * Create a new EvalContext.
+     * @param parentContext parent context
+     */
+<span class="fc" id="L65">    public EvalContext(EvalContext parentContext) {</span>
+<span class="fc" id="L66">        this.parentContext = parentContext;</span>
+<span class="fc" id="L67">    }</span>
+
+    public Pointer getContextNodePointer() {
+<span class="fc" id="L70">        return getCurrentNodePointer();</span>
+    }
+
+    public JXPathContext getJXPathContext() {
+<span class="fc" id="L74">        return getRootContext().getJXPathContext();</span>
+    }
+
+    public int getPosition() {
+<span class="nc" id="L78">        return position;</span>
+    }
+
+    /**
+     * Determines the document order for this context.
+     *
+     * @return 1 ascending order, -1 descending order,
+     *  0 - does not require ordering
+     */
+    public int getDocumentOrder() {
+<span class="fc bfc" id="L88" title="All 4 branches covered.">        return parentContext != null &amp;&amp; parentContext.isChildOrderingRequired() ? 1 : 0;</span>
+    }
+
+    /**
+     * Even if this context has the natural ordering and therefore does
+     * not require collecting and sorting all nodes prior to returning them,
+     * such operation may be required for any child context.
+     * @return boolean
+     */
+    public boolean isChildOrderingRequired() {
+        // Default behavior: if this context needs to be ordered,
+        // the children need to be ordered too
+<span class="fc bfc" id="L100" title="All 2 branches covered.">        return getDocumentOrder() != 0;</span>
+    }
+
+    /**
+     * Returns true if there are mode nodes matching the context's constraints.
+     * @return boolean
+     */
+    public boolean hasNext() {
+<span class="fc bfc" id="L108" title="All 2 branches covered.">        if (pointerIterator != null) {</span>
+<span class="fc" id="L109">            return pointerIterator.hasNext();</span>
+        }
+<span class="fc bfc" id="L111" title="All 2 branches covered.">        if (getDocumentOrder() != 0) {</span>
+<span class="fc" id="L112">            return constructIterator();</span>
+        }
+<span class="pc bpc" id="L114" title="1 of 4 branches missed.">        if (!done &amp;&amp; !hasPerformedIteratorStep) {</span>
+<span class="fc" id="L115">            performIteratorStep();</span>
+        }
+<span class="fc bfc" id="L117" title="All 2 branches covered.">        return !done;</span>
+    }
+
+    /**
+     * Returns the next node pointer in the context
+     * @return Object
+     */
+    public Object next() {
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        if (pointerIterator != null) {</span>
+<span class="fc" id="L126">            return pointerIterator.next();</span>
+        }
+
+<span class="pc bpc" id="L129" title="1 of 2 branches missed.">        if (getDocumentOrder() != 0) {</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">            if (!constructIterator()) {</span>
+<span class="nc" id="L131">                throw new NoSuchElementException();</span>
+            }
+<span class="nc" id="L133">            return pointerIterator.next();</span>
+        }
+<span class="pc bpc" id="L135" title="1 of 4 branches missed.">        if (!done &amp;&amp; !hasPerformedIteratorStep) {</span>
+<span class="fc" id="L136">            performIteratorStep();</span>
+        }
+<span class="pc bpc" id="L138" title="1 of 2 branches missed.">        if (done) {</span>
+<span class="nc" id="L139">            throw new NoSuchElementException();</span>
+        }
+<span class="fc" id="L141">        hasPerformedIteratorStep = false;</span>
+<span class="fc" id="L142">        return getCurrentNodePointer();</span>
+    }
+
+    /**
+     * Moves the iterator forward by one position
+     */
+    private void performIteratorStep() {
+<span class="fc" id="L149">        done = true;</span>
+<span class="fc bfc" id="L150" title="All 4 branches covered.">        if (position != 0 &amp;&amp; nextNode()) {</span>
+<span class="fc" id="L151">            done = false;</span>
+        }
+        else {
+<span class="fc bfc" id="L154" title="All 2 branches covered.">            while (nextSet()) {</span>
+<span class="fc bfc" id="L155" title="All 2 branches covered.">                if (nextNode()) {</span>
+<span class="fc" id="L156">                    done = false;</span>
+<span class="fc" id="L157">                    break;</span>
+                }
+            }
+        }
+<span class="fc" id="L161">        hasPerformedIteratorStep = true;</span>
+<span class="fc" id="L162">    }</span>
+
+    /**
+     * Operation is not supported
+     * @throws UnsupportedOperationException
+     */
+    public void remove() {
+<span class="nc" id="L169">        throw new UnsupportedOperationException(</span>
+            &quot;JXPath iterators cannot remove nodes&quot;);
+    }
+
+    /**
+     * Construct an iterator.
+     * @return whether the Iterator was constructed
+     */
+    private boolean constructIterator() {
+<span class="fc" id="L178">        HashSet set = new HashSet();</span>
+<span class="fc" id="L179">        ArrayList list = new ArrayList();</span>
+<span class="fc bfc" id="L180" title="All 2 branches covered.">        while (nextSet()) {</span>
+<span class="fc bfc" id="L181" title="All 2 branches covered.">            while (nextNode()) {</span>
+<span class="fc" id="L182">                NodePointer pointer = getCurrentNodePointer();</span>
+<span class="fc bfc" id="L183" title="All 2 branches covered.">                if (!set.contains(pointer)) {</span>
+<span class="fc" id="L184">                    set.add(pointer);</span>
+<span class="fc" id="L185">                    list.add(pointer);</span>
+                }
+<span class="fc" id="L187">            }</span>
+        }
+<span class="fc bfc" id="L189" title="All 2 branches covered.">        if (list.isEmpty()) {</span>
+<span class="fc" id="L190">            return false;</span>
+        }
+
+<span class="fc" id="L193">        sortPointers(list);</span>
+
+<span class="fc" id="L195">        pointerIterator = list.iterator();</span>
+<span class="fc" id="L196">        return true;</span>
+    }
+
+    /**
+     * Sort a list of pointers based on document order.
+     * @param l the list to sort.
+     */
+    protected void sortPointers(List l) {
+<span class="fc bfc" id="L204" title="All 3 branches covered.">        switch (getDocumentOrder()) {</span>
+        case 1:
+<span class="fc" id="L206">            Collections.sort(l);</span>
+<span class="fc" id="L207">            break;</span>
+        case -1:
+<span class="fc" id="L209">            Collections.sort(l, ReverseComparator.INSTANCE);</span>
+<span class="fc" id="L210">            break;</span>
+        default:
+        }
+<span class="fc" id="L213">    }</span>
+
+    /**
+     * Returns the list of all Pointers in this context for the current
+     * position of the parent context.
+     * @return List
+     */
+    public List getContextNodeList() {
+<span class="nc" id="L221">        int pos = position;</span>
+<span class="nc bnc" id="L222" title="All 2 branches missed.">        if (pos != 0) {</span>
+<span class="nc" id="L223">            reset();</span>
+        }
+<span class="nc" id="L225">        List list = new ArrayList();</span>
+<span class="nc bnc" id="L226" title="All 2 branches missed.">        while (nextNode()) {</span>
+<span class="nc" id="L227">            list.add(getCurrentNodePointer());</span>
+        }
+<span class="nc bnc" id="L229" title="All 2 branches missed.">        if (pos != 0) {</span>
+<span class="nc" id="L230">            setPosition(pos);</span>
+        }
+        else {
+<span class="nc" id="L233">            reset();</span>
+        }
+<span class="nc" id="L235">        return list;</span>
+    }
+
+    /**
+     * Returns the list of all Pointers in this context for all positions
+     * of the parent contexts.  If there was an ongoing iteration over
+     * this context, the method should not be called.
+     * @return NodeSet
+     */
+    public NodeSet getNodeSet() {
+<span class="pc bpc" id="L245" title="1 of 2 branches missed.">        if (position != 0) {</span>
+<span class="nc" id="L246">            throw new JXPathException(</span>
+                &quot;Simultaneous operations: &quot;
+                    + &quot;should not request pointer list while &quot;
+                    + &quot;iterating over an EvalContext&quot;);
+        }
+<span class="fc" id="L251">        BasicNodeSet set = new BasicNodeSet();</span>
+<span class="fc bfc" id="L252" title="All 2 branches covered.">        while (nextSet()) {</span>
+<span class="fc bfc" id="L253" title="All 2 branches covered.">            while (nextNode()) {</span>
+<span class="fc" id="L254">                set.add((Pointer) getCurrentNodePointer().clone());</span>
+            }
+        }
+
+<span class="fc" id="L258">        return set;</span>
+    }
+
+    /**
+     * Typically returns the NodeSet by calling getNodeSet(),
+     * but will be overridden for contexts that more naturally produce
+     * individual values, e.g. VariableContext
+     * @return Object
+     */
+    public Object getValue() {
+<span class="fc" id="L268">        return getNodeSet();</span>
+    }
+
+    public String toString() {
+<span class="nc" id="L272">        Pointer ptr = getContextNodePointer();</span>
+<span class="nc bnc" id="L273" title="All 2 branches missed.">        return ptr == null ? &quot;Empty expression context&quot; : &quot;Expression context [&quot; + getPosition()</span>
+<span class="nc" id="L274">                + &quot;] &quot; + ptr.asPath();</span>
+    }
+
+    /**
+     * Returns the root context of the path, which provides easy
+     * access to variables and functions.
+     * @return RootContext
+     */
+    public RootContext getRootContext() {
+<span class="fc bfc" id="L283" title="All 2 branches covered.">        if (rootContext == null) {</span>
+<span class="fc" id="L284">            rootContext = parentContext.getRootContext();</span>
+        }
+<span class="fc" id="L286">        return rootContext;</span>
+    }
+
+    /**
+     * Sets current position = 0, which is the pre-iteration state.
+     */
+    public void reset() {
+<span class="fc" id="L293">        position = 0;</span>
+<span class="fc" id="L294">    }</span>
+
+    /**
+     * Get the current position.
+     * @return int position.
+     */
+    public int getCurrentPosition() {
+<span class="fc" id="L301">        return position;</span>
+    }
+
+    /**
+     * Returns the first encountered Pointer that matches the current
+     * context's criteria.
+     * @return Pointer
+     */
+    public Pointer getSingleNodePointer() {
+<span class="fc" id="L310">        reset();</span>
+<span class="fc bfc" id="L311" title="All 2 branches covered.">        while (nextSet()) {</span>
+<span class="fc bfc" id="L312" title="All 2 branches covered.">            if (nextNode()) {</span>
+<span class="fc" id="L313">                return getCurrentNodePointer();</span>
+            }
+        }
+<span class="fc" id="L316">        return null;</span>
+    }
+
+    /**
+     * Returns the current context node. Undefined before the beginning
+     * of the iteration.
+     * @return NodePoiner
+     */
+    public abstract NodePointer getCurrentNodePointer();
+
+    /**
+     * Returns true if there is another sets of objects to interate over.
+     * Resets the current position and node.
+     * @return boolean
+     */
+    public boolean nextSet() {
+<span class="fc" id="L332">        reset(); // Restart iteration within the set</span>
+
+        // Most of the time you have one set per parent node
+        // First time this method is called, we should look for
+        // the first parent set that contains at least one node.
+<span class="fc bfc" id="L337" title="All 2 branches covered.">        if (!startedSetIteration) {</span>
+<span class="fc" id="L338">            startedSetIteration = true;</span>
+<span class="fc bfc" id="L339" title="All 2 branches covered.">            while (parentContext.nextSet()) {</span>
+<span class="fc bfc" id="L340" title="All 2 branches covered.">                if (parentContext.nextNode()) {</span>
+<span class="fc" id="L341">                    return true;</span>
+                }
+            }
+<span class="fc" id="L344">            return false;</span>
+        }
+
+        // In subsequent calls, we see if the parent context
+        // has any nodes left in the current set
+<span class="fc bfc" id="L349" title="All 2 branches covered.">        if (parentContext.nextNode()) {</span>
+<span class="fc" id="L350">            return true;</span>
+        }
+
+        // If not, we look for the next set that contains
+        // at least one node
+<span class="fc bfc" id="L355" title="All 2 branches covered.">        while (parentContext.nextSet()) {</span>
+<span class="fc bfc" id="L356" title="All 2 branches covered.">            if (parentContext.nextNode()) {</span>
+<span class="fc" id="L357">                return true;</span>
+            }
+        }
+<span class="fc" id="L360">        return false;</span>
+    }
+
+    /**
+     * Returns true if there is another object in the current set.
+     * Switches the current position and node to the next object.
+     * @return boolean
+     */
+    public abstract boolean nextNode();
+
+    /**
+     * Moves the current position to the specified index. Used with integer
+     * predicates to quickly get to the n'th element of the node set.
+     * Returns false if the position is out of the node set range.
+     * You can call it with 0 as the position argument to restart the iteration.
+     * @param position to set
+     * @return boolean
+     */
+    public boolean setPosition(int position) {
+<span class="fc" id="L379">        this.position = position;</span>
+<span class="fc" id="L380">        return true;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

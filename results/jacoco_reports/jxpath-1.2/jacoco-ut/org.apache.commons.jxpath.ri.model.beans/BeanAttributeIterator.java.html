@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>BeanAttributeIterator.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri.model.beans</a> &gt; <span class="el_source">BeanAttributeIterator.java</span></div><h1>BeanAttributeIterator.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri.model.beans;
+
+import org.apache.commons.jxpath.ri.QName;
+import org.apache.commons.jxpath.ri.model.NodePointer;
+
+/**
+ * An iterator of attributes of a JavaBean. Returns bean properties as
+ * well as the &quot;xml:lang&quot; attribute.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision$ $Date$
+ */
+public class BeanAttributeIterator extends PropertyIterator {
+    private NodePointer parent;
+<span class="fc" id="L31">    private int position = 0;</span>
+    private boolean includeXmlLang;
+
+    /**
+     * Create a new BeanAttributeIterator.
+     * @param parent parent pointer
+     * @param name name of this bean
+     */
+    public BeanAttributeIterator(PropertyOwnerPointer parent, QName name) {
+<span class="fc" id="L40">        super(</span>
+            parent,
+<span class="fc bfc" id="L42" title="All 2 branches covered.">            (name.getPrefix() == null</span>
+<span class="pc bpc" id="L43" title="1 of 4 branches missed.">                &amp;&amp; (name.getName() == null || name.getName().equals(&quot;*&quot;)))</span>
+                ? null
+<span class="fc" id="L45">                : name.toString(),</span>
+            false,
+            null);
+<span class="fc" id="L48">        this.parent = parent;</span>
+<span class="fc" id="L49">        includeXmlLang =</span>
+<span class="pc bpc" id="L50" title="1 of 4 branches missed.">            (name.getPrefix() != null &amp;&amp; name.getPrefix().equals(&quot;xml&quot;))</span>
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">                &amp;&amp; (name.getName().equals(&quot;lang&quot;)</span>
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">                || name.getName().equals(&quot;*&quot;));</span>
+<span class="fc" id="L53">    }</span>
+
+    public NodePointer getNodePointer() {
+<span class="pc bpc" id="L56" title="1 of 4 branches missed.">        return includeXmlLang &amp;&amp; position == 1 ? new LangAttributePointer(parent) : super.getNodePointer();</span>
+    }
+
+    public int getPosition() {
+<span class="fc" id="L60">        return position;</span>
+    }
+
+    public boolean setPosition(int position) {
+<span class="fc" id="L64">        this.position = position;</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        if (includeXmlLang) {</span>
+<span class="pc bpc" id="L66" title="1 of 4 branches missed.">            return position == 1 || super.setPosition(position - 1);</span>
+        }
+<span class="fc" id="L68">        return super.setPosition(position);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

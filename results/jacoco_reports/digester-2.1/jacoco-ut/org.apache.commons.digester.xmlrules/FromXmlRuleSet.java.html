@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>FromXmlRuleSet.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester.xmlrules</a> &gt; <span class="el_source">FromXmlRuleSet.java</span></div><h1>FromXmlRuleSet.java</h1><pre class="source lang-java linenums">/* $Id$
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+package org.apache.commons.digester.xmlrules;
+
+
+import java.net.URL;
+
+import org.apache.commons.digester.Digester;
+import org.apache.commons.digester.RuleSetBase;
+
+import org.xml.sax.InputSource;
+
+/**
+ * A Digester rule set where the rules come from an XML file.
+ *
+ * @since 1.2
+ */
+public class FromXmlRuleSet extends RuleSetBase {
+
+    public static final String DIGESTER_DTD_PATH = &quot;org/apache/commons/digester/xmlrules/digester-rules.dtd&quot;;
+
+    /**
+     * The file containing the Digester rules, in XML.
+     */
+    private XMLRulesLoader rulesLoader;
+
+    /**
+     * The rule set for parsing the Digester rules
+     */
+    private DigesterRuleParser parser;
+
+    /**
+        * The digester for loading the rules xml.
+        */
+    private Digester rulesDigester;
+
+    /**
+     * Constructs a FromXmlRuleSet using the default DigesterRuleParser and
+     * rulesDigester.
+     * @param rulesXml the path to the XML document defining the Digester rules
+     */
+    public FromXmlRuleSet(URL rulesXml) {
+<span class="fc" id="L60">        this(rulesXml, new DigesterRuleParser(), new Digester());</span>
+<span class="fc" id="L61">    }</span>
+
+    /**
+     * Constructs a FromXmlRuleSet using the default DigesterRuleParser and
+     * a ruleDigester for loading the rules xml.
+     * @param rulesXml the path to the XML document defining the Digester rules
+     * @param rulesDigester the digester to read the rules xml.
+     */
+    public FromXmlRuleSet(URL rulesXml, Digester rulesDigester) {
+<span class="nc" id="L70">        this(rulesXml, new DigesterRuleParser(), rulesDigester);</span>
+<span class="nc" id="L71">    }</span>
+
+    /**
+     * @param rulesXml the path to the XML document defining the Digester rules
+     * @param parser an instance of DigesterRuleParser, for parsing the rules from XML
+     */
+    public FromXmlRuleSet(URL rulesXml, DigesterRuleParser parser) {
+<span class="nc" id="L78">        this(rulesXml, parser, new Digester());</span>
+<span class="nc" id="L79">    }</span>
+
+    /**
+     * @param rulesXml the path to the XML document defining the Digester rules
+     * @param parser an instance of DigesterRuleParser, for parsing the rules from XML
+     * @param rulesDigester the digester used to load the Xml rules.
+     */
+<span class="fc" id="L86">    public FromXmlRuleSet(URL rulesXml, DigesterRuleParser parser, Digester rulesDigester) {</span>
+<span class="fc" id="L87">        init(new URLXMLRulesLoader(rulesXml), parser, rulesDigester);</span>
+<span class="fc" id="L88">    }</span>
+
+    /**
+     * Constructs a FromXmlRuleSet using the default DigesterRuleParser and
+     * rulesDigester.
+     * @param inputSource load the xml rules from this InputSource
+     */
+    public FromXmlRuleSet(InputSource inputSource) {
+<span class="fc" id="L96">        this(inputSource, new DigesterRuleParser(), new Digester());</span>
+<span class="fc" id="L97">    }</span>
+    
+    /**
+     * Constructs a FromXmlRuleSet using the default DigesterRuleParser and
+     * a ruleDigester for loading the rules xml.
+     * @param inputSource load the xml rules from this InputSource
+     * @param rulesDigester the digester to read the rules xml.
+     */
+    public FromXmlRuleSet(InputSource inputSource, Digester rulesDigester) {
+<span class="nc" id="L106">        this(inputSource, new DigesterRuleParser(), rulesDigester);</span>
+<span class="nc" id="L107">    }</span>
+
+    /**
+     * @param inputSource load the xml rules from this InputSource
+     * @param parser an instance of DigesterRuleParser, for parsing the rules from XML
+     */
+    public FromXmlRuleSet(InputSource inputSource, DigesterRuleParser parser) {
+<span class="nc" id="L114">        this(inputSource, parser, new Digester());</span>
+<span class="nc" id="L115">    }</span>
+
+    /**
+     * @param inputSource load the xml rules from this InputSource
+     * @param parser an instance of DigesterRuleParser, for parsing the rules from XML
+     * @param rulesDigester the digester used to load the Xml rules.
+     */
+<span class="fc" id="L122">    public FromXmlRuleSet(InputSource inputSource, DigesterRuleParser parser, Digester rulesDigester) {</span>
+<span class="fc" id="L123">        init(new InputSourceXMLRulesLoader(inputSource), parser, rulesDigester);</span>
+<span class="fc" id="L124">    }</span>
+    
+    /**
+     * Base constructor
+     */
+    private void init(XMLRulesLoader rulesLoader, DigesterRuleParser parser, Digester rulesDigester) {
+<span class="fc" id="L130">        this.rulesLoader = rulesLoader;</span>
+<span class="fc" id="L131">        this.parser = parser;</span>
+<span class="fc" id="L132">        this.rulesDigester = rulesDigester;</span>
+<span class="fc" id="L133">    }</span>
+    
+    /**
+     * Adds to the digester the set of Rule instances defined in the
+     * XML file for this rule set.
+     * @see org.apache.commons.digester.RuleSetBase
+     */
+    @Override
+    public void addRuleInstances(org.apache.commons.digester.Digester digester) throws XmlLoadException {
+<span class="fc" id="L142">        addRuleInstances(digester, null);</span>
+<span class="fc" id="L143">    }</span>
+    
+    /**
+     * Adds to the digester the set of Rule instances defined in the
+     * XML file for this rule set.
+     * &lt;p&gt;
+     * Note that this method doesn't have a matching one on the DigesterLoader
+     * class, because it is not expected to be widely used, and DigesterLoader's
+     * load method is already heavily overloaded.
+     *
+     * @param digester is the digester that rules will be added to.
+     * @param basePath is a path that will be prefixed to every
+     * pattern string defined in the xmlrules input file.
+     *
+     * @see org.apache.commons.digester.RuleSetBase
+     * @since 1.6
+     */
+    public void addRuleInstances(
+    org.apache.commons.digester.Digester digester,
+    String basePath) 
+    throws XmlLoadException {
+        
+<span class="fc" id="L165">        URL dtdURL = getClass().getClassLoader().getResource(DIGESTER_DTD_PATH);</span>
+<span class="pc bpc" id="L166" title="1 of 2 branches missed.">        if (dtdURL == null) {</span>
+<span class="nc" id="L167">            throw new XmlLoadException(&quot;Cannot find resource \&quot;&quot; +</span>
+                    DIGESTER_DTD_PATH + &quot;\&quot;&quot;);
+        }
+<span class="fc" id="L170">        parser.setDigesterRulesDTD(dtdURL.toString());</span>
+<span class="fc" id="L171">        parser.setTarget(digester);</span>
+<span class="fc" id="L172">        parser.setBasePath(basePath);</span>
+
+<span class="fc" id="L174">        rulesDigester.addRuleSet(parser);</span>
+<span class="fc" id="L175">        rulesDigester.push(parser);</span>
+
+<span class="fc" id="L177">        rulesLoader.loadRules();</span>
+<span class="fc" id="L178">    }</span>
+    
+    /** 
+     * Worker class encapsulates loading mechanisms.
+     * Private until some reason is found to make it public.
+     */
+<span class="fc" id="L184">    private abstract static class XMLRulesLoader {</span>
+        /** Load rules now */
+        public abstract void loadRules()  throws XmlLoadException;
+    }
+    
+    /** Loads XMLRules from an URL */
+    private class URLXMLRulesLoader extends XMLRulesLoader {
+        private URL url;
+<span class="fc" id="L192">        public URLXMLRulesLoader(URL url) {</span>
+<span class="fc" id="L193">            this.url = url;</span>
+<span class="fc" id="L194">        }</span>
+        
+        @Override
+        public void loadRules() throws XmlLoadException {
+            try {
+<span class="fc" id="L199">                rulesDigester.parse(url.openStream());</span>
+<span class="fc" id="L200">            } catch (Exception ex) {</span>
+<span class="fc" id="L201">                throw new XmlLoadException(ex);</span>
+<span class="fc" id="L202">            }</span>
+<span class="fc" id="L203">        }</span>
+    }
+
+    /** Loads XMLRules from an InputSource */
+    private class InputSourceXMLRulesLoader extends XMLRulesLoader {
+        private InputSource inputSource;
+<span class="fc" id="L209">        public InputSourceXMLRulesLoader(InputSource inputSource) {</span>
+<span class="fc" id="L210">            this.inputSource = inputSource;</span>
+<span class="fc" id="L211">        }</span>
+        
+        @Override
+        public void loadRules() throws XmlLoadException {
+            try {
+<span class="fc" id="L216">                rulesDigester.parse(inputSource);</span>
+<span class="nc" id="L217">            } catch (Exception ex) {</span>
+<span class="nc" id="L218">                throw new XmlLoadException(ex);</span>
+<span class="fc" id="L219">            }</span>
+<span class="fc" id="L220">        }</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

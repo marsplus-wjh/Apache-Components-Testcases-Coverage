@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChildContext.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri.axes</a> &gt; <span class="el_source">ChildContext.java</span></div><h1>ChildContext.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri.axes;
+
+import org.apache.commons.jxpath.Pointer;
+import org.apache.commons.jxpath.ri.EvalContext;
+import org.apache.commons.jxpath.ri.compiler.NodeTest;
+import org.apache.commons.jxpath.ri.model.NodeIterator;
+import org.apache.commons.jxpath.ri.model.NodePointer;
+
+/**
+ * EvalContext that can walk the &quot;child::&quot;, &quot;following-sibling::&quot; and
+ * &quot;preceding-sibling::&quot; axes.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision: 652903 $ $Date: 2008-05-02 15:46:32 -0500 (Fri, 02 May 2008) $
+ */
+public class ChildContext extends EvalContext {
+    private NodeTest nodeTest;
+    private boolean startFromParentLocation;
+    private boolean reverse;
+    private NodeIterator iterator;
+
+    /**
+     * Create a new ChildContext.
+     * @param parentContext parent EvalContext
+     * @param nodeTest NodeTest
+     * @param startFromParentLocation whether to start from parent location
+     * @param reverse whether to iterate in reverse
+     */
+    public ChildContext(EvalContext parentContext, NodeTest nodeTest,
+            boolean startFromParentLocation, boolean reverse) {
+<span class="fc" id="L47">        super(parentContext);</span>
+<span class="fc" id="L48">        this.nodeTest = nodeTest;</span>
+<span class="fc" id="L49">        this.startFromParentLocation = startFromParentLocation;</span>
+<span class="fc" id="L50">        this.reverse = reverse;</span>
+<span class="fc" id="L51">    }</span>
+
+    public NodePointer getCurrentNodePointer() {
+<span class="pc bpc" id="L54" title="3 of 4 branches missed.">        if (position == 0 &amp;&amp; !setPosition(1)) {</span>
+<span class="nc" id="L55">            return null;</span>
+        }
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">        return iterator == null ? null : iterator.getNodePointer();</span>
+    }
+
+    /**
+     * This method is called on the last context on the path when only
+     * one value is needed.  Note that this will return the whole property,
+     * even if it is a collection. It will not extract the first element
+     * of the collection.  For example, &quot;books&quot; will return the collection
+     * of books rather than the first book from that collection.
+     * @return Pointer
+     */
+    public Pointer getSingleNodePointer() {
+<span class="fc bfc" id="L69" title="All 2 branches covered.">        if (position == 0) {</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">            while (nextSet()) {</span>
+<span class="fc" id="L71">                prepare();</span>
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">                if (iterator == null) {</span>
+<span class="nc" id="L73">                    return null;</span>
+                }
+                // See if there is a property there, singular or collection
+<span class="fc" id="L76">                NodePointer pointer = iterator.getNodePointer();</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">                if (pointer != null) {</span>
+<span class="fc" id="L78">                    return pointer;</span>
+                }
+<span class="fc" id="L80">            }</span>
+<span class="fc" id="L81">            return null;</span>
+        }
+<span class="fc" id="L83">        return getCurrentNodePointer();</span>
+    }
+
+    public boolean nextNode() {
+<span class="fc" id="L87">        return setPosition(getCurrentPosition() + 1);</span>
+    }
+
+    public void reset() {
+<span class="fc" id="L91">        super.reset();</span>
+<span class="fc" id="L92">        iterator = null;</span>
+<span class="fc" id="L93">    }</span>
+
+    public boolean setPosition(int position) {
+<span class="fc" id="L96">        int oldPosition = getCurrentPosition();</span>
+<span class="fc" id="L97">        super.setPosition(position);</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        if (oldPosition == 0) {</span>
+<span class="fc" id="L99">            prepare();</span>
+        }
+<span class="fc bfc" id="L101" title="All 2 branches covered.">        return iterator == null ? false : iterator.setPosition(position);</span>
+    }
+
+    /**
+     * Allocates a PropertyIterator.
+     */
+    private void prepare() {
+<span class="fc" id="L108">        NodePointer parent = parentContext.getCurrentNodePointer();</span>
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">        if (parent == null) {</span>
+<span class="nc" id="L110">            return;</span>
+        }
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        NodePointer useParent = startFromParentLocation ? parent.getParent() : parent;</span>
+<span class="fc bfc" id="L113" title="All 2 branches covered.">        iterator = useParent.childIterator(nodeTest, reverse,</span>
+                startFromParentLocation ? parent : null);
+<span class="fc" id="L115">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

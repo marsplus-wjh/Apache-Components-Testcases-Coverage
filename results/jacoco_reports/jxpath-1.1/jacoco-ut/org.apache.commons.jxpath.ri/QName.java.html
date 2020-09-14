@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>QName.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri</a> &gt; <span class="el_source">QName.java</span></div><h1>QName.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri;
+
+import java.io.Serializable;
+
+
+/**
+ * A qualified name: a combination of an optional namespace prefix
+ * and an local name.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision$ $Date$
+ */
+public class QName implements Serializable {
+    private static final long serialVersionUID = 7616199282015091496L;
+
+    private String prefix;
+    private String name;
+    private String qualifiedName;
+
+    /**
+     * Create a new QName.
+     * @param qualifiedName value
+     */
+<span class="fc" id="L40">    public QName(String qualifiedName) {</span>
+<span class="fc" id="L41">        this.qualifiedName = qualifiedName;</span>
+<span class="fc" id="L42">        int index = qualifiedName.indexOf(':');</span>
+<span class="fc bfc" id="L43" title="All 2 branches covered.">        prefix = index &lt; 0 ? null : qualifiedName.substring(0, index);</span>
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        name = index &lt; 0 ? qualifiedName : qualifiedName.substring(index + 1);</span>
+<span class="fc" id="L45">    }</span>
+
+    /**
+     * Create a new QName.
+     * @param prefix ns
+     * @param localName String
+     */
+<span class="fc" id="L52">    public QName(String prefix, String localName) {</span>
+<span class="fc" id="L53">        this.prefix = prefix;</span>
+<span class="fc" id="L54">        this.name = localName;</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        this.qualifiedName = prefix == null ? localName : prefix + ':' + localName;</span>
+<span class="fc" id="L56">    }</span>
+
+    /**
+     * Get the prefix of this QName.
+     * @return String
+     */
+    public String getPrefix() {
+<span class="fc" id="L63">        return prefix;</span>
+    }
+
+    /**
+     * Get the local name.
+     * @return String
+     */
+    public String getName() {
+<span class="fc" id="L71">        return name;</span>
+    }
+
+    public String toString() {
+<span class="fc" id="L75">        return qualifiedName;</span>
+    }
+
+    public int hashCode() {
+<span class="fc" id="L79">        return name.hashCode();</span>
+    }
+
+    public boolean equals(Object object) {
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        if (this == object) {</span>
+<span class="fc" id="L84">            return true;</span>
+        }
+<span class="pc bpc" id="L86" title="1 of 2 branches missed.">        if (!(object instanceof QName)) {</span>
+<span class="nc" id="L87">            return false;</span>
+        }
+<span class="fc" id="L89">        return qualifiedName.equals(((QName) object).qualifiedName);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

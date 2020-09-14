@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>PredicatedCollection.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.collection</a> &gt; <span class="el_source">PredicatedCollection.java</span></div><h1>PredicatedCollection.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.collections4.collection;
+
+import java.util.Collection;
+
+import org.apache.commons.collections4.Predicate;
+
+/**
+ * Decorates another {@link Collection} to validate that additions
+ * match a specified predicate.
+ * &lt;p&gt;
+ * This collection exists to provide validation for the decorated collection.
+ * It is normally created to decorate an empty collection.
+ * If an object cannot be added to the collection, an IllegalArgumentException is thrown.
+ * &lt;p&gt;
+ * One usage would be to ensure that no null entries are added to the collection.
+ * &lt;pre&gt;Collection coll = PredicatedCollection.decorate(new ArrayList(), NotNullPredicate.INSTANCE);&lt;/pre&gt;
+ * &lt;p&gt;
+ * This class is Serializable from Commons Collections 3.1.
+ *
+ * @param &lt;E&gt; the type of the elements in the collection
+ * @since 3.0
+ * @version $Id$
+ */
+public class PredicatedCollection&lt;E&gt; extends AbstractCollectionDecorator&lt;E&gt; {
+
+    /** Serialization version */
+    private static final long serialVersionUID = -5259182142076705162L;
+
+    /** The predicate to use */
+    protected final Predicate&lt;? super E&gt; predicate;
+
+    /**
+     * Factory method to create a predicated (validating) collection.
+     * &lt;p&gt;
+     * If there are any elements already in the collection being decorated, they
+     * are validated.
+     *
+     * @param &lt;T&gt; the type of the elements in the collection
+     * @param coll  the collection to decorate, must not be null
+     * @param predicate  the predicate to use for validation, must not be null
+     * @return a new predicated collection
+     * @throws IllegalArgumentException if collection or predicate is null
+     * @throws IllegalArgumentException if the collection contains invalid elements
+     * @since 4.0
+     */
+    public static &lt;T&gt; PredicatedCollection&lt;T&gt; predicatedCollection(final Collection&lt;T&gt; coll,
+                                                                   final Predicate&lt;? super T&gt; predicate) {
+<span class="fc" id="L64">        return new PredicatedCollection&lt;T&gt;(coll, predicate);</span>
+    }
+
+    //-----------------------------------------------------------------------
+    /**
+     * Constructor that wraps (not copies).
+     * &lt;p&gt;
+     * If there are any elements already in the collection being decorated, they
+     * are validated.
+     *
+     * @param coll  the collection to decorate, must not be null
+     * @param predicate  the predicate to use for validation, must not be null
+     * @throws IllegalArgumentException if collection or predicate is null
+     * @throws IllegalArgumentException if the collection contains invalid elements
+     */
+    protected PredicatedCollection(final Collection&lt;E&gt; coll, final Predicate&lt;? super E&gt; predicate) {
+<span class="fc" id="L80">        super(coll);</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        if (predicate == null) {</span>
+<span class="fc" id="L82">            throw new IllegalArgumentException(&quot;Predicate must not be null&quot;);</span>
+        }
+<span class="fc" id="L84">        this.predicate = predicate;</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">        for (final E item : coll) {</span>
+<span class="fc" id="L86">            validate(item);</span>
+<span class="fc" id="L87">        }</span>
+<span class="fc" id="L88">    }</span>
+
+    /**
+     * Validates the object being added to ensure it matches the predicate.
+     * &lt;p&gt;
+     * The predicate itself should not throw an exception, but return false to
+     * indicate that the object cannot be added.
+     *
+     * @param object  the object being added
+     * @throws IllegalArgumentException if the add is invalid
+     */
+    protected void validate(final E object) {
+<span class="fc bfc" id="L100" title="All 2 branches covered.">        if (predicate.evaluate(object) == false) {</span>
+<span class="fc" id="L101">            throw new IllegalArgumentException(&quot;Cannot add Object '&quot; + object + &quot;' - Predicate '&quot; +</span>
+                                               predicate + &quot;' rejected it&quot;);
+        }
+<span class="fc" id="L104">    }</span>
+
+    //-----------------------------------------------------------------------
+    /**
+     * Override to validate the object being added to ensure it matches
+     * the predicate.
+     *
+     * @param object  the object being added
+     * @return the result of adding to the underlying collection
+     * @throws IllegalArgumentException if the add is invalid
+     */
+    @Override
+    public boolean add(final E object) {
+<span class="fc" id="L117">        validate(object);</span>
+<span class="fc" id="L118">        return decorated().add(object);</span>
+    }
+
+    /**
+     * Override to validate the objects being added to ensure they match
+     * the predicate. If any one fails, no update is made to the underlying
+     * collection.
+     *
+     * @param coll  the collection being added
+     * @return the result of adding to the underlying collection
+     * @throws IllegalArgumentException if the add is invalid
+     */
+    @Override
+    public boolean addAll(final Collection&lt;? extends E&gt; coll) {
+<span class="fc bfc" id="L132" title="All 2 branches covered.">        for (final E item : coll) {</span>
+<span class="fc" id="L133">            validate(item);</span>
+<span class="fc" id="L134">        }</span>
+<span class="fc" id="L135">        return decorated().addAll(coll);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

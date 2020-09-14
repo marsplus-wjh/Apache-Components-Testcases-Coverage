@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>DynaBeanPointer.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri.model.dynabeans</a> &gt; <span class="el_source">DynaBeanPointer.java</span></div><h1>DynaBeanPointer.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri.model.dynabeans;
+
+import java.util.Locale;
+
+import org.apache.commons.beanutils.DynaBean;
+import org.apache.commons.jxpath.ri.QName;
+import org.apache.commons.jxpath.ri.model.NodePointer;
+import org.apache.commons.jxpath.ri.model.beans.PropertyOwnerPointer;
+import org.apache.commons.jxpath.ri.model.beans.PropertyPointer;
+
+
+/**
+ * A Pointer that points to a {@link DynaBean}.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision$ $Date$
+ */
+public class DynaBeanPointer extends PropertyOwnerPointer {
+    private QName name;
+    private DynaBean dynaBean;
+
+    private static final long serialVersionUID = -9135052498044877965L;
+
+    /**
+     * Create a new DynaBeanPointer.
+     * @param name is the name given to the first node
+     * @param dynaBean pointed
+     * @param locale Locale
+     */
+    public DynaBeanPointer(QName name, DynaBean dynaBean, Locale locale) {
+<span class="fc" id="L47">        super(null, locale);</span>
+<span class="fc" id="L48">        this.name = name;</span>
+<span class="fc" id="L49">        this.dynaBean = dynaBean;</span>
+<span class="fc" id="L50">    }</span>
+
+    /**
+     * Create a new DynaBeanPointer.
+     * @param parent pointer
+     * @param name is the name given to the first node
+     * @param dynaBean pointed
+     */
+    public DynaBeanPointer(NodePointer parent, QName name, DynaBean dynaBean) {
+<span class="nc" id="L59">        super(parent);</span>
+<span class="nc" id="L60">        this.name = name;</span>
+<span class="nc" id="L61">        this.dynaBean = dynaBean;</span>
+<span class="nc" id="L62">    }</span>
+
+    public PropertyPointer getPropertyPointer() {
+<span class="fc" id="L65">        return new DynaBeanPropertyPointer(this, dynaBean);</span>
+    }
+
+    public QName getName() {
+<span class="fc" id="L69">        return name;</span>
+    }
+
+    public Object getBaseValue() {
+<span class="nc" id="L73">        return dynaBean;</span>
+    }
+
+    public Object getImmediateNode() {
+<span class="fc" id="L77">        return dynaBean;</span>
+    }
+
+    public boolean isCollection() {
+<span class="nc" id="L81">        return false;</span>
+    }
+
+    public int getLength() {
+<span class="fc" id="L85">        return 1;</span>
+    }
+
+    public boolean isLeaf() {
+<span class="fc" id="L89">        return false;</span>
+    }
+
+    public int hashCode() {
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">        return name == null ? 0 : name.hashCode();</span>
+    }
+
+    public boolean equals(Object object) {
+<span class="pc bpc" id="L97" title="1 of 2 branches missed.">        if (object == this) {</span>
+<span class="nc" id="L98">            return true;</span>
+        }
+
+<span class="fc bfc" id="L101" title="All 2 branches covered.">        if (!(object instanceof DynaBeanPointer)) {</span>
+<span class="fc" id="L102">            return false;</span>
+        }
+
+<span class="fc" id="L105">        DynaBeanPointer other = (DynaBeanPointer) object;</span>
+<span class="pc bpc" id="L106" title="2 of 4 branches missed.">        if (!(equalObjects(parent, other.parent) &amp;&amp; equalObjects(name, other.name))) {</span>
+<span class="nc" id="L107">            return false;</span>
+        }
+
+<span class="fc bfc" id="L110" title="All 2 branches covered.">        int iThis = (index == WHOLE_COLLECTION ? 0 : index);</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">        int iOther = (other.index == WHOLE_COLLECTION ? 0 : other.index);</span>
+<span class="pc bpc" id="L112" title="2 of 4 branches missed.">        return iThis == iOther &amp;&amp; dynaBean == other.dynaBean;</span>
+    }
+
+    public String asPath() {
+<span class="pc bpc" id="L116" title="1 of 2 branches missed.">        return parent == null ? &quot;/&quot; : super.asPath();</span>
+    }
+
+    /**
+     * Learn whether two objects are == || .equals().
+     * @param o1 first object
+     * @param o2 second object
+     * @return boolean
+     */
+    private static boolean equalObjects(Object o1, Object o2) {
+<span class="pc bpc" id="L126" title="5 of 6 branches missed.">        return o1 == o2 || o1 != null &amp;&amp; o1.equals(o2);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

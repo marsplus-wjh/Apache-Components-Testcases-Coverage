@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LoaderFromClass.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester3.plugins.strategies</a> &gt; <span class="el_source">LoaderFromClass.java</span></div><h1>LoaderFromClass.java</h1><pre class="source lang-java linenums">package org.apache.commons.digester3.plugins.strategies;
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import static org.apache.commons.beanutils.MethodUtils.getAccessibleMethod;
+
+import java.lang.reflect.Method;
+
+import org.apache.commons.digester3.Digester;
+import org.apache.commons.digester3.plugins.PluginException;
+import org.apache.commons.digester3.plugins.RuleLoader;
+import org.apache.commons.logging.Log;
+
+/**
+ * A RuleLoader which invokes a static method on a target class, leaving that method to actually instantiate and add new
+ * rules to a Digester instance.
+ * 
+ * @since 1.6
+ */
+public class LoaderFromClass
+    extends RuleLoader
+{
+
+    private final Class&lt;?&gt; rulesClass;
+
+    private final Method rulesMethod;
+
+    /**
+     * Constructor.
+     *
+     * @param rulesClass The target class
+     * @param rulesMethod The method has to be invoked
+     */
+    public LoaderFromClass( Class&lt;?&gt; rulesClass, Method rulesMethod )
+<span class="fc" id="L52">    {</span>
+<span class="fc" id="L53">        this.rulesClass = rulesClass;</span>
+<span class="fc" id="L54">        this.rulesMethod = rulesMethod;</span>
+<span class="fc" id="L55">    }</span>
+
+    /**
+     * Constructor.
+     *
+     * @param rulesClass The target class
+     * @param methodName The method name has to be invoked
+     * @throws PluginException if input method can't be located inside the given class
+     */
+    public LoaderFromClass( Class&lt;?&gt; rulesClass, String methodName )
+        throws PluginException
+<span class="fc" id="L66">    {</span>
+
+<span class="fc" id="L68">        Method method = locateMethod( rulesClass, methodName );</span>
+
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">        if ( method == null )</span>
+        {
+<span class="nc" id="L72">            throw new PluginException( &quot;rule class &quot; + rulesClass.getName() + &quot; does not have method &quot; + methodName</span>
+                + &quot; or that method has an invalid signature.&quot; );
+        }
+
+<span class="fc" id="L76">        this.rulesClass = rulesClass;</span>
+<span class="fc" id="L77">        this.rulesMethod = method;</span>
+<span class="fc" id="L78">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void addRules( Digester d, String path )
+        throws PluginException
+    {
+<span class="fc" id="L87">        Log log = d.getLogger();</span>
+<span class="fc" id="L88">        boolean debug = log.isDebugEnabled();</span>
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">        if ( debug )</span>
+        {
+<span class="nc" id="L91">            log.debug( &quot;LoaderFromClass loading rules for plugin at path [&quot; + path + &quot;]&quot; );</span>
+        }
+
+        try
+        {
+<span class="fc" id="L96">            Object[] params = { d, path };</span>
+<span class="fc" id="L97">            rulesMethod.invoke( null, params );</span>
+        }
+<span class="nc" id="L99">        catch ( Exception e )</span>
+        {
+<span class="nc" id="L101">            throw new PluginException(</span>
+                                       &quot;Unable to invoke rules method &quot; + rulesMethod + &quot; on rules class &quot; + rulesClass,
+                                       e );
+<span class="fc" id="L104">        }</span>
+<span class="fc" id="L105">    }</span>
+
+    /**
+     * Find a method on the specified class whose name matches methodName, and whose signature is:
+     * &lt;code&gt; public static void foo(Digester d, String patternPrefix);&lt;/code&gt;.
+     *
+     * @param rulesClass The target class
+     * @param methodName The method name has to be invoked
+     * @return The method name has to be invoked, or null if no such method exists.
+     * @throws PluginException if any error occurs while discovering the method
+     */
+    public static Method locateMethod( Class&lt;?&gt; rulesClass, String methodName )
+        throws PluginException
+    {
+<span class="fc" id="L119">        Class&lt;?&gt;[] paramSpec = { Digester.class, String.class };</span>
+<span class="fc" id="L120">        Method rulesMethod = getAccessibleMethod( rulesClass, methodName, paramSpec );</span>
+
+<span class="fc" id="L122">        return rulesMethod;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

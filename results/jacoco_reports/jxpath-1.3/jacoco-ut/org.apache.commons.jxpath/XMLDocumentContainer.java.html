@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>XMLDocumentContainer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath</a> &gt; <span class="el_source">XMLDocumentContainer.java</span></div><h1>XMLDocumentContainer.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath;
+
+import java.net.URL;
+
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMResult;
+
+import org.apache.commons.jxpath.xml.DocumentContainer;
+import org.w3c.dom.Document;
+
+/**
+ * An XML document container reads and parses XML only when it is
+ * accessed.  JXPath traverses Containers transparently -
+ * you use the same paths to access objects in containers as you
+ * do to access those objects directly.  You can create
+ * XMLDocumentContainers for various XML documents that may or
+ * may not be accessed by XPaths.  If they are, they will be automatically
+ * read, parsed and traversed. If they are not - they won't be
+ * read at all.
+ *
+ * @deprecated 1.1 Please use {@link DocumentContainer}
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision: 652845 $ $Date: 2008-05-02 12:46:46 -0500 (Fri, 02 May 2008) $
+ */
+public class XMLDocumentContainer implements Container {
+
+    private DocumentContainer delegate;
+    private Object document;
+    private URL xmlURL;
+    private Source source;
+
+    /**
+     * Create a new XMLDocumentContainer.
+     * @param xmlURL a URL for an XML file. Use getClass().getResource(resourceName)
+     *               to load XML from a resource file.
+     */
+<span class="nc" id="L56">    public XMLDocumentContainer(URL xmlURL) {</span>
+<span class="nc" id="L57">        this.xmlURL = xmlURL;</span>
+<span class="nc" id="L58">        delegate = new DocumentContainer(xmlURL);</span>
+<span class="nc" id="L59">    }</span>
+
+    /**
+     * Create a new XMLDocumentContainer.
+     * @param source XML source
+     */
+<span class="nc" id="L65">    public XMLDocumentContainer(Source source) {</span>
+<span class="nc" id="L66">        this.source = source;</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        if (source == null) {</span>
+<span class="nc" id="L68">            throw new RuntimeException(&quot;Source is null&quot;);</span>
+        }
+<span class="nc" id="L70">    }</span>
+
+    /**
+     * Reads XML, caches it internally and returns the Document.
+     * @return Object value
+     */
+    public Object getValue() {
+<span class="nc bnc" id="L77" title="All 2 branches missed.">        if (document == null) {</span>
+            try {
+<span class="nc bnc" id="L79" title="All 2 branches missed.">                if (source != null) {</span>
+<span class="nc" id="L80">                    DOMResult result = new DOMResult();</span>
+                    Transformer trans =
+<span class="nc" id="L82">                        TransformerFactory.newInstance().newTransformer();</span>
+<span class="nc" id="L83">                    trans.transform(source, result);</span>
+<span class="nc" id="L84">                    document = (Document) result.getNode();</span>
+<span class="nc" id="L85">                }</span>
+                else {
+<span class="nc" id="L87">                    document = delegate.getValue();</span>
+                }
+            }
+<span class="nc" id="L90">            catch (Exception ex) {</span>
+<span class="nc bnc" id="L91" title="All 2 branches missed.">                throw new JXPathException(</span>
+                    &quot;Cannot read XML from: &quot;
+                        + (xmlURL != null
+<span class="nc bnc" id="L94" title="All 2 branches missed.">                            ? xmlURL.toString()</span>
+                            : (source != null
+<span class="nc" id="L96">                                ? source.getSystemId()</span>
+                                : &quot;&lt;&lt;undefined source&gt;&gt;&quot;)),
+                    ex);
+<span class="nc" id="L99">            }</span>
+        }
+<span class="nc" id="L101">        return document;</span>
+    }
+
+    /**
+     * Throws an UnsupportedOperationException
+     * @param value to set
+     */
+    public void setValue(Object value) {
+<span class="nc" id="L109">        throw new UnsupportedOperationException();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

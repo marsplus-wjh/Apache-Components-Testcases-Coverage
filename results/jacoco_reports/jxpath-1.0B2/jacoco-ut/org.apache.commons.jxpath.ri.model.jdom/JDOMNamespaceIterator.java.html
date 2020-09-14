@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>JDOMNamespaceIterator.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons JXPath</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.jxpath.ri.model.jdom</a> &gt; <span class="el_source">JDOMNamespaceIterator.java</span></div><h1>JDOMNamespaceIterator.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.jxpath.ri.model.jdom;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.apache.commons.jxpath.ri.model.NodeIterator;
+import org.apache.commons.jxpath.ri.model.NodePointer;
+import org.jdom.Document;
+import org.jdom.Element;
+import org.jdom.Namespace;
+
+/**
+ * An iterator of namespaces of a DOM Node.
+ *
+ * @author Dmitri Plotnikov
+ * @version $Revision$ $Date$
+ */
+public class JDOMNamespaceIterator implements NodeIterator {
+    private NodePointer parent;
+    private List namespaces;
+    private Set prefixes;
+<span class="fc" id="L40">    private int position = 0;</span>
+
+    /**
+     * Create a new JDOMNamespaceIterator.
+     * @param parent the parent NodePointer.
+     */
+<span class="fc" id="L46">    public JDOMNamespaceIterator(NodePointer parent) {</span>
+<span class="fc" id="L47">        this.parent = parent;</span>
+<span class="fc" id="L48">        Object node = parent.getNode();</span>
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">        if (node instanceof Document) {</span>
+<span class="nc" id="L50">            node = ((Document) node).getRootElement();</span>
+        }
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">        if (node instanceof Element) {</span>
+<span class="fc" id="L53">            namespaces = new ArrayList();</span>
+<span class="fc" id="L54">            prefixes = new HashSet();</span>
+<span class="fc" id="L55">            collectNamespaces((Element) node);</span>
+        }
+<span class="fc" id="L57">    }</span>
+
+    /**
+     * Collect the namespaces from a JDOM Element.
+     * @param element the source Element
+     */
+    private void collectNamespaces(Element element) {
+<span class="fc" id="L64">        Namespace ns = element.getNamespace();</span>
+<span class="pc bpc" id="L65" title="1 of 4 branches missed.">        if (ns != null &amp;&amp; !prefixes.contains(ns.getPrefix())) {</span>
+<span class="fc" id="L66">            namespaces.add(ns);</span>
+<span class="fc" id="L67">            prefixes.add(ns.getPrefix());</span>
+        }
+<span class="fc" id="L69">        List others = element.getAdditionalNamespaces();</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">        for (int i = 0; i &lt; others.size(); i++) {</span>
+<span class="fc" id="L71">            ns = (Namespace) others.get(i);</span>
+<span class="pc bpc" id="L72" title="2 of 4 branches missed.">            if (ns != null &amp;&amp; !prefixes.contains(ns.getPrefix())) {</span>
+<span class="fc" id="L73">                namespaces.add(ns);</span>
+<span class="fc" id="L74">                prefixes.add(ns.getPrefix());</span>
+            }
+        }
+<span class="fc" id="L77">        Object elementParent = element.getParent();</span>
+<span class="fc bfc" id="L78" title="All 2 branches covered.">        if (elementParent instanceof Element) {</span>
+<span class="fc" id="L79">            collectNamespaces((Element) elementParent);</span>
+        }
+<span class="fc" id="L81">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    public NodePointer getNodePointer() {
+<span class="pc bpc" id="L87" title="1 of 2 branches missed.">        if (position == 0) {</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">            if (!setPosition(1)) {</span>
+<span class="nc" id="L89">                return null;</span>
+            }
+<span class="nc" id="L91">            position = 0;</span>
+        }
+<span class="fc" id="L93">        int index = position - 1;</span>
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">        if (index &lt; 0) {</span>
+<span class="nc" id="L95">            index = 0;</span>
+        }
+<span class="fc" id="L97">        Namespace ns = (Namespace) namespaces.get(index);</span>
+<span class="fc" id="L98">        return new JDOMNamespacePointer(parent, ns.getPrefix(), ns.getURI());</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public int getPosition() {
+<span class="fc" id="L105">        return position;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean setPosition(int position) {
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">        if (namespaces == null) {</span>
+<span class="nc" id="L113">            return false;</span>
+        }
+<span class="fc" id="L115">        this.position = position;</span>
+<span class="pc bpc" id="L116" title="1 of 4 branches missed.">        return position &gt;= 1 &amp;&amp; position &lt;= namespaces.size();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

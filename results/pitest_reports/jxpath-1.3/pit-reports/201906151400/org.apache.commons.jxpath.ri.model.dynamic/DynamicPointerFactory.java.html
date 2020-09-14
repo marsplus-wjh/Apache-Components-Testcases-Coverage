@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="../style.css">
+</head>
+<body>
+
+
+<h1>DynamicPointerFactory.java</h1>
+
+<table class="src">
+
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_1'/>
+1
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_1'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>/*</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_2'/>
+2
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_2'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * Licensed to the Apache Software Foundation (ASF) under one or more</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_3'/>
+3
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_3'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * contributor license agreements.  See the NOTICE file distributed with</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_4'/>
+4
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_4'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * this work for additional information regarding copyright ownership.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_5'/>
+5
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_5'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * The ASF licenses this file to You under the Apache License, Version 2.0</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_6'/>
+6
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_6'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * (the &#34;License&#34;); you may not use this file except in compliance with</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_7'/>
+7
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_7'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * the License.  You may obtain a copy of the License at</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_8'/>
+8
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_8'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> *</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_9'/>
+9
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_9'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> *     http://www.apache.org/licenses/LICENSE-2.0</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_10'/>
+10
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_10'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> *</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_11'/>
+11
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_11'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * Unless required by applicable law or agreed to in writing, software</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_12'/>
+12
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_12'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * distributed under the License is distributed on an &#34;AS IS&#34; BASIS,</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_13'/>
+13
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_13'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_14'/>
+14
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_14'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * See the License for the specific language governing permissions and</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_15'/>
+15
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_15'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * limitations under the License.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_16'/>
+16
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_16'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> */</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_17'/>
+17
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_17'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>package org.apache.commons.jxpath.ri.model.dynamic;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_18'/>
+18
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_18'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_19'/>
+19
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_19'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>import java.util.Locale;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_20'/>
+20
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_20'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_21'/>
+21
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_21'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>import org.apache.commons.jxpath.DynamicPropertyHandler;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_22'/>
+22
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_22'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>import org.apache.commons.jxpath.JXPathBeanInfo;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_23'/>
+23
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_23'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>import org.apache.commons.jxpath.JXPathIntrospector;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_24'/>
+24
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_24'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>import org.apache.commons.jxpath.ri.QName;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_25'/>
+25
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_25'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>import org.apache.commons.jxpath.ri.model.NodePointer;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_26'/>
+26
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_26'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>import org.apache.commons.jxpath.ri.model.NodePointerFactory;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_27'/>
+27
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_27'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>import org.apache.commons.jxpath.ri.model.beans.NullPointer;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_28'/>
+28
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_28'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>import org.apache.commons.jxpath.util.ValueUtils;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_29'/>
+29
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_29'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_30'/>
+30
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_30'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>/**</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_31'/>
+31
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_31'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * Implements NodePointerFactory for Dynamic classes like Map.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_32'/>
+32
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_32'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> *</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_33'/>
+33
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_33'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * @author Dmitri Plotnikov</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_34'/>
+34
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_34'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * @version $Revision: 652845 $ $Date: 2008-05-02 12:46:46 -0500 (Fri, 02 May 2008) $</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_35'/>
+35
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_35'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> */</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_36'/>
+36
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_36'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>public class DynamicPointerFactory implements NodePointerFactory {</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_37'/>
+37
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_37'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_38'/>
+38
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_38'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    /**</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_39'/>
+39
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_39'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     * Factory order constant.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_40'/>
+40
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_40'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>     */</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_41'/>
+41
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_41'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    public static final int DYNAMIC_POINTER_FACTORY_ORDER = 800;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_42'/>
+42
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_42'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_43'/>
+43
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_43'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    public int getOrder() {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_44'/>
+44
+</td>
+<td class='survived'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_44'>1</a>
+<span>
+1. getOrder : replaced return of integer sized value with (x == 0 ? 1 : 0) &rarr; SURVIVED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='survived'>        return DYNAMIC_POINTER_FACTORY_ORDER;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_45'/>
+45
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_45'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    }</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_46'/>
+46
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_46'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_47'/>
+47
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_47'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    public NodePointer createNodePointer(</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_48'/>
+48
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_48'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        QName name,</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_49'/>
+49
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_49'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        Object bean,</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_50'/>
+50
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_50'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        Locale locale) {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_51'/>
+51
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_51'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>        JXPathBeanInfo bi = JXPathIntrospector.getBeanInfo(bean.getClass());</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_52'/>
+52
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_52'>1</a>
+<span>
+1. createNodePointer : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        if (bi.isDynamic()) {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_53'/>
+53
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_53'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>            DynamicPropertyHandler handler =</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_54'/>
+54
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_54'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>                ValueUtils.getDynamicPropertyHandler(</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_55'/>
+55
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_55'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>                    bi.getDynamicPropertyHandlerClass());</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_56'/>
+56
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_56'>1</a>
+<span>
+1. createNodePointer : mutated return of Object value for org/apache/commons/jxpath/ri/model/dynamic/DynamicPointerFactory::createNodePointer to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            return new DynamicPointer(name, bean, handler, locale);</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_57'/>
+57
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_57'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        }</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_58'/>
+58
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_58'>1</a>
+<span>
+1. createNodePointer : mutated return of Object value for org/apache/commons/jxpath/ri/model/dynamic/DynamicPointerFactory::createNodePointer to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        return null;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_59'/>
+59
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_59'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    }</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_60'/>
+60
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_60'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_61'/>
+61
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_61'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    public NodePointer createNodePointer(</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_62'/>
+62
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_62'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        NodePointer parent,</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_63'/>
+63
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_63'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        QName name,</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_64'/>
+64
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_64'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        Object bean) {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_65'/>
+65
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_65'>1</a>
+<span>
+1. createNodePointer : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        if (bean == null) {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_66'/>
+66
+</td>
+<td class='survived'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_66'>1</a>
+<span>
+1. createNodePointer : mutated return of Object value for org/apache/commons/jxpath/ri/model/dynamic/DynamicPointerFactory::createNodePointer to ( if (x != null) null else throw new RuntimeException ) &rarr; SURVIVED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='survived'>            return new NullPointer(parent, name);</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_67'/>
+67
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_67'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        }</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_68'/>
+68
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_68'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_69'/>
+69
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_69'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>        JXPathBeanInfo bi = JXPathIntrospector.getBeanInfo(bean.getClass());</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_70'/>
+70
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_70'>1</a>
+<span>
+1. createNodePointer : negated conditional &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        if (bi.isDynamic()) {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_71'/>
+71
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_71'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>            DynamicPropertyHandler handler =</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_72'/>
+72
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_72'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>                ValueUtils.getDynamicPropertyHandler(</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_73'/>
+73
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_73'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>                    bi.getDynamicPropertyHandlerClass());</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_74'/>
+74
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_74'>1</a>
+<span>
+1. createNodePointer : mutated return of Object value for org/apache/commons/jxpath/ri/model/dynamic/DynamicPointerFactory::createNodePointer to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>            return new DynamicPointer(parent, name, bean, handler);</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_75'/>
+75
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_75'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>        }</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_76'/>
+76
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_76'>1</a>
+<span>
+1. createNodePointer : mutated return of Object value for org/apache/commons/jxpath/ri/model/dynamic/DynamicPointerFactory::createNodePointer to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>        return null;</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_77'/>
+77
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_77'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>    }</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@68ee4588_78'/>
+78
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_78'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>}</span></pre></td></tr>
+
+
+
+<tr><td></td><td></td><td><h2>Mutations</h2></td></tr>
+
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@68ee4588_44'>44</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_44'/> 
+
+<p class='SURVIVED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>getOrder<br/><b>Killed by : </b>none</span></span> replaced return of integer sized value with (x == 0 ? 1 : 0) &rarr; SURVIVED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@68ee4588_52'>52</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_52'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>createNodePointer<br/><b>Killed by : </b>org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest.testMethodLookup(org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@68ee4588_56'>56</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_56'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>createNodePointer<br/><b>Killed by : </b>org.apache.commons.jxpath.servlet.JXPathServletContextTest.testServletRequestWithoutSession(org.apache.commons.jxpath.servlet.JXPathServletContextTest)</span></span> mutated return of Object value for org/apache/commons/jxpath/ri/model/dynamic/DynamicPointerFactory::createNodePointer to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@68ee4588_58'>58</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_58'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>createNodePointer<br/><b>Killed by : </b>org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest.testMethodLookup(org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest)</span></span> mutated return of Object value for org/apache/commons/jxpath/ri/model/dynamic/DynamicPointerFactory::createNodePointer to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@68ee4588_65'>65</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_65'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>createNodePointer<br/><b>Killed by : </b>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testRemovePathBeanValue(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@68ee4588_66'>66</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_66'/> 
+
+<p class='SURVIVED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>createNodePointer<br/><b>Killed by : </b>none</span></span> mutated return of Object value for org/apache/commons/jxpath/ri/model/dynamic/DynamicPointerFactory::createNodePointer to ( if (x != null) null else throw new RuntimeException ) &rarr; SURVIVED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@68ee4588_70'>70</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_70'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>createNodePointer<br/><b>Killed by : </b>org.apache.commons.jxpath.servlet.JXPathServletContextTest.testServletRequestWithoutSession(org.apache.commons.jxpath.servlet.JXPathServletContextTest)</span></span> negated conditional &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@68ee4588_74'>74</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_74'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>createNodePointer<br/><b>Killed by : </b>org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest.testSetPrimitiveValue(org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest)</span></span> mutated return of Object value for org/apache/commons/jxpath/ri/model/dynamic/DynamicPointerFactory::createNodePointer to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@68ee4588_76'>76</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@68ee4588_76'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>createNodePointer<br/><b>Killed by : </b>org.apache.commons.jxpath.servlet.JXPathServletContextTest.testServletRequestWithoutSession(org.apache.commons.jxpath.servlet.JXPathServletContextTest)</span></span> mutated return of Object value for org/apache/commons/jxpath/ri/model/dynamic/DynamicPointerFactory::createNodePointer to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED</p> 
+</td>
+</tr>
+
+</table>
+
+
+<h2>Active mutators</h2>
+<ul>
+<li class='mutator'>INCREMENTS_MUTATOR</li>
+<li class='mutator'>VOID_METHOD_CALL_MUTATOR</li>
+<li class='mutator'>RETURN_VALS_MUTATOR</li>
+<li class='mutator'>MATH_MUTATOR</li>
+<li class='mutator'>NEGATE_CONDITIONALS_MUTATOR</li>
+<li class='mutator'>INVERT_NEGS_MUTATOR</li>
+<li class='mutator'>CONDITIONALS_BOUNDARY_MUTATOR</li>
+
+</ul>
+
+<h2>Tests examined</h2>
+<ul>
+<li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testCoreFunctions(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (2 ms)</li><li>org.apache.commons.jxpath.servlet.JXPathServletContextTest.testServletRequestWithoutSession(org.apache.commons.jxpath.servlet.JXPathServletContextTest) (0 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testRemoveAllArrayElements(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.axes.SimplePathInterpreterTest.testDoStepPredicatesPropertyOwner(org.apache.commons.jxpath.ri.axes.SimplePathInterpreterTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.compiler.VariableTest.testIterateVariable(org.apache.commons.jxpath.ri.compiler.VariableTest) (6 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testAxisDescendant(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (9 ms)</li><li>org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest.testCollectionReturn(org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testBeanElement(org.apache.commons.jxpath.ri.model.MixedModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest.testConstructorLookup(org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testCreatePathExpandExistingCollection(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testAxisPreceding(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testAxisFollowingSibling(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (7 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testRemoveAllMapEntries(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.compiler.VariableTest.testRemovePathArrayElement(org.apache.commons.jxpath.ri.compiler.VariableTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest.testCreatePathCreateBean(org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest) (0 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testListContainer(org.apache.commons.jxpath.ri.model.MixedModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testListBean(org.apache.commons.jxpath.ri.model.MixedModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testBeanPrimitive(org.apache.commons.jxpath.ri.model.MixedModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testCreatePathExpandNewCollection(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest.testNodeSetReturn(org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testRemovePathArrayElement(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.servlet.JXPathServletContextTest.testPageContext(org.apache.commons.jxpath.servlet.JXPathServletContextTest) (12 ms)</li><li>org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest.testDocument(org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest) (6 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testAttributeName(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest.testStaticMethodLookup(org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest.testCreatePathNewCollectionElement(org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testIterateAndSet(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testAxisSelf(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testSetNonPrimitiveValue(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testListMap(org.apache.commons.jxpath.ri.model.MixedModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testCreatePathAndSetValueWithMatrix(org.apache.commons.jxpath.ri.model.MixedModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.compiler.CoreOperationTest.testNodeSetOperations(org.apache.commons.jxpath.ri.compiler.CoreOperationTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.container.ContainerModelTest.testContainerPropertyWithCollection(org.apache.commons.jxpath.ri.model.container.ContainerModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testMapContainer(org.apache.commons.jxpath.ri.model.MixedModelTest) (11 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testDocumentOrder(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testIteratePointersArrayElementWithVariable(org.apache.commons.jxpath.ri.model.MixedModelTest) (5 ms)</li><li>org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest.testCreatePath(org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.axes.SimplePathInterpreterTest.testDoStepNoPredicatesStandard(org.apache.commons.jxpath.ri.axes.SimplePathInterpreterTest) (5 ms)</li><li>org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest.testMethodLookupWithExpressionContextAndArgument(org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest) (0 ms)</li><li>org.apache.commons.jxpath.ri.axes.RecursiveAxesTest.testInfiniteDescent(org.apache.commons.jxpath.ri.axes.RecursiveAxesTest) (9 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testAxisPrecedingSibling(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest.testAttributeName(org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testIteratePointerSetValue(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testIndexPredicate(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.compiler.VariableTest.testInvalidVariableName(org.apache.commons.jxpath.ri.compiler.VariableTest) (5 ms)</li><li>org.apache.commons.jxpath.ri.axes.SimplePathInterpreterTest.testDoStepPredicatesStandard(org.apache.commons.jxpath.ri.axes.SimplePathInterpreterTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testIndividualIterators(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.compiler.VariableTest.testCreatePathDeclareVariable(org.apache.commons.jxpath.ri.compiler.VariableTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest.testCreatePathAndSetValueCreateBean(org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.compiler.VariableTest.testCreatePathDeclareVariableSetProperty(org.apache.commons.jxpath.ri.compiler.VariableTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testAxisChild(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testSetContextDependentNode(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest.testCollectionMethodCall(org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest) (2 ms)</li><li>org.apache.commons.jxpath.BasicNodeSetTest.testRemove(org.apache.commons.jxpath.BasicNodeSetTest) (9 ms)</li><li>org.apache.commons.jxpath.servlet.JXPathServletContextTest.testServletRequest(org.apache.commons.jxpath.servlet.JXPathServletContextTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.EmptyCollectionTest.testEmptyChildArray(org.apache.commons.jxpath.ri.model.EmptyCollectionTest) (4 ms)</li><li>org.apache.commons.jxpath.servlet.JXPathServletContextTest.testServletContext(org.apache.commons.jxpath.servlet.JXPathServletContextTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.compiler.CoreOperationTest.testInfoSetTypes(org.apache.commons.jxpath.ri.compiler.CoreOperationTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.compiler.VariableTest.testUnionOfVariableAndNode(org.apache.commons.jxpath.ri.compiler.VariableTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.axes.SimplePathInterpreterTest.testInterpretExpressionPath(org.apache.commons.jxpath.ri.axes.SimplePathInterpreterTest) (6 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testVarDocument(org.apache.commons.jxpath.ri.model.MixedModelTest) (6 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testAxisChildNestedCollection(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (0 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testVarContainer(org.apache.commons.jxpath.ri.model.MixedModelTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testIterateAndSet(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testAxisAncestor(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testVarMap(org.apache.commons.jxpath.ri.model.MixedModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testIteratePointerSetValue(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testCreatePathAndSetValueCreateBeanExpandCollection(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testRemoveAllMapEntries(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.compiler.VariableTest.testCreatePathExpandCollection(org.apache.commons.jxpath.ri.compiler.VariableTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testCreatePathAndSetValueExpandExistingCollection(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.BasicNodeSetTest.testAdd(org.apache.commons.jxpath.BasicNodeSetTest) (243 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testAxisPreceding(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.EmbeddedColonMapKeysTest.testSelectNodes(org.apache.commons.jxpath.ri.model.EmbeddedColonMapKeysTest) (0 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testAxisAncestor(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.compiler.CoreFunctionTest.testExtendedKeyFunction(org.apache.commons.jxpath.ri.compiler.CoreFunctionTest) (6 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testCreatePath(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testVarList(org.apache.commons.jxpath.ri.model.MixedModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.EmbeddedColonMapKeysTest.testSelectSingleNode(org.apache.commons.jxpath.ri.model.EmbeddedColonMapKeysTest) (0 ms)</li><li>org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest.testBCNodeSetHack(org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest) (17 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testVar(org.apache.commons.jxpath.ri.model.MixedModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.compiler.VariableTest.testSetValue(org.apache.commons.jxpath.ri.compiler.VariableTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.axes.SimplePathInterpreterTest.testDoPredicatesStandard(org.apache.commons.jxpath.ri.axes.SimplePathInterpreterTest) (7 ms)</li><li>org.apache.commons.jxpath.ri.model.EmptyCollectionTest.testEmptyChildSet(org.apache.commons.jxpath.ri.model.EmptyCollectionTest) (0 ms)</li><li>org.apache.commons.jxpath.ri.model.container.ContainerModelTest.testContainerMapWithCollection(org.apache.commons.jxpath.ri.model.container.ContainerModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testCreatePathExpandExistingCollectionAndSetProperty(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testCreatePath(org.apache.commons.jxpath.ri.model.MixedModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testMapList(org.apache.commons.jxpath.ri.model.MixedModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testSetContextDependentNode(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.compiler.VariableTest.testCreatePathDeclareVariableSetCollectionElementProperty(org.apache.commons.jxpath.ri.compiler.VariableTest) (13 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testIndexedProperty(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testRelativeContextAbsolutePath(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testRelativeContextRelativePath(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testVarElement(org.apache.commons.jxpath.ri.model.MixedModelTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.compiler.VariableTest.testCreatePathAndSetValueExpandCollection(org.apache.commons.jxpath.ri.compiler.VariableTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest.testCreatePathAndSetValueCollectionElement(org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.compiler.CoreFunctionTest.testIDFunction(org.apache.commons.jxpath.ri.compiler.CoreFunctionTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testRelativeContextInheritance(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testRemoveAllArrayElements(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testCreatePath(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest.testMapOfMaps(org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testRelativeContextParent(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (5 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testBeanBean(org.apache.commons.jxpath.ri.model.MixedModelTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testSetCollectionElement(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testRoot(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testMatrix(org.apache.commons.jxpath.ri.model.MixedModelTest) (10 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testCollectionPointer(org.apache.commons.jxpath.ri.model.MixedModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testRemovePathBeanValue(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest.testContainer(org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest) (10 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testCreatePathAndSetValueExpandExistingCollection(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest.testMethodLookupWithExpressionContext(org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest) (0 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testRootAsCollection(org.apache.commons.jxpath.ri.model.MixedModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testAxisChild(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testBeanDocument(org.apache.commons.jxpath.ri.model.MixedModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testCreatePathAndSetValueExpandNewCollection(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testRemovePathPropertyValue(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.compiler.CoreOperationTest.testEmptyNodeSetOperations(org.apache.commons.jxpath.ri.compiler.CoreOperationTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testIteratePropertyArrayWithHasNext(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testCreatePathExpandNewCollection(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest.testCreatePathAndSetValue(org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest) (0 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testUnion(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest.testRemovePath(org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest) (0 ms)</li><li>org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest.testMethodCall(org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.compiler.CoreFunctionTest.testFormatNumberFunction(org.apache.commons.jxpath.ri.compiler.CoreFunctionTest) (6 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testRemoveAllListElements(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testVarPrimitive(org.apache.commons.jxpath.ri.model.MixedModelTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testAttributeName(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testAxisParent(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (7 ms)</li><li>org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest.testSetPrimitiveValue(org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest) (0 ms)</li><li>org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest.testExpressionContext(org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest) (21 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testIteratePropertyArrayWithoutHasNext(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testAxisChildNestedCollection(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.compiler.VariableTest.testVariablesInExpressions(org.apache.commons.jxpath.ri.compiler.VariableTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testAxisChildNestedBean(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testSetNonPrimitiveValue(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testIterateVector(org.apache.commons.jxpath.ri.model.MixedModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testRelativeContextParent(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testSetCollectionElement(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (0 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testListDocument(org.apache.commons.jxpath.ri.model.MixedModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.compiler.VariableTest.testRemovePathCollectionElement(org.apache.commons.jxpath.ri.compiler.VariableTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testRemovePathBeanValue(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (0 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testCreatePathAndSetValue(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (0 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testAxisFollowing(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest.testElementInVariable(org.apache.commons.jxpath.ri.model.jdom.JDOMModelTest) (13 ms)</li><li>org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest.testSetCollection(org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest) (0 ms)</li><li>org.apache.commons.jxpath.ri.compiler.VariableTest.testNestedContext(org.apache.commons.jxpath.ri.compiler.VariableTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testCreatePathCreateBeanExpandCollection(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testRelativeContextRelativePath(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (0 ms)</li><li>org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest.testAxisDescendant(org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest) (5 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testRelativeContextInheritance(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest.testEstablishNodeSetBaseline(org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest) (7 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testCreatePathAndSetValue(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testCreatePathAndSetValueExpandNewCollection(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testBeanMap(org.apache.commons.jxpath.ri.model.MixedModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testAxisAttribute(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testMultipleIterators(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testIteratePropertyArrayWithHasNext(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testCreatePathAndSetValueCreateBeanExpandCollection(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testBooleanPredicate(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (28 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testSetPropertyValue(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest.testCreatePathAndSetValueNewCollectionElement(org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testMapBean(org.apache.commons.jxpath.ri.model.MixedModelTest) (13 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testIterateArray(org.apache.commons.jxpath.ri.model.MixedModelTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testAxisDescendant(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (6 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testBooleanPredicate(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (6 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testRemovePathPropertyValue(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (0 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testUnion(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (5 ms)</li><li>org.apache.commons.jxpath.ri.compiler.CoreFunctionTest.testKeyFunction(org.apache.commons.jxpath.ri.compiler.CoreFunctionTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.compiler.VariableTest.testCreatePathAndSetValueDeclareVariableSetProperty(org.apache.commons.jxpath.ri.compiler.VariableTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.model.container.ContainerModelTest.testContainerVariableWithCollection(org.apache.commons.jxpath.ri.model.container.ContainerModelTest) (0 ms)</li><li>org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest.testSetNewKey(org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BadlyImplementedFactoryTest.testBadFactoryImplementation(org.apache.commons.jxpath.ri.model.beans.BadlyImplementedFactoryTest) (0 ms)</li><li>org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest.testCollectionOfMaps(org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testMapElement(org.apache.commons.jxpath.ri.model.MixedModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.compiler.CoreFunctionTest.testCoreFunctions(org.apache.commons.jxpath.ri.compiler.CoreFunctionTest) (13 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testBeanContainer(org.apache.commons.jxpath.ri.model.MixedModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.axes.SimplePathInterpreterTest.testDoStepNoPredicatesPropertyOwner(org.apache.commons.jxpath.ri.axes.SimplePathInterpreterTest) (9 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testCoreFunctions(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (7 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testRelativeContextAbsolutePath(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testRemovePathArrayElement(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.compiler.VariableTest.testVariables(org.apache.commons.jxpath.ri.compiler.VariableTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testBeanList(org.apache.commons.jxpath.ri.model.MixedModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.compiler.VariableTest.testCreateAndSetValuePathDeclareVariableSetCollectionElement(org.apache.commons.jxpath.ri.compiler.VariableTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testAxisParent(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (7 ms)</li><li>org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest.testMethodLookup(org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest) (0 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testRemoveAllListElements(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testIteratePropertyArrayWithoutHasNext(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testMapDocument(org.apache.commons.jxpath.ri.model.MixedModelTest) (8 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testAxisPrecedingSibling(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (7 ms)</li><li>org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest.testAxisChild(org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.dom.DOMModelTest.testContainer(org.apache.commons.jxpath.ri.model.dom.DOMModelTest) (8 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testAxisFollowing(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.axes.SimplePathInterpreterTest.testDoPredicateIndex(org.apache.commons.jxpath.ri.axes.SimplePathInterpreterTest) (19 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testAttributeLang(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testListPrimitive(org.apache.commons.jxpath.ri.model.MixedModelTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.model.dom.DOMModelTest.testElementInVariable(org.apache.commons.jxpath.ri.model.dom.DOMModelTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest.testStaticMethodLookupWithConversion(org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testNull(org.apache.commons.jxpath.ri.model.MixedModelTest) (23 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testListElement(org.apache.commons.jxpath.ri.model.MixedModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.dom.DOMModelTest.testDocument(org.apache.commons.jxpath.ri.model.dom.DOMModelTest) (5 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testAxisDescendantOrSelf(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (12 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testAxisChildNestedBean(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (0 ms)</li><li>org.apache.commons.jxpath.ri.model.container.ContainerModelTest.testContainerRootWithCollection(org.apache.commons.jxpath.ri.model.container.ContainerModelTest) (0 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testAxisAttribute(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.BasicNodeSetTest.testNodes(org.apache.commons.jxpath.BasicNodeSetTest) (6 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testMapMap(org.apache.commons.jxpath.ri.model.MixedModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testIteratePointersArray(org.apache.commons.jxpath.ri.model.MixedModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest.testStaticMethodLookupWithExpressionContext(org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest) (0 ms)</li><li>org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest.testStaticMethodCall(org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest) (47 ms)</li><li>org.apache.commons.jxpath.ri.compiler.VariableTest.testCreatePathAndSetValueDeclVarSetCollectionElementProperty(org.apache.commons.jxpath.ri.compiler.VariableTest) (5 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testCreatePathExpandExistingCollection(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest.testCreatePathCollectionElement(org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.compiler.VariableTest.testRemovePathUndeclareVariable(org.apache.commons.jxpath.ri.compiler.VariableTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testListList(org.apache.commons.jxpath.ri.model.MixedModelTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.compiler.VariableTest.testCreatePathDeclareVariableSetCollectionElement(org.apache.commons.jxpath.ri.compiler.VariableTest) (12 ms)</li><li>org.apache.commons.jxpath.ri.axes.SimplePathInterpreterTest.testDoPredicateName(org.apache.commons.jxpath.ri.axes.SimplePathInterpreterTest) (19 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testVarBean(org.apache.commons.jxpath.ri.model.MixedModelTest) (3 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testMapPrimitive(org.apache.commons.jxpath.ri.model.MixedModelTest) (8 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testDocumentOrder(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (5 ms)</li><li>org.apache.commons.jxpath.ri.model.MixedModelTest.testErrorProperty(org.apache.commons.jxpath.ri.model.MixedModelTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testCreatePathCreateBeanExpandCollection(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testIndexPredicate(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (4 ms)</li><li>org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest.testConstructorLookupWithExpressionContext(org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest) (0 ms)</li><li>org.apache.commons.jxpath.ri.compiler.CoreOperationTest.testNan(org.apache.commons.jxpath.ri.compiler.CoreOperationTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testAxisFollowingSibling(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (7 ms)</li><li>org.apache.commons.jxpath.ri.StressTest.testThreads(org.apache.commons.jxpath.ri.StressTest) (2616 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testSetPropertyValue(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest.testRemovePathArrayElement(org.apache.commons.jxpath.ri.model.dynamic.DynamicPropertiesModelTest) (1 ms)</li><li>org.apache.commons.jxpath.ri.model.beans.BeanModelTest.testAxisDescendantOrSelf(org.apache.commons.jxpath.ri.model.beans.BeanModelTest) (9 ms)</li><li>org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest.testAllocation(org.apache.commons.jxpath.ri.compiler.ExtensionFunctionTest) (2 ms)</li><li>org.apache.commons.jxpath.ri.compiler.VariableTest.testCreatePathAndSetValueDeclareVariable(org.apache.commons.jxpath.ri.compiler.VariableTest) (5 ms)</li><li>org.apache.commons.jxpath.ri.model.EmptyCollectionTest.testEmptyChildList(org.apache.commons.jxpath.ri.model.EmptyCollectionTest) (0 ms)</li><li>org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest.testCreatePathExpandExistingCollectionAndSetProperty(org.apache.commons.jxpath.ri.model.dynabeans.DynaBeanModelTest) (2 ms)</li>
+</ul>
+
+<br/>
+
+Report generated by <a href='http://pitest.org'>PIT</a> 1.4.3
+
+</body>
+</html>

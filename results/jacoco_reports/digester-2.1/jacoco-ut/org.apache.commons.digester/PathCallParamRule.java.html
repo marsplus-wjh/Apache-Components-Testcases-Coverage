@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>PathCallParamRule.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Commons Digester</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.digester</a> &gt; <span class="el_source">PathCallParamRule.java</span></div><h1>PathCallParamRule.java</h1><pre class="source lang-java linenums">/* $Id$
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+package org.apache.commons.digester;
+
+
+import org.xml.sax.Attributes;
+
+/**
+ * &lt;p&gt;Rule implementation that saves a parameter containing the 
+ * &lt;code&gt;Digester&lt;/code&gt; matching path for use by a surrounding 
+ * &lt;code&gt;CallMethodRule&lt;/code&gt;. This Rule is most useful when making 
+ * extensive use of wildcards in rule patterns.&lt;/p&gt;
+ *
+ * @since 1.6
+ */
+
+public class PathCallParamRule extends Rule {
+
+    // ----------------------------------------------------------- Constructors
+
+    /**
+     * Construct a &quot;call parameter&quot; rule that will save the body text of this
+     * element as the parameter value.
+     *
+     * @param paramIndex The zero-relative parameter number
+     */
+<span class="fc" id="L44">    public PathCallParamRule(int paramIndex) {</span>
+
+<span class="fc" id="L46">        this.paramIndex = paramIndex;</span>
+
+<span class="fc" id="L48">    }</span>
+ 
+    // ----------------------------------------------------- Instance Variables
+
+    /**
+     * The zero-relative index of the parameter we are saving.
+     */
+<span class="fc" id="L55">    protected int paramIndex = 0;</span>
+
+    // --------------------------------------------------------- Public Methods
+
+
+    /**
+     * Process the start of this element.
+     *
+     * @param namespace the namespace URI of the matching element, or an 
+     *   empty string if the parser is not namespace aware or the element has
+     *   no namespace
+     * @param name the local name if the parser is namespace aware, or just 
+     *   the element name otherwise
+     * @param attributes The attribute list for this element
+
+     */
+    @Override
+    public void begin(String namespace, String name, Attributes attributes) throws Exception {
+
+<span class="fc" id="L74">        String param = getDigester().getMatch();</span>
+        
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">        if(param != null) {</span>
+<span class="fc" id="L77">            Object parameters[] = (Object[]) digester.peekParams();</span>
+<span class="fc" id="L78">            parameters[paramIndex] = param;</span>
+        }
+        
+<span class="fc" id="L81">    }</span>
+
+    /**
+     * Render a printable version of this Rule.
+     */
+    @Override
+    public String toString() {
+
+<span class="nc" id="L89">        StringBuffer sb = new StringBuffer(&quot;PathCallParamRule[&quot;);</span>
+<span class="nc" id="L90">        sb.append(&quot;paramIndex=&quot;);</span>
+<span class="nc" id="L91">        sb.append(paramIndex);</span>
+<span class="nc" id="L92">        sb.append(&quot;]&quot;);</span>
+<span class="nc" id="L93">        return (sb.toString());</span>
+
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>
